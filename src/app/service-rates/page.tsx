@@ -6,10 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 const services = [
     { service: 'Wash, Dry, Fold (per 7.5kg load)', price: '180.00' },
-    { service: 'Ironing (per piece)', price: '15.00' },
-    { service: 'Stain Removal (per piece)', price: '25.00' },
-    { service: 'Delicate Wash (per load)', price: '200.00' },
-    { service: 'Beddings & Linens (per load)', price: '220.00' },
 ];
 
 const deliverySurcharges = [
