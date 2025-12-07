@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
 
 import { AppHeader } from '@/components/app-header'
 import { AppFooter } from '@/components/app-footer'
@@ -33,69 +32,28 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
 
-    const formData = new FormData(e.currentTarget)
-    const email = String(formData.get('email'))
-    const password = String(formData.get('password'))
-    const firstName = String(formData.get('firstName'))
-    const lastName = String(formData.get('lastName'))
-
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-        }
-      }
-    })
-
-    if (signUpError) {
+    // Simulate a successful signup for demonstration
+    setTimeout(() => {
       setLoading(false)
-      setError(signUpError.message)
-      return
-    }
 
-    if (signUpData.user) {
-        // The user's profile data is already set via the signUp options.
-        // We now just need to insert into our public `users` table.
-        const { error: profileError } = await supabase
-            .from('users')
-            .insert({
-              id: signUpData.user.id,
-              first_name: firstName,
-              last_name: lastName,
-              role: 'customer' // Set default role
-            })
-        
-        if (profileError) {
-            setLoading(false)
-            setError(profileError.message)
-            // Optional: handle user cleanup if profile insertion fails
-            await supabase.auth.admin.deleteUser(signUpData.user.id)
-            return
+      let countdown = 3;
+      const { id: toastId, update } = toast({
+        variant: 'default',
+        title: 'Signup Successful!',
+        description: `Redirecting to login in ${countdown}s...`,
+        className: 'bg-green-500 text-white',
+      });
+
+      const interval = setInterval(() => {
+        countdown -= 1;
+        if (update) {
+          update({ id: toastId, description: `Redirecting to login in ${countdown}s...` });
         }
-    }
-
-
-    setLoading(false)
-
-    // Show success toast and start countdown
-    let countdown = 3;
-    const { id: toastId, update } = toast({
-      variant: 'default',
-      title: 'Signup Successful!',
-      description: `Redirecting to login in ${countdown}s...`,
-      className: 'bg-green-500 text-white',
-    });
-
-    const interval = setInterval(() => {
-      countdown -= 1;
-      update({ id: toastId, description: `Redirecting to login in ${countdown}s...` });
-      if (countdown === 0) {
-        clearInterval(interval);
-        router.push('/login');
-      }
+        if (countdown === 0) {
+          clearInterval(interval);
+          router.push('/login');
+        }
+      }, 1000);
     }, 1000);
   }
 

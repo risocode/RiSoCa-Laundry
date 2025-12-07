@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabaseClient'
 
 import { AppHeader } from '@/components/app-header'
 import { AppFooter } from '@/components/app-footer'
@@ -33,52 +32,22 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (signInError) {
+    // Simulating a successful login for demonstration
+    // In a real app, you would have your auth logic here.
+    setTimeout(() => {
       setLoading(false)
       toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: signInError.message,
+        title: 'Login Successful',
+        description: 'Welcome back!',
       })
-      return
-    }
 
-    if (signInData.user) {
-        const { data: userProfile, error: profileError } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', signInData.user.id)
-            .single()
-
-        setLoading(false)
-
-        if (profileError) {
-            toast({
-                variant: 'destructive',
-                title: 'Login Failed',
-                description: 'Could not retrieve user role.',
-            })
-            // Log out the user if profile can't be fetched
-            await supabase.auth.signOut()
-            return
-        }
-
-        toast({
-            title: 'Login Successful',
-            description: 'Welcome back!',
-        })
-        
-        if (userProfile.role === 'admin') {
-            router.push('/admin')
-        } else {
-            router.push('/order-status')
-        }
-    }
+      // Simulate role-based redirect
+      if (email.includes('admin')) {
+        router.push('/admin')
+      } else {
+        router.push('/order-status')
+      }
+    }, 1000)
   }
 
   return (
