@@ -219,12 +219,15 @@ export function OrderForm() {
         status: 'Order Placed',
         total: pendingOrder.pricing.computedPrice,
     };
-
+    
     addOrder(newOrder);
     setIsCustomerInfoDialogOpen(false);
     customerForm.reset();
     form.reset();
-    router.push('/order-status');
+    
+    startTransition(() => {
+        router.push('/order-status');
+    });
   }
 
   return (
