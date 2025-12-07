@@ -68,7 +68,7 @@ export default function RegisterPage() {
             <CardDescription>
               Enter your information to create an account
             </CardDescription>
-          </Header>
+          </CardHeader>
 
           <CardContent className="p-4 pt-0">
             <form onSubmit={handleSubmit} className="grid gap-3">
