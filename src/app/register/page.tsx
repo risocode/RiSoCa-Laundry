@@ -1,62 +1,140 @@
+'use client'
 
-import Link from "next/link"
-import { AppHeader } from "@/components/app-header"
-import { AppFooter } from "@/components/app-footer"
-import { Button } from "@/components/ui/button"
+import React, { useState } from 'react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabaseClient'
+
+import { AppHeader } from '@/components/app-header'
+import { AppFooter } from '@/components/app-footer'
+
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { UserPlus } from "lucide-react"
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { UserPlus } from 'lucide-react'
 
 export default function RegisterPage() {
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setLoading(true)
+    setMessage(null)
+
+    const formData = new FormData(e.currentTarget)
+
+    const email = String(formData.get('email'))
+    const password = String(formData.get('password'))
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      // ✅ add emailRedirectTo if you want
+      // options: {
+      //   emailRedirectTo: `${location.origin}/auth/callback`,
+      // },
+    })
+
+    setLoading(false)
+
+    if (error) {
+      setMessage(error.message)
+      return
+    }
+
+    setMessage(
+      'Registration successful. Check your email to confirm your account (if required).'
+    )
+
+    e.currentTarget.reset()
+  }
+
   return (
-    <div className="flex flex-col h-screen">
-      <AppHeader showLogo={true} />
-      <main className="flex-1 overflow-hidden flex items-center justify-center px-4">
-        <Card className="mx-auto max-w-sm w-full">
+    <div className="flex flex-col min-h-screen">
+      <AppHeader showLogo />
+
+      <main className="flex-1 flex items-center justify-center px-4">
+        <Card className="mx-auto w-full max-w-sm">
           <CardHeader className="p-4">
             <CardTitle className="text-xl">Sign Up</CardTitle>
             <CardDescription>
               Enter your information to create an account
             </CardDescription>
           </CardHeader>
+
           <CardContent className="p-4 pt-0">
-            <div className="grid gap-3">
+            <form onSubmit={handleSubmit} className="grid gap-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="first-name">First name</Label>
-                  <Input id="first-name" placeholder="Max" required />
+                  <Label htmlFor="firstName">First name</Label>
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    placeholder="Max"
+                    disabled={loading}
+                  />
                 </div>
+
                 <div className="grid gap-1.5">
-                  <Label htmlFor="last-name">Last name</Label>
-                  <Input id="last-name" placeholder="Robinson" required />
+                  <Label htmlFor="lastName">Last name</Label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    placeholder="Robinson"
+                    disabled={loading}
+                  />
                 </div>
               </div>
+
               <div className="grid gap-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="m@example.com"
                   required
+                  disabled={loading}
                 />
               </div>
+
               <div className="grid gap-1.5">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  minLength={6}
+                  required
+                  disabled={loading}
+                />
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-white">
-                <UserPlus className="mr-2 h-4 w-4" /> Create an account
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-white"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                {loading ? 'Creating account...' : 'Create an account'}
               </Button>
-            </div>
+            </form>
+
+            {message && (
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                {message}
+              </p>
+            )}
+
             <div className="mt-3 text-center text-xs">
-              Already have an account?{" "}
+              Already have an account?{' '}
               <Link href="/login" className="underline">
                 Sign in
               </Link>
@@ -64,6 +142,7 @@ export default function RegisterPage() {
           </CardContent>
         </Card>
       </main>
+
       <AppFooter />
     </div>
   )
