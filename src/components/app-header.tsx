@@ -28,7 +28,7 @@ export function AppHeader() {
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-max max-w-fit h-auto top-14 right-4 rounded-lg p-2">
+          <SheetContent side="right" className="w-max max-w-fit sm:w-full sm:max-w-fit h-auto top-14 right-4 rounded-lg p-2">
              <SheetHeader>
               <SheetTitle className="sr-only">Menu</SheetTitle>
             </SheetHeader>
