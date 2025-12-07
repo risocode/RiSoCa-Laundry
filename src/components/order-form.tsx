@@ -17,9 +17,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Loader2, Truck, Weight, Layers, Info } from 'lucide-react';
+import { Loader2, Truck, Weight, Layers, Info, MapPin } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { LocationPicker } from './location-picker';
+
 
 const packages = [
   { id: 'package1', label: 'Package 1', description: 'Wash, Dry, & Fold' },
@@ -44,19 +46,24 @@ export function OrderForm() {
   const [pricingResult, setPricingResult] = useState<PricingResult | null>(null);
   const [calculatedLoads, setCalculatedLoads] = useState(1);
   const [showDistancePrompt, setShowDistancePrompt] = useState(false);
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
       servicePackage: 'package1',
       weight: undefined,
-      distance: 1,
+      distance: 0,
     },
     mode: 'onChange'
   });
 
-  const { watch } = form;
+  const { watch, setValue } = form;
   const watchedValues = watch();
+
+  const handleLocationSelect = (distance: number) => {
+    setValue('distance', distance, { shouldValidate: true });
+  };
 
   const calculatePrice = (values: OrderFormValues) => {
     startTransition(() => {
@@ -93,21 +100,24 @@ export function OrderForm() {
   };
 
   useEffect(() => {
-    const parsed = orderSchema.safeParse(watchedValues);
-    if (parsed.success) {
-      calculatePrice(parsed.data);
-    } else {
-        const needsDistance = (watchedValues.servicePackage === 'package2' || watchedValues.servicePackage === 'package3');
-        if (needsDistance && (!watchedValues.distance || watchedValues.distance <= 0)) {
-             setPricingResult(null);
-             setShowDistancePrompt(true);
+    const subscription = watch((values) => {
+        const parsed = orderSchema.safeParse(values);
+        if (parsed.success) {
+            calculatePrice(parsed.data);
         } else {
-             setPricingResult(null);
-             setShowDistancePrompt(false);
+            const needsDistance = (values.servicePackage === 'package2' || values.servicePackage === 'package3');
+            if (needsDistance && (!values.distance || values.distance <= 0)) {
+                setPricingResult(null);
+                setShowDistancePrompt(true);
+            } else {
+                setPricingResult(null);
+                setShowDistancePrompt(false);
+            }
         }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedValues.servicePackage, watchedValues.weight, watchedValues.distance]);
+    });
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watch]);
 
 
   const onSubmit = (data: OrderFormValues) => {
@@ -116,6 +126,7 @@ export function OrderForm() {
   };
 
   return (
+    <>
     <Card className="shadow-lg w-full">
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <CardHeader className="p-4">
@@ -188,16 +199,16 @@ export function OrderForm() {
             </div>
             <div className="space-y-2">
                 <Label htmlFor="distance" className="text-base font-semibold">3. Location</Label>
-                <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-md">
-                    <Truck className="h-5 w-5 text-muted-foreground" />
-                    <div className='flex-grow'>
-                        <Label htmlFor="distance" className="text-xs font-medium text-muted-foreground">Distance (km)</Label>
-                        <Controller
-                        name="distance"
-                        control={form.control}
-                        render={({ field }) => <Input id="distance" type="number" placeholder="e.g. 1" className="text-center bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" {...field} />}
-                        />
-                    </div>
+                <div className="flex flex-col gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsLocationPickerOpen(true)} className="w-full">
+                        <MapPin className="mr-2 h-4 w-4"/>
+                        Select Location
+                    </Button>
+                    {watchedValues.distance > 0 && (
+                       <div className="text-xs text-center text-muted-foreground">
+                           Distance: {watchedValues.distance.toFixed(2)} km
+                       </div>
+                    )}
                 </div>
                 {form.formState.errors.distance && (
                 <p className="text-xs font-medium text-destructive">{form.formState.errors.distance.message}</p>
@@ -217,7 +228,7 @@ export function OrderForm() {
                         <span className="text-sm">Calculating...</span>
                     </div>
                 ) : showDistancePrompt ? (
-                    <div className="text-center text-primary h-16 flex items-center justify-center text-sm font-semibold">Please enter your distance.</div>
+                    <div className="text-center text-primary h-16 flex items-center justify-center text-sm font-semibold">Please select a location for delivery.</div>
                 ) : pricingResult ? (
                     <>
                         <div className="flex justify-between items-center">
@@ -251,5 +262,12 @@ export function OrderForm() {
         </CardFooter>
       </form>
     </Card>
+    <LocationPicker
+        open={isLocationPickerOpen}
+        onOpenChange={setIsLocationPickerOpen}
+        onLocationSelect={handleLocationSelect}
+    />
+    </>
   );
 }
+
