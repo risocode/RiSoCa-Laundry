@@ -13,9 +13,9 @@ const branches = [
 
 export default function BranchesPage() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen">
       <AppHeader />
-      <main className="flex-1 container mx-auto px-4 py-8 pb-16">
+      <main className="flex-1 overflow-y-auto pt-4 pb-20 container mx-auto px-4">
         <div className="flex flex-col items-center text-center mb-12">
             <h1 className="text-3xl md:text-4xl font-bold text-primary">Our Branches</h1>
             <p className="text-base md:text-lg text-muted-foreground mt-2">Find an RKR Laundry location near you.</p>

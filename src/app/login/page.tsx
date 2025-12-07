@@ -16,9 +16,9 @@ import { LogIn } from "lucide-react"
 
 export default function LoginPage() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen">
       <AppHeader />
-      <main className="flex-1 flex items-center justify-center px-4 pb-16">
+      <main className="flex-1 overflow-y-auto pt-4 pb-20 flex items-center justify-center px-4">
         <Card className="mx-auto max-w-sm w-full">
           <CardHeader>
             <CardTitle className="text-2xl">Login</CardTitle>

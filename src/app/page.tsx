@@ -20,9 +20,9 @@ const gridItems = [
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col h-screen">
       <AppHeader />
-      <main className="flex-1 flex flex-col items-center container mx-auto px-4 pt-8 pb-16 text-center">
+      <main className="flex-1 overflow-y-auto pt-4 pb-20 flex flex-col items-center container mx-auto px-4 text-center">
         
         <div className="flex flex-row items-center gap-4 mb-8">
           <Link href="/login" passHref>
