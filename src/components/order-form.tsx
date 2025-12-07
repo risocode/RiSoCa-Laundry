@@ -5,7 +5,7 @@ import { useState, useEffect, useTransition } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import dynamic from 'next/dynamic';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -21,16 +21,6 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Weight, Layers, Info, MapPin } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Skeleton } from './ui/skeleton';
-
-const LocationPicker = dynamic(
-  () => import('./location-picker').then(mod => mod.LocationPicker),
-  { 
-    ssr: false,
-    loading: () => <Button type="button" variant="outline" className="w-full"><Skeleton className="h-4 w-24" /></Button>
-  }
-);
-
 
 const packages = [
   { id: 'package1', label: 'Package 1', description: 'Wash, Dry, & Fold' },
@@ -51,34 +41,47 @@ interface PricingResult {
 }
 
 export function OrderForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [pricingResult, setPricingResult] = useState<PricingResult | null>(null);
   const [calculatedLoads, setCalculatedLoads] = useState(1);
   const [showDistancePrompt, setShowDistancePrompt] = useState(false);
-  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  
+  const distanceParam = searchParams.get('distance');
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
     defaultValues: {
       servicePackage: 'package1',
       weight: undefined,
-      distance: 0,
+      distance: distanceParam ? parseFloat(distanceParam) : 0,
     },
     mode: 'onChange'
   });
 
-  const { watch, setValue, trigger } = form;
+  const { watch, setValue, trigger, control } = form;
   const watchedValues = watch();
   const servicePackage = watch('servicePackage');
   const needsLocation = servicePackage === 'package2' || servicePackage === 'package3';
 
-  const handleLocationSelect = (distance: number) => {
-    setValue('distance', distance, { shouldValidate: true });
+  // Effect to update form distance when URL param changes
+  useEffect(() => {
+    if (distanceParam) {
+      const numericDistance = parseFloat(distanceParam);
+      if (!isNaN(numericDistance)) {
+        setValue('distance', numericDistance, { shouldValidate: true });
+      }
+    }
+  }, [distanceParam, setValue]);
+
+  const handleLocationSelect = () => {
+    router.push('/select-location');
   };
 
   useEffect(() => {
     // When package changes, reset distance if it's not needed
-    if (!needsLocation) {
+    if (!needsLocation && !distanceParam) { // Keep distance if it came from URL
         setValue('distance', 0);
     }
     // Re-trigger validation when the dependency changes
@@ -98,7 +101,6 @@ export function OrderForm() {
       }
       setShowDistancePrompt(false);
       
-
       const effectiveWeight = !weight || weight < 0 ? 0 : weight;
       const loads = Math.max(1, Math.ceil(effectiveWeight / 7.5));
       setCalculatedLoads(loads);
@@ -161,7 +163,7 @@ export function OrderForm() {
             <Label className="text-base font-semibold">1. Select a Package</Label>
             <Controller
               name="servicePackage"
-              control={form.control}
+              control={control}
               render={({ field }) => (
                 <RadioGroup
                   value={field.value}
@@ -210,7 +212,7 @@ export function OrderForm() {
                         <Label htmlFor="weight" className="text-xs font-medium text-muted-foreground">Weight in KG (Optional)</Label>
                         <Controller
                             name="weight"
-                            control={form.control}
+                            control={control}
                             render={({ field }) => <Input id="weight" type="number" placeholder="e.g., 7.5" className="text-center bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" {...field} value={field.value ?? ''}/>}
                         />
                     </div>
@@ -223,30 +225,22 @@ export function OrderForm() {
               <div className="space-y-2">
                   <Label htmlFor="distance" className="text-base font-semibold">3. Location</Label>
                   <div className="flex flex-col gap-2">
-                      <LocationPicker
-                        open={isLocationPickerOpen}
-                        onOpenChange={setIsLocationPickerOpen}
-                        onLocationSelect={handleLocationSelect}
-                        trigger={
-                          <Button type="button" variant="outline" onClick={() => setIsLocationPickerOpen(true)} className="w-full">
-                            <MapPin className="mr-2 h-4 w-4"/>
-                            Select Location
-                          </Button>
-                        }
-                      />
+                      <Button type="button" variant="outline" onClick={handleLocationSelect} className="w-full">
+                        <MapPin className="mr-2 h-4 w-4"/>
+                        Select Location on Map
+                      </Button>
                       {watchedValues.distance > 0 && (
                          <div className="text-xs text-center text-muted-foreground">
                              Distance: {watchedValues.distance.toFixed(2)} km
                          </div>
                       )}
                   </div>
-                  {form.formState.errors.distance && (
-                  <p className="text-xs font-medium text-destructive">{form.formState.errors.distance.message}</p>
-                  )}
+                  {form.formState.errors.distance && !watchedValues.distance ? (
+                  <p className="text-xs font-medium text-destructive">Please select a location.</p>
+                  ): null}
               </div>
             )}
           </div>
-
 
           <Separator />
 
