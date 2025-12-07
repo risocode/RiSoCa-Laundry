@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useState, useEffect } from 'react'
@@ -27,7 +26,7 @@ export default function RegisterPage() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [countdown, setCountdown] = useState(3)
+  
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -37,20 +36,39 @@ export default function RegisterPage() {
     const formData = new FormData(e.currentTarget)
     const email = String(formData.get('email'))
     const password = String(formData.get('password'))
+    const firstName = String(formData.get('firstName'))
+    const lastName = String(formData.get('lastName'))
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     })
 
-    setLoading(false)
-
     if (signUpError) {
+      setLoading(false)
       setError(signUpError.message)
       return
     }
 
+    if (signUpData.user) {
+        const { error: profileError } = await supabase
+            .from('users')
+            .update({ first_name: firstName, last_name: lastName })
+            .eq('id', signUpData.user.id)
+        
+        if (profileError) {
+            setLoading(false)
+            setError(profileError.message)
+            // Optional: handle user cleanup if profile creation fails
+            return
+        }
+    }
+
+
+    setLoading(false)
+
     // Show success toast and start countdown
+    let countdown = 3;
     const { id: toastId, update } = toast({
       variant: 'default',
       title: 'Signup Successful!',
@@ -59,15 +77,12 @@ export default function RegisterPage() {
     });
 
     const interval = setInterval(() => {
-      setCountdown((prev) => {
-        const newCountdown = prev - 1;
-        update({ id: toastId, description: `Redirecting to login in ${newCountdown}s...` });
-        if (newCountdown === 0) {
-          clearInterval(interval);
-          router.push('/login');
-        }
-        return newCountdown;
-      });
+      countdown -= 1;
+      update({ id: toastId, description: `Redirecting to login in ${countdown}s...` });
+      if (countdown === 0) {
+        clearInterval(interval);
+        router.push('/login');
+      }
     }, 1000);
   }
 
@@ -94,6 +109,7 @@ export default function RegisterPage() {
                     name="firstName"
                     placeholder="Max"
                     disabled={loading}
+                    required
                   />
                 </div>
 
@@ -104,6 +120,7 @@ export default function RegisterPage() {
                     name="lastName"
                     placeholder="Robinson"
                     disabled={loading}
+                    required
                   />
                 </div>
               </div>

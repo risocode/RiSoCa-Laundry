@@ -33,28 +33,50 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    setLoading(false)
-
-    if (error) {
+    if (signInError) {
+      setLoading(false)
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: error.message,
+        description: signInError.message,
       })
       return
     }
 
-    toast({
-      title: 'Login Successful',
-      description: 'Welcome back!',
-    })
+    if (signInData.user) {
+        const { data: userProfile, error: profileError } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', signInData.user.id)
+            .single()
 
-    router.push('/admin') // ✅ change if needed
+        setLoading(false)
+
+        if (profileError) {
+            toast({
+                variant: 'destructive',
+                title: 'Login Failed',
+                description: 'Could not retrieve user role.',
+            })
+            return
+        }
+
+        toast({
+            title: 'Login Successful',
+            description: 'Welcome back!',
+        })
+        
+        if (userProfile.role === 'admin') {
+            router.push('/admin')
+        } else {
+            router.push('/order-status')
+        }
+    }
   }
 
   return (
