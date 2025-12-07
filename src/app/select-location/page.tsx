@@ -1,28 +1,36 @@
-
 'use client';
 
 import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
+import { useLoadScript } from '@react-google-maps/api';
 import { Loader2 } from 'lucide-react';
 import { LocationConfirmation } from '@/components/location-confirmation';
+import { LocationMap } from '@/components/location-map';
 
-// Dynamically import the LocationMap component with SSR turned off.
-// This is the key to preventing "window is not defined" and other server-side errors.
-const LocationMap = dynamic(
-  () => import('@/components/location-map').then((mod) => mod.LocationMap),
-  {
-    ssr: false,
-    // Provide a loading component to show while the map is being loaded.
-    loading: () => (
-      <div className="h-full w-full bg-muted flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="ml-3 text-muted-foreground">Loading Map...</p>
-      </div>
-    ),
-  }
-);
+const libraries: ('places' | 'drawing' | 'geometry' | 'localContext' | 'visualization')[] = ['geometry'];
 
 function SelectLocationContent() {
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+    libraries,
+  });
+
+  if (loadError) {
+    return (
+        <div className="h-full w-full bg-muted flex items-center justify-center">
+            <p className="text-destructive-foreground">Error loading map</p>
+        </div>
+    )
+  }
+
+  if (!isLoaded) {
+    return (
+        <div className="h-full w-full bg-muted flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="ml-3 text-muted-foreground">Loading Map...</p>
+        </div>
+    );
+  }
+  
   return (
     <div className="h-screen w-screen flex flex-col md:flex-row bg-background">
       {/* Side panel for confirmation */}
@@ -40,7 +48,6 @@ function SelectLocationContent() {
 
 
 export default function SelectLocationPage() {
-    // The top-level Suspense handles the initial page load.
     return (
         <Suspense fallback={<div className="h-screen w-screen bg-muted flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
             <SelectLocationContent />

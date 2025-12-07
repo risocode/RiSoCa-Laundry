@@ -1,101 +1,101 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
-import L, { LatLng } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Statically import marker icons to fix display issues in Next.js
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-// Fix the default icon issue by merging options once at the module level.
-// This prevents Leaflet from trying to dynamically load image URLs.
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconUrl: markerIcon.src,
-    iconRetinaUrl: markerIcon2x.src,
-    shadowUrl: markerShadow.src,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-});
-
+import { GoogleMap, MarkerF } from '@react-google-maps/api';
 
 const SHOP_LATITUDE = 17.522928;
 const SHOP_LONGITUDE = 121.775073;
+const SHOP_POSITION = { lat: SHOP_LATITUDE, lng: SHOP_LONGITUDE };
 
-function DraggableMarker() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  // Set initial position to shop's location
-  const [position, setPosition] = useState<LatLng>(new LatLng(SHOP_LATITUDE, SHOP_LONGITUDE));
-
-  const updateURL = (pos: LatLng) => {
-    const shopLatLng = new L.LatLng(SHOP_LATITUDE, SHOP_LONGITUDE);
-    const distanceInMeters = shopLatLng.distanceTo(pos);
-    const distanceInKm = distanceInMeters / 1000;
-    
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('distance', distanceInKm.toFixed(2));
-    // Use replace to avoid adding to browser history on every drag/click
-    router.replace(`/select-location?${params.toString()}`);
-  };
-
-  const map = useMapEvents({
-    click(e) {
-      setPosition(e.latlng);
-      updateURL(e.latlng);
-    },
-    locationfound(e) {
-        map.flyTo(e.latlng, map.getZoom());
-        setPosition(e.latlng);
-        updateURL(e.latlng);
-    }
-  });
-
-  // On initial mount, try to locate the user
-  useEffect(() => {
-    map.locate();
-  }, [map]);
-
-  const handleDragEnd = (event: L.DragEndEvent) => {
-    const marker = event.target;
-    const newPosition = marker.getLatLng();
-    setPosition(newPosition);
-    updateURL(newPosition);
-  };
-
-  return position === null ? null : (
-    <Marker 
-        position={position} 
-        draggable={true}
-        eventHandlers={{
-            dragend: handleDragEnd,
-        }}
-    >
-      {/* A popup could be added here for more context if needed */}
-    </Marker>
-  );
+// Function to calculate distance between two lat/lng points in kilometers
+function getDistanceInKm(
+  pos1: google.maps.LatLng,
+  pos2: google.maps.LatLng
+) {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = (pos2.lat() - pos1.lat()) * (Math.PI / 180);
+  const dLon = (pos2.lng() - pos1.lng()) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(pos1.lat() * (Math.PI / 180)) *
+      Math.cos(pos2.lat() * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
 export function LocationMap() {
-    return (
-        <MapContainer
-            center={[SHOP_LATITUDE, SHOP_LONGITUDE]}
-            zoom={13}
-            scrollWheelZoom={true}
-            style={{ height: '100%', width: '100%' }}
-        >
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <DraggableMarker />
-        </MapContainer>
-    );
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [markerPosition, setMarkerPosition] = useState(SHOP_POSITION);
+
+  // Update URL with the new distance
+  const updateURL = useCallback(
+    (pos: google.maps.LatLng) => {
+      const shopLatLng = new google.maps.LatLng(SHOP_LATITUDE, SHOP_LONGITUDE);
+      const distanceInKm = getDistanceInKm(shopLatLng, pos);
+      
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('distance', distanceInKm.toFixed(2));
+      router.replace(`/select-location?${params.toString()}`);
+    },
+    [router, searchParams]
+  );
+  
+  // Set initial position and update URL on first load
+  useEffect(() => {
+    updateURL(new google.maps.LatLng(markerPosition.lat, markerPosition.lng))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleMarkerDragEnd = useCallback(
+    (event: google.maps.MapMouseEvent) => {
+      if (event.latLng) {
+        const newPosition = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+        setMarkerPosition(newPosition);
+        updateURL(event.latLng);
+      }
+    },
+    [updateURL]
+  );
+
+  const handleMapClick = useCallback(
+    (event: google.maps.MapMouseEvent) => {
+      if (event.latLng) {
+        const newPosition = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+        setMarkerPosition(newPosition);
+        updateURL(event.latLng);
+      }
+    },
+    [updateURL]
+  );
+
+  const mapOptions = useMemo<google.maps.MapOptions>(
+    () => ({
+      disableDefaultUI: true,
+      clickableIcons: true,
+      scrollwheel: true,
+    }),
+    []
+  );
+
+  return (
+    <GoogleMap
+      options={mapOptions}
+      zoom={14}
+      center={SHOP_POSITION}
+      mapTypeId={google.maps.MapTypeId.ROADMAP}
+      mapContainerStyle={{ width: '100%', height: '100%' }}
+      onClick={handleMapClick}
+    >
+      <MarkerF
+        position={markerPosition}
+        draggable={true}
+        onDragEnd={handleMarkerDragEnd}
+      />
+      <MarkerF position={SHOP_POSITION} icon={{ url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png" }} />
+    </GoogleMap>
+  );
 }
