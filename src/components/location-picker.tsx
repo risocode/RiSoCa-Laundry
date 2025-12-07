@@ -1,10 +1,10 @@
 
 'use client';
 
-import dynamic from 'next/dynamic';
 import { Button } from './ui/button';
 import { MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Label } from './ui/label';
 
 export function LocationPicker({ onLocationSelect, currentDistance }: { onLocationSelect: (distance: number) => void, currentDistance: number }) {
   const router = useRouter();
