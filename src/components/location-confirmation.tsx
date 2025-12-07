@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,8 +13,15 @@ export function LocationConfirmation() {
     const distanceParam = searchParams.get('distance');
     const [calculatedDistance, setCalculatedDistance] = useState(distanceParam ? parseFloat(distanceParam) : 0);
 
+    useEffect(() => {
+        const newDistance = searchParams.get('distance');
+        if (newDistance) {
+            setCalculatedDistance(parseFloat(newDistance));
+        }
+    }, [searchParams]);
+
     const handleConfirm = () => {
-        const params = new URLSearchParams();
+        const params = new URLSearchParams(searchParams.toString());
         params.set('distance', calculatedDistance.toFixed(2));
         router.push(`/create-order?${params.toString()}`);
     };
