@@ -17,11 +17,11 @@ export default function BranchesPage() {
       <AppHeader />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col items-center text-center mb-12">
-            <h1 className="text-4xl font-bold text-primary">Our Branches</h1>
-            <p className="text-lg text-muted-foreground mt-2">Find an RKR Laundry location near you.</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-primary">Our Branches</h1>
+            <p className="text-base md:text-lg text-muted-foreground mt-2">Find an RKR Laundry location near you.</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {branches.map(branch => (
                 <Card key={branch.name}>
                     <CardHeader>

@@ -37,16 +37,16 @@ export default function FaqsPage() {
       <AppHeader />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col items-center text-center mb-12">
-            <h1 className="text-4xl font-bold text-primary">Frequently Asked Questions</h1>
-            <p className="text-lg text-muted-foreground mt-2">Find answers to common questions about our services.</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-primary">Frequently Asked Questions</h1>
+            <p className="text-base md:text-lg text-muted-foreground mt-2">Find answers to common questions about our services.</p>
         </div>
         
         <div className="max-w-3xl mx-auto">
             <Accordion type="single" collapsible className="w-full">
                 {faqs.map((faq, index) => (
                      <AccordionItem key={index} value={`item-${index}`}>
-                        <AccordionTrigger className="text-lg text-left">{faq.question}</AccordionTrigger>
-                        <AccordionContent className="text-base text-muted-foreground">
+                        <AccordionTrigger className="text-base md:text-lg text-left">{faq.question}</AccordionTrigger>
+                        <AccordionContent className="text-sm md:text-base text-muted-foreground">
                             {faq.answer}
                         </AccordionContent>
                     </AccordionItem>

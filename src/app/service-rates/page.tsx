@@ -25,11 +25,11 @@ export default function ServiceRatesPage() {
       <AppHeader />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col items-center text-center mb-12">
-            <h1 className="text-4xl font-bold text-primary">Service Rates</h1>
-            <p className="text-lg text-muted-foreground mt-2">Transparent pricing for all our services.</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-primary">Service Rates</h1>
+            <p className="text-base md:text-lg text-muted-foreground mt-2">Transparent pricing for all our services.</p>
         </div>
         
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <Card>
                 <CardHeader>
                     <CardTitle>Standard Services</CardTitle>

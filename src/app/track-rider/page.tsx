@@ -9,8 +9,8 @@ export default function TrackRiderPage() {
       <AppHeader />
       <main className="flex-1 container mx-auto px-4 py-12">
         <div className="flex flex-col items-center text-center mb-12">
-            <h1 className="text-4xl font-bold text-primary">Track Your Rider</h1>
-            <p className="text-lg text-muted-foreground mt-2">See your rider's location in real-time.</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-primary">Track Your Rider</h1>
+            <p className="text-base md:text-lg text-muted-foreground mt-2">See your rider's location in real-time.</p>
         </div>
         
         <Card className="max-w-4xl mx-auto">
