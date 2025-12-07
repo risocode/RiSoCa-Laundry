@@ -12,7 +12,7 @@ import React,
 import { supabase } from '@/lib/supabaseClient';
 import { Session, User } from '@supabase/supabase-js';
 
-// Define the shape of your public.users table
+// Define the shape of your public.profiles table
 interface UserProfile {
     id: string;
     first_name: string;
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             if (session?.user) {
                 const { data: userProfile, error } = await supabase
-                    .from('users')
+                    .from('profiles')
                     .select('*')
                     .eq('id', session.user.id)
                     .single();
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (currentUser) {
                     // Fetch profile when auth state changes
                     const { data: userProfile, error } = await supabase
-                        .from('users')
+                        .from('profiles')
                         .select('*')
                         .eq('id', currentUser.id)
                         .single();
