@@ -158,7 +158,7 @@ export function OrderForm() {
 
   const onSubmit = (data: OrderFormValues) => {
     console.log('Order submitted:', data, 'with price:', pricingResult?.computedPrice);
-    alert(`Order placed! Total cost: ₱${pricingResult?.computedPrice.toFixed(2)}`);
+    router.push('/order-status');
   };
 
   return (
@@ -302,5 +302,3 @@ export function OrderForm() {
     </>
   );
 }
-
-    
