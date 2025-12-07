@@ -42,6 +42,12 @@ export default function RegisterPage() {
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+        }
+      }
     })
 
     if (signUpError) {
@@ -51,15 +57,22 @@ export default function RegisterPage() {
     }
 
     if (signUpData.user) {
+        // The user's profile data is already set via the signUp options.
+        // We now just need to insert into our public `users` table.
         const { error: profileError } = await supabase
             .from('users')
-            .update({ first_name: firstName, last_name: lastName })
-            .eq('id', signUpData.user.id)
+            .insert({
+              id: signUpData.user.id,
+              first_name: firstName,
+              last_name: lastName,
+              role: 'customer' // Set default role
+            })
         
         if (profileError) {
             setLoading(false)
             setError(profileError.message)
-            // Optional: handle user cleanup if profile creation fails
+            // Optional: handle user cleanup if profile insertion fails
+            await supabase.auth.admin.deleteUser(signUpData.user.id)
             return
         }
     }
@@ -97,7 +110,7 @@ export default function RegisterPage() {
             <CardDescription>
               Enter your information to create an account
             </CardDescription>
-          </CardHeader>
+          </Header>
 
           <CardContent className="p-4 pt-0">
             <form onSubmit={handleSubmit} className="grid gap-3">

@@ -63,6 +63,8 @@ export default function LoginPage() {
                 title: 'Login Failed',
                 description: 'Could not retrieve user role.',
             })
+            // Log out the user if profile can't be fetched
+            await supabase.auth.signOut()
             return
         }
 
