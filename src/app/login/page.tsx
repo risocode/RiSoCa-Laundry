@@ -35,13 +35,30 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        throw error;
+      if (signInError) {
+        throw signInError;
+      }
+      
+      if (!signInData.user) {
+        throw new Error("Login failed, please try again.");
+      }
+
+      // After successful sign-in, fetch the user's role from the `users` table
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', signInData.user.id)
+        .single();
+      
+      if (profileError) {
+        // Handle case where profile doesn't exist or there's an error,
+        // but the user is authenticated. Default to customer role.
+        console.error("Error fetching user role, defaulting to customer.", profileError);
       }
       
       toast({
@@ -50,7 +67,11 @@ export default function LoginPage() {
         className: 'bg-green-500 text-white',
       })
 
-      router.push('/');
+      if (userProfile?.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
 
     } catch (error: any) {
         toast({

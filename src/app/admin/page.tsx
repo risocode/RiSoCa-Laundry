@@ -19,21 +19,23 @@ import { Loader2, Inbox } from 'lucide-react';
 
 export default function AdminPage() {
   const { orders, updateOrderStatus } = useOrders();
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading) {
+      if (!user || profile?.role !== 'admin') {
+        router.push('/login');
+      }
     }
-  }, [user, loading, router]);
+  }, [user, profile, loading, router]);
 
 
   const handleStatusChange = (orderId: string, newStatus: string) => {
     updateOrderStatus(orderId, newStatus);
   };
 
-  if (loading || !user) {
+  if (loading || !user || profile?.role !== 'admin') {
      return (
         <div className="flex flex-col h-screen">
           <AppHeader showLogo={true} />

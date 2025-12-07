@@ -12,7 +12,7 @@ import React,
 import { supabase } from '@/lib/supabaseClient';
 import { Session, User } from '@supabase/supabase-js';
 
-// Define the shape of your public.profiles table
+// Define a unified user profile shape
 interface UserProfile {
     id: string;
     first_name: string;
@@ -37,20 +37,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const fetchUserProfile = async (currentUser: User) => {
+            // Fetch basic profile info (name, etc.)
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('id', currentUser.id)
+                .single();
+
+            // Fetch role from the 'users' table
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (profileError || userError) {
+                console.error("Error fetching user profile or role:", profileError || userError);
+                return null;
+            }
+
+            return {
+                id: currentUser.id,
+                first_name: profileData.first_name,
+                last_name: profileData.last_name,
+                role: userData.role,
+            };
+        };
+
         const getInitialSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
-            setUser(session?.user ?? null);
+            const currentUser = session?.user ?? null;
+            setUser(currentUser);
             
-            if (session?.user) {
-                const { data: userProfile, error } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', session.user.id)
-                    .single();
-                if (!error) {
-                    setProfile(userProfile);
-                }
+            if (currentUser) {
+                const fullProfile = await fetchUserProfile(currentUser);
+                setProfile(fullProfile);
             }
             setLoading(false);
         };
@@ -64,18 +87,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUser(currentUser);
 
                 if (currentUser) {
-                    // Fetch profile when auth state changes
-                    const { data: userProfile, error } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', currentUser.id)
-                        .single();
-
-                    if (!error) {
-                        setProfile(userProfile);
-                    } else {
-                        setProfile(null);
-                    }
+                    const fullProfile = await fetchUserProfile(currentUser);
+                    setProfile(fullProfile);
                 } else {
                     setProfile(null);
                 }
@@ -91,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const signOut = async () => {
         await supabase.auth.signOut();
         // The onAuthStateChange listener will handle setting user and profile to null
+        router.push('/login');
     };
 
     const value = {
@@ -103,7 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
 };
