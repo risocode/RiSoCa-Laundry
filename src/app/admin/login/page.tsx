@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
+import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -16,12 +16,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LogIn } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth } from '@/context/AuthContext'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const { signInAdmin } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -31,22 +29,44 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setLoading(true)
 
-    const success = signInAdmin(email, password)
+    try {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
 
-    if (success) {
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome, Admin!',
-        className: 'bg-green-500 text-white',
-      })
-      router.push('/admin')
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: 'Invalid credentials. Please try again.',
-      })
-      setLoading(false)
+        if (signInError) throw signInError;
+        if (!signInData.user) throw new Error("Login failed, please try again.");
+
+        // After successful login, check the user's role
+        const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', signInData.user.id)
+            .single();
+        
+        if (profileError) throw profileError;
+
+        if (profileData.role !== 'admin') {
+            await supabase.auth.signOut(); // Log out non-admin users
+            throw new Error("Access denied. You are not an administrator.");
+        }
+
+        toast({
+            title: 'Login Successful',
+            description: 'Welcome, Admin!',
+            className: 'bg-green-500 text-white',
+        })
+        router.push('/admin'); // Redirect to admin dashboard
+
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: error.message || 'Invalid credentials or access denied.',
+        })
+    } finally {
+        setLoading(false)
     }
   }
 

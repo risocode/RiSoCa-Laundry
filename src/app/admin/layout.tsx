@@ -20,29 +20,22 @@ export default function AdminLayout({
   const isLoginPage = pathname === '/admin/login';
 
   useEffect(() => {
-    if (!loading && profile?.role !== 'admin' && !isLoginPage) {
+    if (loading) return; // Wait for auth state to be determined
+
+    // If user is not an admin and is trying to access a protected admin page, redirect to login
+    if (profile?.role !== 'admin' && !isLoginPage) {
       router.push('/admin/login');
     }
-    if (!loading && profile?.role === 'admin' && isLoginPage) {
+    
+    // If user is an admin and is on the login page, redirect to the admin dashboard
+    if (profile?.role === 'admin' && isLoginPage) {
       router.push('/admin');
     }
   }, [profile, loading, router, isLoginPage]);
 
-  // If we are on the login page and not an admin, show the login page
-  if (isLoginPage && profile?.role !== 'admin') {
-     return (
-        <div className="flex flex-col h-screen">
-            <AppHeader showLogo={true} />
-            <main className="flex-1 flex items-center justify-center">
-                {children}
-            </main>
-            <AppFooter />
-        </div>
-     )
-  }
-
-  // If loading, or if not an admin (and not on login page), show loader
-  if (loading || profile?.role !== 'admin') {
+  // If loading and not on the login page, show a loader.
+  // We allow rendering the login page even while loading to avoid a flicker.
+  if (loading && !isLoginPage) {
     return (
       <div className="flex flex-col h-screen">
         <AppHeader showLogo={true} />
@@ -53,15 +46,30 @@ export default function AdminLayout({
       </div>
     );
   }
-
-  // If admin, show the protected content
-  return (
-    <div className="flex flex-col h-screen">
+  
+  // If not loading, but user is not an admin and not on the login page,
+  // show a loader while redirecting.
+  if (!loading && profile?.role !== 'admin' && !isLoginPage) {
+    return (
+       <div className="flex flex-col h-screen">
         <AppHeader showLogo={true} />
-        <main className="flex-1 overflow-y-auto container mx-auto px-4 py-8">
-            {children}
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </main>
         <AppFooter />
+      </div>
+    )
+  }
+
+
+  // If the user is an admin, or if they are on the login page, render the children.
+  return (
+    <div className="flex flex-col h-screen">
+      <AppHeader showLogo={true} />
+      <main className="flex-1 overflow-y-auto container mx-auto px-4 py-8 flex items-center justify-center">
+        {children}
+      </main>
+      <AppFooter />
     </div>
   );
 }
