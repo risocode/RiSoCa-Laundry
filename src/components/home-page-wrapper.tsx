@@ -39,7 +39,7 @@ export function HomePageWrapper({ children, gridItems }: HomePageWrapperProps) {
       const className = node.props.className || '';
       if (typeof className === 'string' && className.includes('grid')) {
          return (
-            <div key="grid-wrapper" className={`grid gap-x-2 gap-y-2 sm:gap-x-4 sm:gap-y-4 w-full max-w-sm sm:max-w-md pb-4 ${isAdmin ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            <div key="grid-wrapper" className={`grid gap-x-2 gap-y-2 sm:gap-x-4 sm:gap-y-4 w-full max-w-[280px] sm:max-w-[320px] pb-4 ${isAdmin ? 'grid-cols-2' : 'grid-cols-3'}`}>
               {gridItems.map((item) => {
                 const isComingSoon = item.comingSoon;
                 const isOrderStatus = item.label === 'Order Status';
@@ -62,8 +62,8 @@ export function HomePageWrapper({ children, gridItems }: HomePageWrapperProps) {
                             Soon
                         </Badge>
                     )}
-                    <item.icon className="h-14 w-14 md:h-16 md:w-16 text-foreground/80 group-hover:text-primary transition-colors" />
-                    <span className="text-sm sm:text-base font-medium text-foreground/90 text-center">{item.label}</span>
+                    <item.icon className="h-12 w-12 md:h-14 md:w-14 text-foreground/80 group-hover:text-primary transition-colors" />
+                    <span className="text-xs sm:text-sm font-medium text-foreground/90 text-center">{item.label}</span>
                   </Wrapper>
                 );
               })}

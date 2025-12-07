@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -22,6 +23,12 @@ const customerGridItems = [
   { href: '/contact-us', label: 'Contact Us', icon: Phone },
 ];
 
+const adminGridItems = [
+  { href: '/admin/orders', label: 'Manage Orders', icon: ClipboardList },
+  { href: '/admin/rates', label: 'Manage Service Rates', icon: DollarSign },
+];
+
+
 export default function Home() {
   const { user, profile, loading } = useAuth();
   const router = useRouter();
@@ -43,19 +50,21 @@ export default function Home() {
       </div>
     );
   }
+  
+  const gridItems = profile?.role === 'admin' ? adminGridItems : customerGridItems;
 
   return (
-      <HomePageWrapper gridItems={customerGridItems}>
+      <HomePageWrapper gridItems={gridItems}>
         <div className="flex flex-col h-screen select-none">
           <AppHeader showLogo={false} />
           <main className="flex-1 overflow-y-auto flex flex-col items-center container mx-auto px-4 text-center pt-2 md:pt-4">
             
             <div className="flex flex-col items-center mb-4 pt-8">
                 <div className="flex items-center gap-2 md:gap-3">
-                  <WashingMachine className="h-20 w-20 md:h-28 md:w-28 text-primary" />
-                  <span className="font-bold text-primary text-5xl md:text-7xl">RKR Laundry</span>
+                  <WashingMachine className="h-16 w-16 md:h-20 md:w-20 text-primary" />
+                  <span className="font-bold text-primary text-4xl md:text-5xl">RKR Laundry</span>
                 </div>
-                <p className="text-lg md:text-2xl text-muted-foreground mt-1">Fast. Clean. Convenient.</p>
+                <p className="text-base md:text-lg text-muted-foreground mt-1">Fast. Clean. Convenient.</p>
             </div>
 
             <div className="flex flex-row items-center justify-center gap-4 mb-4 h-11">
