@@ -13,7 +13,7 @@ const gridItems = [
   { href: '/create-order', label: 'Create Order', icon: FileText },
   { href: '/service-rates', label: 'Service Rates', icon: DollarSign },
   { href: '#', label: 'Track Rider', icon: Bike, comingSoon: true },
-  { href: '/download-app', label: 'Download App', icon: Download },
+  { href: '#', label: 'Download App', icon: Download, comingSoon: true },
   { href: '/laundry-calculator', label: 'Calculator', icon: Calculator },
   { href: '/faqs', label: 'FAQs', icon: HelpCircle },
   { href: '/branches', label: 'Branches', icon: MapPin },
