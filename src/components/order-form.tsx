@@ -18,9 +18,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Loader2, Weight, Layers, Info, MapPin } from 'lucide-react';
+import { Loader2, Weight, Layers, Info, MapPin, User, Phone } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useOrders } from '@/context/OrderContext';
 
 const packages = [
@@ -35,11 +36,23 @@ const orderSchema = z.object({
   distance: z.coerce.number().min(0, "Distance cannot be negative.").max(50, "We don't deliver beyond 50 km."),
 });
 
+const customerInfoSchema = z.object({
+    customerName: z.string().min(2, "Name is required."),
+    contactNumber: z.string().min(10, "A valid contact number is required."),
+});
+
 type OrderFormValues = z.infer<typeof orderSchema>;
+type CustomerFormValues = z.infer<typeof customerInfoSchema>;
 
 interface PricingResult {
   computedPrice: number;
 }
+
+type PendingOrder = {
+    orderData: OrderFormValues;
+    pricing: PricingResult;
+    loads: number;
+};
 
 export function OrderForm() {
   const router = useRouter();
@@ -49,6 +62,9 @@ export function OrderForm() {
   const [calculatedLoads, setCalculatedLoads] = useState(1);
   const [showDistancePrompt, setShowDistancePrompt] = useState(false);
   const { addOrder } = useOrders();
+
+  const [isCustomerInfoDialogOpen, setIsCustomerInfoDialogOpen] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null);
   
   const distanceParam = searchParams.get('distance');
   const packageParam = searchParams.get('servicePackage');
@@ -61,6 +77,14 @@ export function OrderForm() {
       distance: distanceParam ? parseFloat(distanceParam) : 0,
     },
     mode: 'onChange'
+  });
+
+  const customerForm = useForm<CustomerFormValues>({
+    resolver: zodResolver(customerInfoSchema),
+    defaultValues: {
+        customerName: '',
+        contactNumber: ''
+    }
   });
 
   const { watch, setValue, trigger, control } = form;
@@ -86,11 +110,9 @@ export function OrderForm() {
   };
 
   useEffect(() => {
-    // When package changes, reset distance if it's not needed
-    if (!needsLocation && !distanceParam) { // Keep distance if it came from URL
+    if (!needsLocation && !distanceParam) { 
         setValue('distance', 0);
     }
-    // Re-trigger validation when the dependency changes
     trigger();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [needsLocation, setValue, trigger]);
@@ -153,7 +175,7 @@ export function OrderForm() {
                 setPricingResult(null);
                 setShowDistancePrompt(true);
             } else if (values.servicePackage === 'package1') {
-                calculatePrice(values as OrderFormValues); // Calculate even if weight is missing for package1
+                calculatePrice(values as OrderFormValues);
             } else {
                 setPricingResult(null);
                 setShowDistancePrompt(false);
@@ -161,7 +183,6 @@ export function OrderForm() {
         }
     });
     
-    // Manually trigger calculation on initial load
     calculatePrice(form.getValues());
     
     return () => subscription.unsubscribe();
@@ -169,11 +190,21 @@ export function OrderForm() {
   }, [watch]);
 
 
-  const onSubmit = (data: OrderFormValues) => {
+  const onOrderSubmit = (data: OrderFormValues) => {
     if (!pricingResult) return;
-    
-    let finalWeight = data.weight;
-    if (data.servicePackage === 'package1' && (finalWeight === undefined || finalWeight === 0)) {
+    setPendingOrder({
+        orderData: data,
+        pricing: pricingResult,
+        loads: calculatedLoads
+    });
+    setIsCustomerInfoDialogOpen(true);
+  };
+
+  const onCustomerInfoSubmit = (customerData: CustomerFormValues) => {
+    if (!pendingOrder) return;
+
+    let finalWeight = pendingOrder.orderData.weight;
+    if (pendingOrder.orderData.servicePackage === 'package1' && (finalWeight === undefined || finalWeight === 0)) {
         finalWeight = 7.5;
     } else if (isFreeDelivery) {
         finalWeight = 7.5;
@@ -181,21 +212,25 @@ export function OrderForm() {
 
     const newOrder = {
         id: `ORD${String(Date.now()).slice(-3)}${String(Math.floor(Math.random() * 100)).padStart(2, '0')}`,
-        customer: 'Jane Doe', // Placeholder
-        contact: '09123456789', // Placeholder
-        load: calculatedLoads,
+        customer: customerData.customerName,
+        contact: customerData.contactNumber,
+        load: pendingOrder.loads,
         weight: finalWeight || 0,
         status: 'Order Placed',
-        total: pricingResult.computedPrice,
+        total: pendingOrder.pricing.computedPrice,
     };
+
     addOrder(newOrder);
+    setIsCustomerInfoDialogOpen(false);
+    customerForm.reset();
+    form.reset();
     router.push('/order-status');
-  };
+  }
 
   return (
     <>
     <Card className="shadow-lg w-full">
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(onOrderSubmit)}>
         <CardHeader className="p-4">
           <CardTitle>Create Order</CardTitle>
           <CardDescription className="text-xs">Select a package to calculate the price.</CardDescription>
@@ -330,6 +365,33 @@ export function OrderForm() {
         </CardFooter>
       </form>
     </Card>
+    <Dialog open={isCustomerInfoDialogOpen} onOpenChange={setIsCustomerInfoDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Customer Information</DialogTitle>
+                <DialogDescription>Please enter your details to complete the order.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={customerForm.handleSubmit(onCustomerInfoSubmit)} className="space-y-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="customerName" className="flex items-center gap-2"><User className="h-4 w-4"/>Customer Name</Label>
+                    <Input id="customerName" placeholder="e.g., Jane Doe" {...customerForm.register('customerName')} />
+                     {customerForm.formState.errors.customerName && (
+                        <p className="text-xs font-medium text-destructive">{customerForm.formState.errors.customerName.message}</p>
+                    )}
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="contactNumber" className="flex items-center gap-2"><Phone className="h-4 w-4"/>Contact Number</Label>
+                    <Input id="contactNumber" type="tel" placeholder="e.g., 09123456789" {...customerForm.register('contactNumber')} />
+                    {customerForm.formState.errors.contactNumber && (
+                        <p className="text-xs font-medium text-destructive">{customerForm.formState.errors.contactNumber.message}</p>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button type="submit">Confirm Order</Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+    </Dialog>
     </>
   );
 }
