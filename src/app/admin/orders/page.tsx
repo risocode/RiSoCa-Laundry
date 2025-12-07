@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -9,70 +9,57 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { OrderList, Order } from '@/components/order-list';
-import { supabase } from '@/lib/supabaseClient';
 import { Loader2, Inbox } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, updateDoc, doc } from 'firebase/firestore';
 
 export default function AdminOrdersPage() {
   const { toast } = useToast();
-  const [adminOrders, setAdminOrders] = useState<Order[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(true);
+  const firestore = useFirestore();
+
+  const ordersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'orders');
+  }, [firestore]);
+
+  const { data: adminOrders, isLoading: ordersLoading, error } = useCollection<Order>(ordersQuery);
 
   useEffect(() => {
-    async function fetchAdminOrders() {
-      setOrdersLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching admin orders:', error);
-        toast({
-            variant: 'destructive',
-            title: 'Error Fetching Orders',
-            description: 'Could not fetch orders from the database.',
-        });
-      } else {
-        const fetchedOrders = data as Order[];
-        setAdminOrders(fetchedOrders);
-      }
-      setOrdersLoading(false);
+    if (error) {
+      console.error('Error fetching admin orders:', error);
+      toast({
+          variant: 'destructive',
+          title: 'Error Fetching Orders',
+          description: 'Could not fetch orders from the database.',
+      });
     }
-    fetchAdminOrders();
-  }, [toast]);
+  }, [error, toast]);
   
   const handleUpdateOrder = async (updatedOrder: Order) => {
-    // Optimistically update UI
-    setAdminOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
-
-    const { error } = await supabase
-        .from('orders')
-        .update({
+    if (!firestore) return;
+    const orderDocRef = doc(firestore, 'orders', updatedOrder.id);
+    
+    try {
+        await updateDoc(orderDocRef, {
             status: updatedOrder.status,
             weight: updatedOrder.weight,
             load: updatedOrder.load,
             total: updatedOrder.total,
-        })
-        .eq('id', updatedOrder.id);
+        });
 
-    if (error) {
+        toast({
+            title: 'Order Updated',
+            description: `Order ${updatedOrder.id} has been successfully updated.`,
+        });
+    } catch (error) {
         toast({
             variant: 'destructive',
             title: 'Update Failed',
             description: `Could not update order ${updatedOrder.id}. Please try again.`,
         });
-        // On failure, you might want to refetch or revert the optimistic update
-        // For simplicity, we are not reverting here but it's a good practice
-    } else {
-        toast({
-            title: 'Order Updated',
-            description: `Order ${updatedOrder.id} has been successfully updated.`,
-            className: 'bg-green-500 text-white',
-        });
     }
   }
-
 
   return (
     <Card className="w-full">
@@ -88,7 +75,7 @@ export default function AdminOrdersPage() {
             <Loader2 className="h-12 w-12 mb-2 animate-spin" />
             <p>Loading all orders...</p>
           </div>
-        ) : adminOrders.length > 0 ? (
+        ) : adminOrders && adminOrders.length > 0 ? (
           <OrderList 
             orders={adminOrders} 
             onUpdateOrder={handleUpdateOrder}

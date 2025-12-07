@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -12,16 +11,29 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/context/AuthContext';
-
+import { useUser, useAuth as useFirebaseAuth } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
-    const { user, profile, signOut } = useAuth();
+    const { profile } = useAuth();
+    const { user } = useUser();
+    const auth = useFirebaseAuth();
+    const router = useRouter();
 
     const isAdmin = profile?.role === 'admin';
 
+    const handleSignOut = async () => {
+      await auth.signOut();
+      if (isAdmin) {
+        router.push('/admin/login');
+      } else {
+        router.push('/login');
+      }
+    };
+
     const navLinks = [
       isAdmin 
-        ? { href: '/admin/orders', label: 'Admin Dashboard', icon: LayoutDashboard }
+        ? { href: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard }
         : { href: '/admin/login', label: 'Administrator Login', icon: UserCog },
       { href: '/download-app', label: 'Download APK', icon: Download },
       { href: '/about', label: 'About', icon: Info },
@@ -57,10 +69,10 @@ export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
                   </Link>
                 </DropdownMenuItem>
               ))}
-               {(user || profile?.role === 'admin') && (
+               {user && (
                 <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={signOut} className="flex items-center gap-3 text-destructive transition-colors hover:text-destructive hover:bg-destructive/10 rounded-md text-base cursor-pointer">
+                    <DropdownMenuItem onSelect={handleSignOut} className="flex items-center gap-3 text-destructive transition-colors hover:text-destructive hover:bg-destructive/10 rounded-md text-base cursor-pointer">
                         <LogOut className="h-5 w-5" />
                         Log Out
                     </DropdownMenuItem>

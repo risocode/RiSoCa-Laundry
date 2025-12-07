@@ -1,9 +1,7 @@
-
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -16,10 +14,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LogIn } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth, useFirestore } from '@/firebase'
+import { signInWithEmailAndPassword, getAuth } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const auth = useAuth()
+  const firestore = useFirestore()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,32 +33,23 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-        if (signInError) throw signInError;
-        if (!signInData.user) throw new Error("Login failed, please try again.");
+        if (!user) throw new Error("Login failed, please try again.");
 
         // After successful login, check the user's role
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', signInData.user.id)
-            .single();
-        
-        if (profileError) throw profileError;
+        const userDocRef = doc(firestore, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
 
-        if (profileData.role !== 'admin') {
-            await supabase.auth.signOut(); // Log out non-admin users
+        if (!userDoc.exists() || userDoc.data().role !== 'admin') {
+            await auth.signOut(); // Log out non-admin users
             throw new Error("Access denied. You are not an administrator.");
         }
 
         toast({
             title: 'Login Successful',
             description: 'Welcome, Admin!',
-            className: 'bg-green-500 text-white',
         })
         router.push('/admin'); // Redirect to admin dashboard
 

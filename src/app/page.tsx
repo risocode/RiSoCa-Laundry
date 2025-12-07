@@ -1,8 +1,7 @@
-
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Package, FileText, MapPin, Phone, HelpCircle, UserPlus, ArrowRight, ClipboardList, Bike, Download, WashingMachine, DollarSign, User, ShieldCheck, Loader2 } from 'lucide-react';
@@ -10,6 +9,7 @@ import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
 import { HomePageWrapper } from '@/components/home-page-wrapper';
 import { useAuth } from '@/context/AuthContext';
+import { useUser } from '@/firebase';
 
 const customerGridItems = [
   { href: '/order-status', label: 'Order Status', icon: Package },
@@ -28,10 +28,12 @@ const adminGridItems = [
   { href: '/admin/rates', label: 'Manage Service Rates', icon: DollarSign },
 ];
 
-
 export default function Home() {
-  const { user, profile, loading } = useAuth();
+  const { profile, loading: profileLoading } = useAuth();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
+
+  const loading = profileLoading || isUserLoading;
 
   useEffect(() => {
     if (!loading && profile?.role === 'admin') {
@@ -39,7 +41,7 @@ export default function Home() {
     }
   }, [loading, profile, router]);
 
-  if (loading || profile?.role === 'admin') {
+  if (loading || (!isUserLoading && profile?.role === 'admin')) {
      return (
       <div className="flex flex-col h-screen">
         <AppHeader showLogo={true} />
@@ -71,7 +73,7 @@ export default function Home() {
               {user ? (
                  <div className="flex items-center gap-2 text-foreground">
                     <User className="h-6 w-6"/>
-                    <span className="font-semibold text-lg">Welcome, {profile?.first_name || user.email}!</span>
+                    <span className="font-semibold text-lg">Welcome, {profile?.firstName || user.email}!</span>
                 </div>
               ) : (
                 <>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useTransition } from 'react';
@@ -24,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useOrders } from '@/context/OrderContext';
 import { useAuth } from '@/context/AuthContext';
+import { useUser } from '@/firebase';
 
 const packages = [
   { id: 'package1', label: 'Package 1', description: 'Wash, Dry, & Fold' },
@@ -59,7 +59,8 @@ type PendingOrder = {
 export function OrderForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, profile } = useAuth();
+  const { user } = useUser();
+  const { profile } = useAuth();
   const [isPending, startTransition] = useTransition();
   const [pricingResult, setPricingResult] = useState<PricingResult | null>(null);
   const [calculatedLoads, setCalculatedLoads] = useState(1);
@@ -93,7 +94,8 @@ export function OrderForm() {
   
   useEffect(() => {
     if (profile) {
-      customerForm.setValue('customerName', `${profile.first_name || ''} ${profile.last_name || ''}`.trim());
+      customerForm.setValue('customerName', `${profile.firstName || ''} ${profile.lastName || ''}`.trim());
+      customerForm.setValue('contactNumber', profile.phone || '');
     }
   }, [profile, customerForm]);
 
@@ -226,13 +228,16 @@ export function OrderForm() {
 
     const newOrder = {
         id: `ORD${String(Date.now()).slice(-3)}${String(Math.floor(Math.random() * 100)).padStart(2, '0')}`,
-        customer_id: user.id,
-        customer: customerData.customerName,
-        contact: customerData.contactNumber,
+        userId: user.uid,
+        customerName: customerData.customerName,
+        contactNumber: customerData.contactNumber,
         load: pendingOrder.loads,
         weight: finalWeight || 0,
         status: 'Order Placed',
         total: pendingOrder.pricing.computedPrice,
+        deliveryOption: customerData.deliveryOption,
+        servicePackage: pendingOrder.orderData.servicePackage,
+        distance: pendingOrder.orderData.distance,
     };
     
     addOrder(newOrder);

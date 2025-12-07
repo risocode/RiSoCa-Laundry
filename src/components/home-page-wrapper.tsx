@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -52,7 +51,7 @@ export function HomePageWrapper({ children, gridItems }: HomePageWrapperProps) {
                     {...props}
                     className={cn("relative flex flex-col items-center justify-center gap-1 p-1 rounded-lg group", isComingSoon ? 'opacity-50 cursor-not-allowed' : '')}
                   >
-                    {isOrderStatus && ongoingOrdersCount > 0 && (
+                    {isOrderStatus && ongoingOrdersCount > 0 && !isAdmin && (
                       <div className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center z-10">
                         {ongoingOrdersCount}
                       </div>

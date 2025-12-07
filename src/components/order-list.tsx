@@ -21,19 +21,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Edit, Save, X, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
+import { Timestamp } from 'firebase/firestore';
 
 export type Order = {
   id: string;
-  customer_id: string;
-  customer: string;
-  contact: string;
+  userId: string;
+  customerName: string;
+  contactNumber: string;
   load: number;
   weight: number;
   status: string;
   total: number;
-  created_at: string;
+  orderDate: Timestamp;
 };
 
 type OrderListProps = {
@@ -105,16 +104,35 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                  <Card key={order.id} className="w-full">
                     <CardHeader className="p-4 flex flex-row items-center justify-between">
                         <CardTitle className="text-lg">{order.id}</CardTitle>
-                         <Badge className={`${getStatusColor(order.status)} hover:${getStatusColor(order.status)} text-white`}>
-                           {order.status}
-                        </Badge>
+                         {isEditing ? (
+                            <div className="relative w-[150px]">
+                                <Select
+                                    value={editableOrder.status}
+                                    onValueChange={(value) => handleFieldChange('status', value)}
+                                    disabled={isSaving}
+                                >
+                                    <SelectTrigger className="h-9">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {statusOptions.map((status) => (
+                                            <SelectItem key={status} value={status}>{status}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                         ) : (
+                            <Badge className={`${getStatusColor(order.status)} hover:${getStatusColor(order.status)} text-white`}>
+                               {order.status}
+                            </Badge>
+                         )}
                     </CardHeader>
                     <CardContent className="p-4 pt-0 space-y-3">
                          <div className="text-sm text-muted-foreground">
-                            <span className="font-semibold text-foreground">Customer:</span> {order.customer}
+                            <span className="font-semibold text-foreground">Customer:</span> {order.customerName}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                            <span className="font-semibold text-foreground">Contact:</span> {order.contact}
+                            <span className="font-semibold text-foreground">Contact:</span> {order.contactNumber}
                         </div>
                          <div className="grid grid-cols-2 gap-3">
                             <div className="text-sm">
@@ -128,30 +146,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         </div>
                         <div className="text-sm">
                             <Label htmlFor={`total-mob-${order.id}`}>Total (₱)</Label>
-                            <Input id={`total-mob-${order.id}`} type="number" value={editableOrder.total} onChange={e => handleFieldChange('total', e.target.value)} className="h-8" disabled={!isEditing || isSaving} />
-                        </div>
-                         <div className="text-sm">
-                            <Label htmlFor={`status-mob-${order.id}`}>Status</Label>
-                             {isEditing ? (
-                                <Select
-                                    value={editableOrder.status}
-                                    onValueChange={(value) => handleFieldChange('status', value)}
-                                    disabled={!isEditing || isSaving}
-                                >
-                                    <SelectTrigger className="w-full h-10 mt-1">
-                                        <SelectValue placeholder="Update Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                    {statusOptions.map((status) => (
-                                        <SelectItem key={status} value={status}>
-                                        {status}
-                                        </SelectItem>
-                                    ))}
-                                    </SelectContent>
-                                </Select>
-                             ) : (
-                                 <p className='mt-1'>{order.status}</p>
-                             )}
+                            <Input id={`total-mob-${order.id}`} type="number" value={editableOrder.total.toString()} onChange={e => handleFieldChange('total', e.target.value)} className="h-8" disabled={!isEditing || isSaving} />
                         </div>
                     </CardContent>
                     <CardFooter className="p-4 pt-0 flex justify-end gap-2">
@@ -172,7 +167,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
             {/* Desktop View */}
             <TableRow className="hidden md:table-row">
                 <TableCell className="font-medium">{order.id}</TableCell>
-                <TableCell>{order.customer}</TableCell>
+                <TableCell>{order.customerName}</TableCell>
                 <TableCell>
                     {isEditing ? (
                         <Input type="number" value={editableOrder.weight} onChange={e => handleFieldChange('weight', e.target.value)} className="h-8 w-24" disabled={isSaving}/>
@@ -189,7 +184,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                 </TableCell>
                 <TableCell>
                     {isEditing ? (
-                        <Input type="number" value={editableOrder.total} onChange={e => handleFieldChange('total', e.target.value)} className="h-8 w-28" disabled={isSaving}/>
+                        <Input type="number" value={editableOrder.total.toString()} onChange={e => handleFieldChange('total', e.target.value)} className="h-8 w-28" disabled={isSaving}/>
                     ) : (
                         `₱${order.total.toFixed(2)}`
                     )}

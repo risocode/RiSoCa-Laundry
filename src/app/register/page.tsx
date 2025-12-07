@@ -1,14 +1,10 @@
-
 'use client'
 
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
-
 import { AppHeader } from '@/components/app-header'
 import { AppFooter } from '@/components/app-footer'
-
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -21,14 +17,19 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { UserPlus } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth, useFirestore } from '@/firebase'
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { doc, setDoc } from 'firebase/firestore'
 
 export default function RegisterPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const auth = useAuth();
+  const firestore = useFirestore();
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
@@ -41,37 +42,34 @@ export default function RegisterPage() {
     const password = formData.get('password') as string
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      if (!auth || !firestore) throw new Error("Firebase services are not ready.");
+
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Create a user profile document in Firestore
+      await setDoc(doc(firestore, "users", user.uid), {
+        id: user.uid,
+        firstName: firstName,
+        lastName: lastName,
         email: email,
-        password: password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-          }
-        }
+        phone: '', // Default empty phone
+        role: 'customer' // Default role
       });
 
-      if (authError) {
-        throw authError;
-      }
-      
-      if (!authData.user) {
-         throw new Error("Signup succeeded but no user data was returned.");
-      }
 
       toast({
         variant: 'default',
         title: 'Signup Successful!',
         description: `Please check your email to verify your account. Redirecting to login...`,
-        className: 'bg-green-500 text-white',
         duration: 3000,
       });
       
+      await auth.signOut(); // Sign out user until they verify email
+
       setTimeout(() => {
         router.push('/login');
       }, 3000)
-
 
     } catch (e: any) {
        setError(e.message || 'An unexpected error occurred.');

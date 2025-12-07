@@ -1,41 +1,62 @@
-
 'use client';
 
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
+import { useUser } from '@/firebase'; // Updated import
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
 import { Loader2 } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import { useState } from 'react';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { profile, loading } = useAuth();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
   const isLoginPage = pathname === '/admin/login';
 
   useEffect(() => {
-    if (loading) return; // Wait for auth state to be determined
+    if (isUserLoading) return; // Wait for auth state to be determined
 
-    // If user is not an admin and is trying to access a protected admin page, redirect to login
-    if (profile?.role !== 'admin' && !isLoginPage) {
-      router.push('/admin/login');
+    if (!user) {
+      if (!isLoginPage) {
+        router.push('/admin/login');
+      }
+      return;
     }
-    
-    // If user is an admin and is on the login page, redirect to the admin dashboard
-    if (profile?.role === 'admin' && isLoginPage) {
-      router.push('/admin');
-    }
-  }, [profile, loading, router, isLoginPage]);
+
+    const checkAdminRole = async () => {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists() && userDoc.data().role === 'admin') {
+        setIsAdmin(true);
+        if (isLoginPage) {
+          router.push('/admin');
+        }
+      } else {
+        setIsAdmin(false);
+        if (!isLoginPage) {
+          router.push('/admin/login');
+        }
+      }
+    };
+
+    checkAdminRole();
+
+  }, [user, isUserLoading, router, isLoginPage, firestore]);
+
+  const isLoading = isUserLoading || isAdmin === null;
 
   // If loading and not on the login page, show a loader.
-  // We allow rendering the login page even while loading to avoid a flicker.
-  if (loading && !isLoginPage) {
+  if (isLoading && !isLoginPage) {
     return (
       <div className="flex flex-col h-screen">
         <AppHeader showLogo={true} />
@@ -49,7 +70,7 @@ export default function AdminLayout({
   
   // If not loading, but user is not an admin and not on the login page,
   // show a loader while redirecting.
-  if (!loading && profile?.role !== 'admin' && !isLoginPage) {
+  if (!isLoading && !isAdmin && !isLoginPage) {
     return (
        <div className="flex flex-col h-screen">
         <AppHeader showLogo={true} />
@@ -60,7 +81,6 @@ export default function AdminLayout({
       </div>
     )
   }
-
 
   // If the user is an admin, or if they are on the login page, render the children.
   return (

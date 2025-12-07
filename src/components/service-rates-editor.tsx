@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, Edit, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 
 type Rate = {
   id: string;
@@ -18,31 +19,24 @@ type Rate = {
 
 export function ServiceRatesEditor() {
   const { toast } = useToast();
+  const firestore = useFirestore();
+  
+  const ratesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'service_rates');
+  }, [firestore]);
+
+  const { data: initialRates, isLoading: loading } = useCollection<Rate>(ratesQuery);
+
   const [rates, setRates] = useState<Rate[]>([]);
-  const [initialRates, setInitialRates] = useState<Rate[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    async function fetchRates() {
-      setLoading(true);
-      const { data, error } = await supabase.from('service_rates').select('*');
-      if (error) {
-        console.error('Error fetching rates:', error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Could not fetch service rates.',
-        });
-      } else {
-        setRates(data);
-        setInitialRates(data);
-      }
-      setLoading(false);
+    if (initialRates) {
+      setRates(initialRates);
     }
-    fetchRates();
-  }, [toast]);
+  }, [initialRates]);
 
   const handlePriceChange = (id: string, newPrice: string) => {
     const numericPrice = parseFloat(newPrice) || 0;
@@ -52,30 +46,21 @@ export function ServiceRatesEditor() {
   };
 
   const handleSave = async () => {
+    if (!firestore) return;
     setSaving(true);
     
-    // Create an array of promises for each update
-    const updatePromises = rates.map(rate =>
-      supabase
-        .from('service_rates')
-        .update({ price: rate.price })
-        .eq('id', rate.id)
-    );
+    const batch = writeBatch(firestore);
+    rates.forEach(rate => {
+        const rateRef = doc(firestore, 'service_rates', rate.id);
+        batch.update(rateRef, { price: rate.price });
+    });
 
     try {
-      const results = await Promise.all(updatePromises);
-      const hasError = results.some(res => res.error);
-
-      if (hasError) {
-        throw new Error('An error occurred while saving one or more rates.');
-      }
-
+      await batch.commit();
       toast({
         title: 'Success!',
         description: 'Service rates have been updated.',
-        className: 'bg-green-500 text-white',
       });
-      setInitialRates(rates); // Update the initial state to the new saved state
       setIsEditing(false);
     } catch (error: any) {
       console.error('Error saving rates:', error);
@@ -84,15 +69,14 @@ export function ServiceRatesEditor() {
         title: 'Save Failed',
         description: error.message || 'Could not save the new rates.',
       });
-      // Optionally revert to initial state on failure
-      setRates(initialRates);
+      if (initialRates) setRates(initialRates);
     } finally {
       setSaving(false);
     }
   };
   
   const handleCancel = () => {
-    setRates(initialRates); // Revert changes
+    if (initialRates) setRates(initialRates);
     setIsEditing(false);
   };
 
@@ -127,7 +111,7 @@ export function ServiceRatesEditor() {
                         disabled={saving}
                       />
                     ) : (
-                      item.price === 0 && item.id === 'delivery_base' ? 'Free' : item.price.toFixed(2)
+                      item.price === 0 && item.id.startsWith('delivery') ? 'Free' : item.price.toFixed(2)
                     )}
                   </TableCell>
                 </TableRow>

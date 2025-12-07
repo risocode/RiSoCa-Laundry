@@ -1,13 +1,9 @@
-
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
-
 import { AppHeader } from '@/components/app-header'
 import { AppFooter } from '@/components/app-footer'
-
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -21,10 +17,13 @@ import { Label } from '@/components/ui/label'
 import { LogIn } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
+import { useAuth } from '@/firebase'
+import { signInWithEmailAndPassword } from 'firebase/auth'
 
 export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const auth = useAuth();
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -35,23 +34,12 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (signInError) {
-        throw signInError;
-      }
-      
-      if (!signInData.user) {
-        throw new Error("Login failed, please try again.");
-      }
+      if (!auth) throw new Error("Auth service not available");
+      await signInWithEmailAndPassword(auth, email, password);
       
       toast({
         title: 'Login Successful',
         description: 'Welcome back!',
-        className: 'bg-green-500 text-white',
       })
 
       router.push('/');
