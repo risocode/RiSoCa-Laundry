@@ -42,7 +42,7 @@ export type PricingLogicGuidanceOutput = z.infer<typeof PricingLogicGuidanceOutp
 // Define the main function
 export async function pricingLogicGuidance(input: PricingLogicGuidanceInput): Promise<PricingLogicGuidanceOutput> {
   // If weight is not provided, default to 1 for calculation
-  const safeInput = { ...input, weight: input.weight ?? 1 };
+  const safeInput = { ...input, weight: input.weight ?? 0 };
   return pricingLogicGuidanceFlow(safeInput);
 }
 
@@ -54,27 +54,30 @@ const pricingLogicGuidancePrompt = ai.definePrompt({
   prompt: `You are an AI assistant for a laundry service, designed to calculate the price of an order in Philippine Pesos (PHP).
 
   Here is the pricing structure:
-  - Package 1 (Wash, Dry, Fold): ₱180 per kg. Minimum weight is 7.5kg. If weight is less than 7.5kg, calculate as 7.5kg.
+  - Base Rate: ₱180 per load.
+  - Load Capacity: One load is a maximum of 7.5kg.
+  - Minimum Charge: All orders are charged for at least one load, even if the weight is less than 7.5kg.
   - Transport Fee: ₱10 per kilometer. The first 1km is free.
 
   Packages:
-  - Package 1: Base service only. No transport.
-  - Package 2: One-Way Transport. Includes either Pick Up or Delivery.
-  - Package 3: All-In. Includes both Pick Up and Delivery.
+  - Package 1: Base service only (Wash, Dry, Fold). No transport.
+  - Package 2: One-Way Transport. Includes either Pick Up OR Delivery.
+  - Package 3: All-In. Includes both Pick Up AND Delivery.
 
   User Selections:
   - Package: {{{servicePackage}}}
   - Weight (kg): {{{weight}}}
-  - Distance: {{{distance}}} km
+  - Distance (km): {{{distance}}}
 
   Tasks:
   1.  **isValidCombination**: This is always true.
   2.  **computedPrice**: Calculate the total price in PHP.
-      - Base Cost: Use a minimum of 7.5kg. Calculate \`max(7.5, {{{weight}}}) * 180\`.
-      - Transport Distance: Calculate \`max(0, {{{distance}}} - 1)\`.
-      - For Package 2, add a one-way transport fee: \`max(0, {{{distance}}} - 1) * 10\`.
-      - For Package 3, add a two-way transport fee: \`max(0, {{{distance}}} - 1) * 10 * 2\`.
-      - Sum the costs to get the final price.
+      - Number of Loads: Calculate the loads by taking the weight and dividing by 7.5, then rounding up to the nearest whole number. The minimum is always 1 load. Use the formula: \`Math.max(1, Math.ceil({{{weight}}} / 7.5))\`.
+      - Base Cost: Multiply the number of loads by ₱180.
+      - Transport Distance: The first kilometer is free. Calculate the billable distance: \`Math.max(0, {{{distance}}} - 1)\`.
+      - For Package 2, add a one-way transport fee: \`billable distance * 10\`.
+      - For Package 3, add a two-way (return) transport fee: \`billable distance * 10 * 2\`.
+      - Sum the base cost and transport fee to get the final price.
   3.  **suggestedServices**: If the user selects Package 2, suggest Package 3 as a convenient "All-In" option. If they choose Package 1 with a distance > 0, suggest a package with delivery. Otherwise, provide an empty array.
   4.  **invalidServiceChoices**: This should be an empty array.
 
@@ -98,4 +101,3 @@ const pricingLogicGuidanceFlow = ai.defineFlow(
     return output!;
   }
 );
-

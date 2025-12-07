@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { pricingLogicGuidance, PricingLogicGuidanceOutput } from '@/ai/flows/pricing-logic-guidance';
-import { Lightbulb, Loader2, Package, Truck, AlertCircle, ShoppingCart, Weight } from 'lucide-react';
+import { Lightbulb, Loader2, Package, Truck, AlertCircle, Weight, Layers } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 const packages = [
@@ -30,7 +30,7 @@ const packages = [
 
 const orderSchema = z.object({
   servicePackage: z.string().min(1, "Please select a package."),
-  weight: z.coerce.number().min(0, "Weight cannot be negative.").max(10, "Maximum of 10kg per order.").optional(),
+  weight: z.coerce.number().min(0, "Weight cannot be negative.").max(100, "Maximum of 100kg per order.").optional(),
   distance: z.coerce.number().min(0, "Distance cannot be negative.").max(50, "We don't deliver beyond 50 km."),
 });
 
@@ -39,6 +39,7 @@ type OrderFormValues = z.infer<typeof orderSchema>;
 export function OrderForm() {
   const [isPending, startTransition] = useTransition();
   const [pricingResult, setPricingResult] = useState<PricingLogicGuidanceOutput | null>(null);
+  const [calculatedLoads, setCalculatedLoads] = useState(1);
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
@@ -49,6 +50,15 @@ export function OrderForm() {
     },
     mode: 'onChange'
   });
+
+  const { watch } = form;
+  const weightValue = watch('weight');
+
+  useEffect(() => {
+    const weight = weightValue ?? 0;
+    const loads = Math.max(1, Math.ceil(weight / 7.5));
+    setCalculatedLoads(loads);
+  }, [weightValue]);
 
   const calculatePrice = (values: OrderFormValues | undefined) => {
     if (!values) return;
@@ -151,7 +161,7 @@ export function OrderForm() {
                         <Controller
                         name="distance"
                         control={form.control}
-                        render={({ field }) => <Input id="distance" type="number" placeholder="1" className="bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0" {...field} />}
+                        render={({ field }) => <Input id="distance" type="number" placeholder="e.g. 1" className="bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0" {...field} />}
                         />
                     </div>
                 </div>
@@ -174,6 +184,12 @@ export function OrderForm() {
                     </div>
                 ) : pricingResult ? (
                     <>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground text-base flex items-center gap-2"><Layers className="h-4 w-4" /> Loads</span>
+                             <span className="text-base font-bold">
+                                {calculatedLoads}
+                            </span>
+                        </div>
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground text-base">Total</span>
                             <span className="text-2xl font-bold text-primary">
