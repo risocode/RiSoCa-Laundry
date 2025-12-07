@@ -23,12 +23,12 @@ export function HomePageWrapper({ children, gridItems }: HomePageWrapperProps) {
     (order) => order.status !== 'Delivered' && order.status !== 'Success'
   ).length;
 
-  const mainContent = React.Children.map(children, (child) => {
+  const mainContent = React.Children.map(children, (child, childIndex) => {
     if (React.isValidElement(child)) {
       // Find the grid container and replace its children with the dynamic grid
-      const grandChildren = (child.props.children as React.ReactNode[]).map(grandchild => {
+      const grandChildren = (child.props.children as React.ReactNode[]).map((grandchild, grandchildIndex) => {
         if (React.isValidElement(grandchild) && grandchild.props.className?.includes('overflow-y-auto')) {
-            const mainChildren = (grandchild.props.children as React.ReactNode[]).map(mainChild => {
+            const mainChildren = (grandchild.props.children as React.ReactNode[]).map((mainChild, mainChildIndex) => {
                 if (React.isValidElement(mainChild) && mainChild.props.className?.includes('grid-cols-3')) {
                     return (
                         <div key="grid-wrapper" className="grid grid-cols-3 gap-x-2 gap-y-2 sm:gap-x-4 sm:gap-y-4 w-full max-w-sm sm:max-w-md pb-4">
@@ -46,13 +46,13 @@ export function HomePageWrapper({ children, gridItems }: HomePageWrapperProps) {
                         </div>
                     );
                 }
-                return mainChild;
+                return React.cloneElement(mainChild, { key: `mainChild-${mainChildIndex}` });
             })
-             return React.cloneElement(grandchild, { children: mainChildren });
+             return React.cloneElement(grandchild, { key: `grandchild-${grandchildIndex}`, children: mainChildren });
         }
-        return grandchild;
+        return React.cloneElement(grandchild, { key: `grandchild-${grandchildIndex}` });
       })
-      return React.cloneElement(child, { children: grandChildren });
+      return React.cloneElement(child, { key: `child-${childIndex}`, children: grandChildren });
     }
     return child;
   });
