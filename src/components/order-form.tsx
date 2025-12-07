@@ -110,7 +110,16 @@ export function OrderForm() {
       setShowDistancePrompt(false);
       
       const isFree = needsLocationForCalc && distance > 0 && distance <= 0.5;
-      const effectiveWeight = isFree ? 7.5 : (!weight || weight < 0 ? 0 : weight);
+      
+      let effectiveWeight = 0;
+      if (isFree) {
+        effectiveWeight = 7.5;
+      } else if (weight && weight > 0) {
+        effectiveWeight = weight;
+      } else if (servicePackage === 'package1' && (weight === undefined || weight === 0)) {
+        effectiveWeight = 7.5;
+      }
+
       const loads = Math.max(1, Math.ceil(effectiveWeight / 7.5));
       setCalculatedLoads(loads);
       const baseCost = loads * 180;
@@ -143,30 +152,39 @@ export function OrderForm() {
             if (needsDistance && (!values.distance || values.distance <= 0)) {
                 setPricingResult(null);
                 setShowDistancePrompt(true);
+            } else if (values.servicePackage === 'package1') {
+                calculatePrice(values as OrderFormValues); // Calculate even if weight is missing for package1
             } else {
                 setPricingResult(null);
                 setShowDistancePrompt(false);
             }
         }
     });
-    // Manually trigger calculation on initial load with params
-    if (distanceParam) {
-        calculatePrice(form.getValues());
-    }
+    
+    // Manually trigger calculation on initial load
+    calculatePrice(form.getValues());
+    
     return () => subscription.unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watch, distanceParam]);
+  }, [watch]);
 
 
   const onSubmit = (data: OrderFormValues) => {
     if (!pricingResult) return;
+    
+    let finalWeight = data.weight;
+    if (data.servicePackage === 'package1' && (finalWeight === undefined || finalWeight === 0)) {
+        finalWeight = 7.5;
+    } else if (isFreeDelivery) {
+        finalWeight = 7.5;
+    }
 
     const newOrder = {
         id: `ORD${String(Date.now()).slice(-3)}${String(Math.floor(Math.random() * 100)).padStart(2, '0')}`,
         customer: 'Jane Doe', // Placeholder
         contact: '09123456789', // Placeholder
         load: calculatedLoads,
-        weight: data.weight || (isFreeDelivery ? 7.5 : 0),
+        weight: finalWeight || 0,
         status: 'Order Placed',
         total: pricingResult.computedPrice,
     };
