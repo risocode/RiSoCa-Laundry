@@ -3,7 +3,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
 
 import { AppHeader } from '@/components/app-header'
 import { AppFooter } from '@/components/app-footer'
@@ -20,11 +19,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LogIn } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import Link from 'next/link'
+import { useAuth } from '@/context/AuthContext'
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { signInAdmin } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -34,36 +34,22 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
-    try {
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+    const success = signInAdmin(email, password)
 
-      if (signInError) {
-        throw signInError;
-      }
-      
-      if (!signInData.user) {
-        throw new Error("Login failed, please try again.");
-      }
-      
+    if (success) {
       toast({
         title: 'Login Successful',
-        description: 'Welcome back!',
+        description: 'Welcome, Admin!',
         className: 'bg-green-500 text-white',
       })
-
-      router.push('/');
-
-    } catch (error: any) {
-        toast({
-            variant: "destructive",
-            title: 'Login Failed',
-            description: error.message || 'Please check your credentials and try again.',
-        })
-    } finally {
-        setLoading(false)
+      router.push('/admin')
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: 'Invalid credentials. Please try again.',
+      })
+      setLoading(false)
     }
   }
 
@@ -74,9 +60,9 @@ export default function LoginPage() {
       <main className="flex-1 flex items-center justify-center px-4">
         <Card className="mx-auto w-full max-w-sm">
           <CardHeader className="p-4">
-            <CardTitle className="text-2xl">Login</CardTitle>
+            <CardTitle className="text-2xl">Administrator Login</CardTitle>
             <CardDescription>
-              Enter your email below to login to your account.
+              Enter your credentials to access the admin dashboard.
             </CardDescription>
           </CardHeader>
 
@@ -87,7 +73,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="admin@example.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -116,12 +102,6 @@ export default function LoginPage() {
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
             </form>
-             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="underline">
-                Sign up
-              </Link>
-            </div>
           </CardContent>
         </Card>
       </main>

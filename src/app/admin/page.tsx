@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
@@ -19,23 +19,23 @@ import { Loader2, Inbox } from 'lucide-react';
 
 export default function AdminPage() {
   const { orders, updateOrderStatus } = useOrders();
-  const { user, profile, loading } = useAuth();
+  const { profile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
-      if (!user || profile?.role !== 'admin') {
-        router.push('/login');
+      if (profile?.role !== 'admin') {
+        router.push('/admin/login');
       }
     }
-  }, [user, profile, loading, router]);
+  }, [profile, loading, router]);
 
 
   const handleStatusChange = (orderId: string, newStatus: string) => {
     updateOrderStatus(orderId, newStatus);
   };
 
-  if (loading || !user || profile?.role !== 'admin') {
+  if (loading || profile?.role !== 'admin') {
      return (
         <div className="flex flex-col h-screen">
           <AppHeader showLogo={true} />

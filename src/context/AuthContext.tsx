@@ -25,6 +25,7 @@ interface AuthContextType {
     user: User | null;
     profile: UserProfile | null;
     session: Session | null;
+    signInAdmin: (email: string, pass: string) => boolean;
     signOut: () => void;
     loading: boolean;
 }
@@ -41,6 +42,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         const fetchSessionAndProfile = async () => {
             setLoading(true);
+
+            // Check for admin session from sessionStorage
+            const adminSession = sessionStorage.getItem('isAdmin');
+            if (adminSession === 'true') {
+                setProfile({ id: 'admin', first_name: 'Admin', last_name: '', role: 'admin' });
+                setLoading(false);
+                return;
+            }
+
             const { data: { session } } = await supabase.auth.getSession();
 
             if (session) {
@@ -52,7 +62,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
                 if (error) {
                     console.error("Error fetching user profile:", error);
-                    // Handle case where user exists in auth but not in profiles
                     await supabase.auth.signOut();
                 } else {
                     setSession(session);
@@ -67,13 +76,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         const { data: authListener } = supabase.auth.onAuthStateChange(
             async (_event, newSession) => {
+                 const adminSession = sessionStorage.getItem('isAdmin');
+                if (adminSession === 'true') {
+                    // If admin session is active, don't let supabase auth state overwrite it
+                    return;
+                }
+
                 if (newSession) {
                      const { data: profileData } = await supabase
                         .from('profiles')
                         .select('id, first_name, last_name, role')
                         .eq('id', newSession.user.id)
                         .single();
-
+                    
                     setProfile(profileData as UserProfile);
                 } else {
                     setProfile(null);
@@ -87,17 +102,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             authListener?.subscription.unsubscribe();
         };
-    }, [router]);
+    }, []);
+
+    const signInAdmin = (email: string, pass: string): boolean => {
+        const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+        const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASS;
+
+        if (email === adminEmail && pass === adminPass) {
+            sessionStorage.setItem('isAdmin', 'true');
+            setProfile({ id: 'admin', first_name: 'Admin', last_name: '', role: 'admin' });
+            setUser(null); // Clear any Supabase user
+            setSession(null); // Clear any Supabase session
+            return true;
+        }
+        return false;
+    };
+
 
     const signOut = async () => {
-        await supabase.auth.signOut();
-        router.push('/login');
+        const isAdmin = sessionStorage.getItem('isAdmin');
+        if (isAdmin) {
+            sessionStorage.removeItem('isAdmin');
+            setProfile(null);
+            router.push('/admin/login');
+        } else {
+            await supabase.auth.signOut();
+            setProfile(null);
+            setUser(null);
+            setSession(null);
+            router.push('/login');
+        }
     };
 
     const value = {
         user,
         profile,
         session,
+        signInAdmin,
         signOut,
         loading,
     };

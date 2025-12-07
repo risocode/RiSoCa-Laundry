@@ -15,10 +15,10 @@ import { useAuth } from '@/context/AuthContext';
 
 
 export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
-    const { user, signOut } = useAuth();
+    const { user, profile, signOut } = useAuth();
 
     const navLinks = [
-      { href: '/login', label: 'Administrator Login', icon: UserCog, requiresAuth: false },
+      { href: '/admin/login', label: 'Administrator Login', icon: UserCog, requiresAuth: false },
       { href: '/download-app', label: 'Download APK', icon: Download, requiresAuth: false },
       { href: '/about', label: 'About', icon: Info, requiresAuth: false },
     ];
@@ -53,7 +53,7 @@ export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
                   </Link>
                 </DropdownMenuItem>
               ))}
-               {user && (
+               {(user || profile?.role === 'admin') && (
                 <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={signOut} className="flex items-center gap-3 text-destructive transition-colors hover:text-destructive hover:bg-destructive/10 rounded-md text-base cursor-pointer">
