@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -18,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 export type Order = {
   id: string;
@@ -33,7 +33,8 @@ export type Order = {
 
 type OrderListProps = {
   orders: Order[];
-  onStatusChange: (orderId: string, newStatus: string) => void;
+  isEditing: boolean;
+  onUpdateOrder: (orderId: string, field: keyof Order, value: any) => void;
 };
 
 const statusOptions = [
@@ -67,7 +68,12 @@ const getStatusColor = (status: string) => {
   }
 };
 
-export function OrderList({ orders, onStatusChange }: OrderListProps) {
+export function OrderList({ orders, isEditing, onUpdateOrder }: OrderListProps) {
+  const handleFieldChange = (orderId: string, field: keyof Order, value: string) => {
+    const numericValue = field === 'status' ? value : parseFloat(value) || 0;
+    onUpdateOrder(orderId, field, numericValue);
+  }
+
   return (
     <>
       {/* Mobile View - Card List */}
@@ -81,23 +87,45 @@ export function OrderList({ orders, onStatusChange }: OrderListProps) {
                   {order.status}
                 </Badge>
               </CardHeader>
-              <CardContent className="p-4 pt-0 space-y-2">
+              <CardContent className="p-4 pt-0 space-y-3">
                 <div className="text-sm text-muted-foreground">
                   <span className="font-semibold text-foreground">Customer Name:</span> {order.customer}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   <span className="font-semibold text-foreground">Contact #:</span> {order.contact}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div><span className="font-semibold text-foreground">Load:</span> {order.load}</div>
-                  <div><span className="font-semibold text-foreground">Weight:</span> {order.weight} kg</div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-sm">
+                    <Label for={`weight-mob-${order.id}`}>Weight (kg)</Label>
+                    {isEditing ? (
+                        <Input id={`weight-mob-${order.id}`} type="number" value={order.weight} onChange={e => handleFieldChange(order.id, 'weight', e.target.value)} className="h-8"/>
+                    ) : (
+                        <p className="font-semibold text-foreground">{order.weight} kg</p>
+                    )}
+                  </div>
+                   <div className="text-sm">
+                    <Label for={`load-mob-${order.id}`}>Load</Label>
+                     {isEditing ? (
+                        <Input id={`load-mob-${order.id}`} type="number" value={order.load} onChange={e => handleFieldChange(order.id, 'load', e.target.value)} className="h-8"/>
+                    ) : (
+                        <p className="font-semibold text-foreground">{order.load}</p>
+                    )}
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  <span className="font-semibold text-foreground">Total:</span> ₱{order.total.toFixed(2)}
+
+                <div className="text-sm">
+                  <Label for={`total-mob-${order.id}`}>Total (₱)</Label>
+                   {isEditing ? (
+                        <Input id={`total-mob-${order.id}`} type="number" value={order.total} onChange={e => handleFieldChange(order.id, 'total', e.target.value)} className="h-8"/>
+                    ) : (
+                        <p className="font-semibold text-foreground">₱{order.total.toFixed(2)}</p>
+                    )}
                 </div>
+
                  <Select
                     value={order.status}
-                    onValueChange={(newStatus) => onStatusChange(order.id, newStatus)}
+                    onValueChange={(newStatus) => onUpdateOrder(order.id, 'status', newStatus)}
                   >
                     <SelectTrigger className="w-full h-10 mt-2">
                       <SelectValue placeholder="Update Status" />
@@ -123,10 +151,9 @@ export function OrderList({ orders, onStatusChange }: OrderListProps) {
             <TableRow>
               <TableHead>Order ID</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Load</TableHead>
               <TableHead>Weight (kg)</TableHead>
-              <TableHead>Total</TableHead>
+              <TableHead>Load</TableHead>
+              <TableHead>Total (₱)</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Action</TableHead>
             </TableRow>
@@ -136,10 +163,27 @@ export function OrderList({ orders, onStatusChange }: OrderListProps) {
               <TableRow key={order.id}>
                 <TableCell className="font-medium">{order.id}</TableCell>
                 <TableCell>{order.customer}</TableCell>
-                <TableCell>{order.contact}</TableCell>
-                <TableCell>{order.load}</TableCell>
-                <TableCell>{order.weight}</TableCell>
-                <TableCell>₱{order.total}</TableCell>
+                <TableCell>
+                  {isEditing ? (
+                    <Input type="number" value={order.weight} onChange={e => handleFieldChange(order.id, 'weight', e.target.value)} className="h-8 w-24" />
+                  ) : (
+                    order.weight
+                  )}
+                </TableCell>
+                 <TableCell>
+                  {isEditing ? (
+                    <Input type="number" value={order.load} onChange={e => handleFieldChange(order.id, 'load', e.target.value)} className="h-8 w-20" />
+                  ) : (
+                    order.load
+                  )}
+                </TableCell>
+                <TableCell>
+                   {isEditing ? (
+                    <Input type="number" value={order.total} onChange={e => handleFieldChange(order.id, 'total', e.target.value)} className="h-8 w-28" />
+                  ) : (
+                    `₱${order.total.toFixed(2)}`
+                  )}
+                </TableCell>
                 <TableCell>
                   <Badge className={`${getStatusColor(order.status)} hover:${getStatusColor(order.status)} text-white`}>
                     {order.status}
@@ -148,7 +192,7 @@ export function OrderList({ orders, onStatusChange }: OrderListProps) {
                 <TableCell>
                   <Select
                     value={order.status}
-                    onValueChange={(newStatus) => onStatusChange(order.id, newStatus)}
+                    onValueChange={(newStatus) => onUpdateOrder(order.id, 'status', newStatus)}
                   >
                     <SelectTrigger className="w-[180px] h-9">
                       <SelectValue placeholder="Update Status" />
@@ -170,3 +214,8 @@ export function OrderList({ orders, onStatusChange }: OrderListProps) {
     </>
   );
 }
+
+// Add a Label component for mobile view consistency
+const Label = ({ children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
+    <label className="text-xs font-medium text-muted-foreground" {...props}>{children}</label>
+);

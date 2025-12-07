@@ -10,13 +10,17 @@ import {
 } from '@/components/ui/card';
 import { OrderList, Order } from '@/components/order-list';
 import { supabase } from '@/lib/supabaseClient';
-import { Loader2, Inbox } from 'lucide-react';
+import { Loader2, Inbox, Edit, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 export default function AdminOrdersPage() {
   const { toast } = useToast();
   const [adminOrders, setAdminOrders] = useState<Order[]>([]);
+  const [initialOrders, setInitialOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     async function fetchAdminOrders() {
@@ -34,48 +38,94 @@ export default function AdminOrdersPage() {
             description: 'Could not fetch orders from the database.',
         });
       } else {
-        setAdminOrders(data as Order[]);
+        const fetchedOrders = data as Order[];
+        setAdminOrders(fetchedOrders);
+        setInitialOrders(fetchedOrders); // Keep a copy of the original state
       }
       setOrdersLoading(false);
     }
     fetchAdminOrders();
   }, [toast]);
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
-    // Optimistically update local state for a responsive UI
+  const handleUpdateOrder = (orderId: string, field: keyof Order, value: any) => {
     setAdminOrders(prev =>
-      prev.map(o => (o.id === orderId ? { ...o, status: newStatus } : o))
+      prev.map(o => (o.id === orderId ? { ...o, [field]: value } : o))
+    );
+  };
+  
+  const handleCancel = () => {
+    setAdminOrders(initialOrders);
+    setIsEditing(false);
+  }
+
+  const handleSave = async () => {
+    setIsSaving(true);
+
+    const updatePromises = adminOrders.map(order => 
+        supabase
+            .from('orders')
+            .update({
+                status: order.status,
+                weight: order.weight,
+                load: order.load,
+                total: order.total,
+            })
+            .eq('id', order.id)
     );
 
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', orderId);
+    try {
+        const results = await Promise.all(updatePromises);
+        const hasError = results.some(res => res.error);
 
-    if (error) {
-      console.error('Error updating status:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Update Failed',
-        description: `Could not update status for order ${orderId}.`,
-      });
-      // Revert the optimistic update on failure
-      const { data: revertedOrders } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      if (revertedOrders) setAdminOrders(revertedOrders as Order[]);
+        if (hasError) {
+            throw new Error('An error occurred while saving one or more orders.');
+        }
 
-    } else {
         toast({
-            title: 'Status Updated',
-            description: `Order ${orderId} is now "${newStatus}".`,
+            title: 'Success!',
+            description: 'All order changes have been saved.',
+            className: 'bg-green-500 text-white',
         });
+        setInitialOrders(adminOrders); // Update the base state
+        setIsEditing(false);
+    } catch(error: any) {
+        console.error('Error saving orders:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Save Failed',
+            description: error.message || 'Could not save order changes.',
+        });
+        setAdminOrders(initialOrders); // Revert on failure
+    } finally {
+        setIsSaving(false);
     }
-  };
+  }
+
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Manage Orders</CardTitle>
-        <CardDescription>Manage and track all customer orders.</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Manage Orders</CardTitle>
+          <CardDescription>Manage and track all customer orders.</CardDescription>
+        </div>
+        <div className="flex gap-2">
+            {isEditing ? (
+              <>
+                <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
+                  <X className="mr-2 h-4 w-4" /> Cancel
+                </Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  Save
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => setIsEditing(true)} disabled={ordersLoading}>
+                <Edit className="mr-2 h-4 w-4" /> Edit Orders
+              </Button>
+            )}
+        </div>
       </CardHeader>
       <CardContent>
         {ordersLoading ? (
@@ -84,7 +134,11 @@ export default function AdminOrdersPage() {
             <p>Loading all orders...</p>
           </div>
         ) : adminOrders.length > 0 ? (
-          <OrderList orders={adminOrders} onStatusChange={handleStatusChange} />
+          <OrderList 
+            orders={adminOrders} 
+            isEditing={isEditing}
+            onUpdateOrder={handleUpdateOrder} 
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
             <Inbox className="h-12 w-12 mb-2" />
