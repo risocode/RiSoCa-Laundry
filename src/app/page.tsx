@@ -2,8 +2,10 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Package, FileText, MapPin, Phone, HelpCircle, UserPlus, ArrowRight, ClipboardList, Bike, Download, WashingMachine, DollarSign, User, ShieldCheck } from 'lucide-react';
+import { Package, FileText, MapPin, Phone, HelpCircle, UserPlus, ArrowRight, ClipboardList, Bike, Download, WashingMachine, DollarSign, User, ShieldCheck, Loader2 } from 'lucide-react';
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
 import { HomePageWrapper } from '@/components/home-page-wrapper';
@@ -28,9 +30,28 @@ const adminGridItems = [
 
 
 export default function Home() {
-  const { user, profile } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const router = useRouter();
   const isAdmin = profile?.role === 'admin';
   const gridItems = isAdmin ? adminGridItems : customerGridItems;
+  
+  useEffect(() => {
+    if (!loading && isAdmin) {
+      router.replace('/admin');
+    }
+  }, [isAdmin, loading, router]);
+
+  if (loading || isAdmin) {
+     return (
+      <div className="flex flex-col h-screen">
+        <AppHeader showLogo={true} />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </main>
+        <AppFooter />
+      </div>
+    );
+  }
 
   return (
       <HomePageWrapper gridItems={gridItems}>
