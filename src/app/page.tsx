@@ -3,13 +3,13 @@ import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Package, FileText, MapPin, Phone, HelpCircle, UserPlus, ArrowRight, Calculator, Bike, Download, WashingMachine } from 'lucide-react';
+import { Package, FileText, MapPin, Phone, HelpCircle, UserPlus, ArrowRight, Calculator, Bike, Download, WashingMachine, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const gridItems = [
   { href: '/order-status', label: 'Order Status', icon: Package, notification: true },
   { href: '/create-order', label: 'Create Order', icon: FileText },
-  { href: '/service-rates', label: 'Service Rates', icon: FileText },
+  { href: '/service-rates', label: 'Service Rates', icon: DollarSign },
   { href: '/track-rider', label: 'Track Rider', icon: Bike },
   { href: '/download-app', label: 'Download App', icon: Download },
   { href: '/laundry-calculator', label: 'Calculator', icon: Calculator },
@@ -24,7 +24,7 @@ export default function Home() {
       <AppHeader />
       <main className="flex-1 overflow-y-auto flex flex-col items-center container mx-auto px-4 text-center pt-2 md:pt-4">
         
-        <div className="flex flex-col items-center mb-4">
+        <div className="flex flex-col items-center mb-4 pt-8">
             <div className="flex items-center gap-2 md:gap-3">
               <WashingMachine className="h-20 w-20 md:h-28 md:w-28 text-primary" />
               <span className="font-bold text-primary text-5xl md:text-7xl">RKR Laundry</span>
