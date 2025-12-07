@@ -9,14 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { LocateFixed } from 'lucide-react';
 
-// Fix for default Leaflet icon path in Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png').default.src,
-  iconUrl: require('leaflet/dist/images/marker-icon.png').default.src,
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png').default.src,
-});
-
 const SHOP_LATITUDE = 14.5515;
 const SHOP_LONGITUDE = 121.0493;
 
@@ -56,6 +48,17 @@ export function LocationPicker({ open, onOpenChange, onLocationSelect }: Locatio
 
   useEffect(() => {
     setIsClient(true);
+    
+    // Fix for default Leaflet icon path in Next.js
+    (async () => {
+        delete (L.Icon.Default.prototype as any)._getIconUrl;
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: (await import('leaflet/dist/images/marker-icon-2x.png')).default.src,
+            iconUrl: (await import('leaflet/dist/images/marker-icon.png')).default.src,
+            shadowUrl: (await import('leaflet/dist/images/marker-shadow.png')).default.src,
+        });
+    })();
+
   }, []);
 
   const handlePositionChange = useCallback((pos: L.LatLng) => {
