@@ -12,7 +12,9 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 // This is the correct way to fix the default icon issue in Next.js
-const DefaultIcon = L.icon({
+// It should be done once at the module level.
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
     iconUrl: markerIcon.src,
     iconRetinaUrl: markerIcon2x.src,
     shadowUrl: markerShadow.src,
@@ -21,7 +23,7 @@ const DefaultIcon = L.icon({
     popupAnchor: [1, -34],
     shadowSize: [41, 41],
 });
-L.Marker.prototype.options.icon = DefaultIcon;
+
 
 const SHOP_LATITUDE = 17.522928;
 const SHOP_LONGITUDE = 121.775073;
