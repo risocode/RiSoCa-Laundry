@@ -24,11 +24,6 @@ export default function Home() {
       <AppHeader />
       <main className="flex-1 flex flex-col items-center justify-center container mx-auto px-4 py-8 text-center">
         
-        <div className="mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary text-center">RKR Laundry</h1>
-            <p className="text-sm md:text-md text-muted-foreground text-center">Fast. Clean. Convenient.</p>
-        </div>
-
         <div className="flex flex-row items-center gap-4 mb-8">
           <Link href="/login" passHref>
             <Button size="lg" className="w-40 h-12 text-base rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-shadow">

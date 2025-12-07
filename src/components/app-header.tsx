@@ -26,9 +26,12 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-center px-4 relative">
-        <Link href="/" className="flex items-center gap-2">
-            <WashingMachine className="h-6 w-6 text-primary" />
-            <span className="font-bold text-primary">RKR Laundry</span>
+        <Link href="/" className="flex flex-col items-center">
+            <div className="flex items-center gap-2">
+              <WashingMachine className="h-6 w-6 text-primary" />
+              <span className="font-bold text-primary text-lg">RKR Laundry</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Fast. Clean. Convenient.</p>
         </Link>
         <div className="absolute right-4">
           <Sheet>
