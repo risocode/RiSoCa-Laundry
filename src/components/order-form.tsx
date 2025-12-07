@@ -55,31 +55,29 @@ export function OrderForm() {
     mode: 'onChange'
   });
 
+  const calculatePrice = (values: OrderFormValues | undefined) => {
+    if (!values) return;
+    const parsed = orderSchema.safeParse(values);
+    if (parsed.success) {
+        startTransition(async () => {
+            const result = await pricingLogicGuidance(parsed.data);
+            setPricingResult(result);
+        });
+    } else {
+        setPricingResult(null);
+    }
+  }
+
   useEffect(() => {
     const subscription = form.watch((value) => {
         const handler = setTimeout(() => {
-            const parsed = orderSchema.safeParse(value);
-            if (parsed.success) {
-                startTransition(async () => {
-                    const result = await pricingLogicGuidance(parsed.data);
-                    setPricingResult(result);
-                });
-            } else {
-                setPricingResult(null);
-            }
+            calculatePrice(value as OrderFormValues);
         }, 300);
         return () => clearTimeout(handler);
     });
 
     // Initial calculation on mount
-    const initialValues = form.getValues();
-    const parsed = orderSchema.safeParse(initialValues);
-    if(parsed.success) {
-        startTransition(async () => {
-            const result = await pricingLogicGuidance(parsed.data);
-            setPricingResult(result);
-        });
-    }
+    calculatePrice(form.getValues());
 
     return () => subscription.unsubscribe();
   }, [form]);
@@ -87,11 +85,10 @@ export function OrderForm() {
   const onSubmit = (data: OrderFormValues) => {
     console.log('Order submitted:', data, 'with price:', pricingResult?.computedPrice);
     alert(`Order placed! Total cost: $${pricingResult?.computedPrice.toFixed(2)}`);
-    // In a real app, this would trigger a navigation to a confirmation or payment page.
   };
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg w-full">
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <CardHeader>
           <CardTitle>Create Your Laundry Order</CardTitle>
@@ -118,9 +115,10 @@ export function OrderForm() {
                                 id={service.id}
                                 checked={isChecked}
                                 onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([...field.value, service.id])
-                                    : field.onChange(field.value?.filter((value) => value !== service.id));
+                                  const newValue = checked
+                                    ? [...field.value, service.id]
+                                    : field.value?.filter((value) => value !== service.id);
+                                  field.onChange(newValue);
                                 }}
                                 className="absolute opacity-0"
                               />
@@ -155,9 +153,10 @@ export function OrderForm() {
                               id={addOn.id}
                               checked={isChecked}
                               onCheckedChange={(checked) => {
-                                return checked
-                                  ? field.onChange([...(field.value ?? []), addOn.id])
-                                  : field.onChange((field.value ?? [])?.filter((value) => value !== addOn.id));
+                                const newValue = checked
+                                  ? [...(field.value ?? []), addOn.id]
+                                  : (field.value ?? [])?.filter((value) => value !== addOn.id);
+                                field.onChange(newValue);
                               }}
                               className="absolute opacity-0"
                             />
