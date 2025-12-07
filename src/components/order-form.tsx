@@ -152,9 +152,9 @@ export function OrderForm() {
       if (!isFree && needsLocationForCalc) {
         const billableDistance = Math.max(0, distance - 1);
         if (servicePackage === 'package2') {
-            transportFee = billableDistance * 10;
+            transportFee = billableDistance * 20;
         } else if (servicePackage === 'package3') {
-            transportFee = billableDistance * 10 * 2;
+            transportFee = billableDistance * 20 * 2;
         }
       }
       
@@ -309,7 +309,7 @@ export function OrderForm() {
               <div className="space-y-2">
                   <Label htmlFor="distance" className="text-base font-semibold">3. Location</Label>
                   <div className="flex flex-col gap-2">
-                      <Button type="button" variant="outline" onClick={handleLocationSelect} className="w-full">
+                      <Button type="button" variant="outline" onClick={handleLocationSelect} className="w-full whitespace-normal h-auto justify-start text-left">
                         <MapPin className="mr-2 h-4 w-4"/>
                         {watchedValues.distance > 0 ? `Distance: ${watchedValues.distance.toFixed(2)} km (Change)` : 'Select Location'}
                       </Button>
