@@ -30,7 +30,7 @@ const packages = [
 
 const orderSchema = z.object({
   servicePackage: z.string().min(1, "Please select a package."),
-  weight: z.coerce.number().max(10, "Maximum of 10kg per order.").optional(),
+  weight: z.coerce.number().min(0, "Weight cannot be negative.").max(10, "Maximum of 10kg per order.").optional(),
   distance: z.coerce.number().min(0, "Distance cannot be negative.").max(50, "We don't deliver beyond 50 km."),
 });
 
@@ -44,8 +44,8 @@ export function OrderForm() {
     resolver: zodResolver(orderSchema),
     defaultValues: {
       servicePackage: 'package1',
-      weight: 1,
-      distance: 5,
+      weight: undefined,
+      distance: 1,
     },
     mode: 'onChange'
   });
@@ -134,7 +134,7 @@ export function OrderForm() {
                         <Controller
                             name="weight"
                             control={form.control}
-                            render={({ field }) => <Input id="weight" type="number" placeholder="1" className="bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" {...field} value={field.value ?? ''}/>}
+                            render={({ field }) => <Input id="weight" type="number" placeholder="e.g., 7.5kg" className="bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" {...field} value={field.value ?? ''}/>}
                         />
                     </div>
                 </div>
@@ -151,7 +151,7 @@ export function OrderForm() {
                         <Controller
                         name="distance"
                         control={form.control}
-                        render={({ field }) => <Input id="distance" type="number" placeholder="5" className="bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0" {...field} />}
+                        render={({ field }) => <Input id="distance" type="number" placeholder="1" className="bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0" {...field} />}
                         />
                     </div>
                 </div>

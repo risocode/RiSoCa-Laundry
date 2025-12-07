@@ -54,8 +54,8 @@ const pricingLogicGuidancePrompt = ai.definePrompt({
   prompt: `You are an AI assistant for a laundry service, designed to calculate the price of an order in Philippine Pesos (PHP).
 
   Here is the pricing structure:
-  - Package 1 (Wash, Dry, Fold): ₱180 per kg.
-  - Transport Fee: ₱10 per kilometer (applies to pick-up or delivery, one way).
+  - Package 1 (Wash, Dry, Fold): ₱180 per kg. Minimum weight is 7.5kg. If weight is less than 7.5kg, calculate as 7.5kg.
+  - Transport Fee: ₱10 per kilometer. The first 1km is free.
 
   Packages:
   - Package 1: Base service only. No transport.
@@ -69,10 +69,11 @@ const pricingLogicGuidancePrompt = ai.definePrompt({
 
   Tasks:
   1.  **isValidCombination**: This is always true.
-  2.  **computedPrice**: Calculate the total price in PHP based on the selected package, weight, and distance.
-      - Calculate the base cost: {{{weight}}} * 180.
-      - For Package 2, add a one-way transport fee: {{{distance}}} * 10.
-      - For Package 3, add a two-way transport fee: ({{{distance}}} * 10) * 2.
+  2.  **computedPrice**: Calculate the total price in PHP.
+      - Base Cost: Use a minimum of 7.5kg. Calculate \`max(7.5, {{{weight}}}) * 180\`.
+      - Transport Distance: Calculate \`max(0, {{{distance}}} - 1)\`.
+      - For Package 2, add a one-way transport fee: \`max(0, {{{distance}}} - 1) * 10\`.
+      - For Package 3, add a two-way transport fee: \`max(0, {{{distance}}} - 1) * 10 * 2\`.
       - Sum the costs to get the final price.
   3.  **suggestedServices**: If the user selects Package 2, suggest Package 3 as a convenient "All-In" option. If they choose Package 1 with a distance > 0, suggest a package with delivery. Otherwise, provide an empty array.
   4.  **invalidServiceChoices**: This should be an empty array.
@@ -97,3 +98,4 @@ const pricingLogicGuidanceFlow = ai.defineFlow(
     return output!;
   }
 );
+
