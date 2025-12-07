@@ -25,11 +25,11 @@ export default function Home() {
       <main className="flex-1 overflow-hidden flex flex-col items-center justify-center container mx-auto px-4 text-center">
         
         <div className="flex flex-col items-center mb-6">
-            <div className="flex items-center gap-2">
-              <WashingMachine className="h-8 w-8 text-primary" />
-              <span className="font-bold text-primary text-2xl">RKR Laundry</span>
+            <div className="flex items-center gap-3">
+              <WashingMachine className="h-12 w-12 text-primary" />
+              <span className="font-bold text-primary text-4xl">RKR Laundry</span>
             </div>
-            <p className="text-sm text-muted-foreground">Fast. Clean. Convenient.</p>
+            <p className="text-base text-muted-foreground">Fast. Clean. Convenient.</p>
         </div>
 
         <div className="flex flex-row items-center gap-4 mb-6">
@@ -47,11 +47,11 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 gap-x-4 gap-y-4 sm:gap-x-6 w-full max-w-xs sm:max-w-md">
+        <div className="grid grid-cols-3 gap-x-4 gap-y-4 sm:gap-x-6 w-full max-w-sm sm:max-w-md">
           {gridItems.map((item) => (
-            <Link href={item.href} key={item.label} className="relative flex flex-col items-center justify-center gap-1 p-1 rounded-lg group">
-              <item.icon className="h-6 w-6 md:h-8 md:w-8 text-foreground/80 group-hover:text-primary transition-colors" />
-              <span className="text-[10px] sm:text-xs font-medium text-foreground/90 text-center">{item.label}</span>
+            <Link href={item.href} key={item.label} className="relative flex flex-col items-center justify-center gap-1 p-2 rounded-lg group">
+              <item.icon className="h-8 w-8 md:h-10 md:w-10 text-foreground/80 group-hover:text-primary transition-colors" />
+              <span className="text-xs sm:text-sm font-medium text-foreground/90 text-center">{item.label}</span>
               {item.notification && <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center rounded-full bg-red-500 text-white p-0 text-[10px]">3</Badge>}
             </Link>
           ))}
