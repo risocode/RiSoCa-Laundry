@@ -11,7 +11,7 @@ export function AppFooter() {
             <Facebook className="h-5 w-5" />
             <span className="sr-only">Facebook</span>
           </a>
-          <a href="mailto:risoca2025@gmail.com" className="text-muted-foreground hover:text-primary transition-colors">
+          <a href="mailto:contact@rkrlaundry.com" className="text-muted-foreground hover:text-primary transition-colors">
             <Mail className="h-5 w-5" />
             <span className="sr-only">Email</span>
           </a>
