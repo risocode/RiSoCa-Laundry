@@ -5,18 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const services = [
-    { service: 'Wash & Fold (per kg)', price: '8.00' },
-    { service: 'Drying (per kg)', price: '5.00' },
-    { service: 'Ironing (per piece)', price: '3.00' },
-    { service: 'Stain Removal', price: '10.00' },
-    { service: 'Delicate Wash', price: '12.00' },
-    { service: 'Beddings & Linens', price: '15.00' },
+    { service: 'Wash, Dry, Fold (per 7.5kg load)', price: '180.00' },
+    { service: 'Ironing (per piece)', price: '15.00' },
+    { service: 'Stain Removal (per piece)', price: '25.00' },
+    { service: 'Delicate Wash (per load)', price: '200.00' },
+    { service: 'Beddings & Linens (per load)', price: '220.00' },
 ];
 
 const deliverySurcharges = [
-    { distance: '0-5 miles', price: '5.00' },
-    { distance: '5-10 miles', price: '10.00' },
-    { distance: '10+ miles', price: '15.00' },
+    { distance: 'First 1 km', price: 'Free' },
+    { distance: 'Each additional km', price: '20.00' },
 ];
 
 export default function ServiceRatesPage() {
@@ -39,7 +37,7 @@ export default function ServiceRatesPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="h-8 text-xs">Service</TableHead>
-                                <TableHead className="text-right h-8 text-xs">Price ($)</TableHead>
+                                <TableHead className="text-right h-8 text-xs">Price (₱)</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -63,7 +61,7 @@ export default function ServiceRatesPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="h-8 text-xs">Distance</TableHead>
-                                <TableHead className="text-right h-8 text-xs">Price ($)</TableHead>
+                                <TableHead className="text-right h-8 text-xs">Price (₱)</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
