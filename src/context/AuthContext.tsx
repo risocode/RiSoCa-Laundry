@@ -40,93 +40,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         const fetchSessionAndProfile = async () => {
-            // 1. Get the initial session
-            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-            
-            if (sessionError) {
-                console.error("Error fetching session:", sessionError);
-                setLoading(false);
-                return;
-            }
+            setLoading(true);
+            const { data: { session } } = await supabase.auth.getSession();
 
-            setSession(session);
-            const currentUser = session?.user ?? null;
-            setUser(currentUser);
-
-            // 2. If a user exists, fetch their profile and role
-            if (currentUser) {
-                const { data: profileData, error: profileError } = await supabase
+            if (session) {
+                const { data: profileData, error } = await supabase
                     .from('profiles')
-                    .select('first_name, last_name')
-                    .eq('id', currentUser.id)
+                    .select('id, first_name, last_name, role')
+                    .eq('id', session.user.id)
                     .single();
 
-                const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('role')
-                    .eq('id', currentUser.id)
-                    .single();
-
-                if (profileError || userError) {
-                    if ((profileError && profileError.code !== 'PGRST116') || (userError && userError.code !== 'PGRST116')) {
-                         console.error("Error fetching user profile or role:", profileError || userError);
-                    }
-                    // Even with an error, the user is technically logged in.
-                    // We just don't have their profile details.
-                    setProfile(null);
-                } else if (profileData && userData) {
-                    setProfile({
-                        id: currentUser.id,
-                        first_name: profileData.first_name,
-                        last_name: profileData.last_name,
-                        role: userData.role,
-                    });
+                if (error) {
+                    console.error("Error fetching user profile:", error);
+                    // Handle case where user exists in auth but not in profiles
+                    await supabase.auth.signOut();
+                } else {
+                    setSession(session);
+                    setUser(session.user);
+                    setProfile(profileData as UserProfile);
                 }
             }
-            
-            // 3. Set loading to false only after all async operations are done
             setLoading(false);
         };
         
         fetchSessionAndProfile();
 
-        // 4. Set up a listener for auth state changes
         const { data: authListener } = supabase.auth.onAuthStateChange(
             async (_event, newSession) => {
-                setSession(newSession);
-                const currentUser = newSession?.user ?? null;
-                setUser(currentUser);
+                if (newSession) {
+                     const { data: profileData } = await supabase
+                        .from('profiles')
+                        .select('id, first_name, last_name, role')
+                        .eq('id', newSession.user.id)
+                        .single();
 
-                // If user logs out, clear profile
-                if (!currentUser) {
-                    setProfile(null);
-                    setLoading(false);
-                    return;
-                }
-                
-                // If user logs in, fetch their profile
-                const { data: profileData, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('first_name, last_name')
-                    .eq('id', currentUser.id)
-                    .single();
-
-                const { data: userData, error: userError } = await supabase
-                    .from('users')
-                    .select('role')
-                    .eq('id', currentUser.id)
-                    .single();
-
-                if (profileData && userData) {
-                     setProfile({
-                        id: currentUser.id,
-                        first_name: profileData.first_name,
-                        last_name: profileData.last_name,
-                        role: userData.role,
-                    });
+                    setProfile(profileData as UserProfile);
                 } else {
-                     setProfile(null);
+                    setProfile(null);
                 }
+                setSession(newSession);
+                setUser(newSession?.user ?? null);
                 setLoading(false);
             }
         );
@@ -134,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             authListener?.subscription.unsubscribe();
         };
-    }, []);
+    }, [router]);
 
     const signOut = async () => {
         await supabase.auth.signOut();
@@ -149,7 +102,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading,
     };
 
-    // Render a loading state or children
     return (
         <AuthContext.Provider value={value}>
             {children}

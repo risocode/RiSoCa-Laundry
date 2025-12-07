@@ -57,7 +57,7 @@ export default function RegisterPage() {
       }
       
       if (authData.user) {
-        // Insert into public.profiles table
+        // Insert into public.profiles table with role
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({ 
@@ -65,27 +65,13 @@ export default function RegisterPage() {
             first_name: firstName, 
             last_name: lastName,
             email: email,
+            role: 'customer' // Add default role here
           });
 
         if (profileError) {
-          console.error('Error saving user to public.profiles table:', profileError);
+          console.error('Error saving user profile:', profileError);
+          // This is a critical error, as the user exists in auth but not in profiles.
           throw new Error(`Account created, but failed to save profile. Please contact support. Details: ${profileError.message}`);
-        }
-
-        // Insert into public.users table
-        const { error: userError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            first_name: firstName,
-            last_name: lastName,
-            role: 'customer', // Default role
-          });
-
-        if (userError) {
-          console.error('Error saving user to public.users table:', userError);
-          // Optional: You might want to clean up the profile entry if this fails
-          throw new Error(`Account created, but failed to save user role. Please contact support. Details: ${userError.message}`);
         }
 
       } else {
