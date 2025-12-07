@@ -3,7 +3,7 @@ import { Facebook, Mail } from 'lucide-react';
 
 export function AppFooter() {
   return (
-    <footer className="w-full py-4">
+    <footer className="w-full py-2 md:py-4">
       <div className="container mx-auto flex items-center justify-between text-xs text-muted-foreground px-4">
         <p>&copy; {new Date().getFullYear()} RKR Laundry. All rights reserved.</p>
         <div className="flex items-center space-x-4">
