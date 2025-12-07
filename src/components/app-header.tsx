@@ -19,11 +19,14 @@ const navLinks = [
 export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
   return (
     <header className="w-full border-b bg-background/95">
-      <div className="container flex h-14 items-center justify-between px-4">
+      <div className="container flex h-16 items-center justify-between px-4">
         {showLogo ? (
           <Link href="/" className="flex items-center gap-2">
-            <WashingMachine className="h-8 w-8 text-primary" />
-            <span className="font-bold text-primary text-xl hidden sm:inline">RKR Laundry</span>
+            <WashingMachine className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+            <div className='flex flex-col'>
+                <span className="font-bold text-primary text-lg sm:text-xl leading-none">RKR Laundry</span>
+                <span className="text-xs sm:text-sm text-muted-foreground leading-none mt-1">Fast. Clean. Convenient.</span>
+            </div>
           </Link>
         ) : <div />}
         <DropdownMenu>
