@@ -22,7 +22,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <AppHeader />
-      <main className="flex-1 flex flex-col items-center justify-center container mx-auto px-4 py-8 text-center">
+      <main className="flex-1 flex flex-col items-center container mx-auto px-4 pt-8 pb-8 text-center">
         
         <div className="flex flex-row items-center gap-4 mb-8">
           <Link href="/login" passHref>
