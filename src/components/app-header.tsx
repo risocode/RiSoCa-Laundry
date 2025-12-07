@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Menu, UserCog, Download, Info, LogOut, WashingMachine } from 'lucide-react';
+import { Menu, UserCog, Download, Info, LogOut, WashingMachine, LayoutDashboard } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,10 +17,14 @@ import { useAuth } from '@/context/AuthContext';
 export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
     const { user, profile, signOut } = useAuth();
 
+    const isAdmin = profile?.role === 'admin';
+
     const navLinks = [
-      { href: '/admin/login', label: 'Administrator Login', icon: UserCog, requiresAuth: false },
-      { href: '/download-app', label: 'Download APK', icon: Download, requiresAuth: false },
-      { href: '/about', label: 'About', icon: Info, requiresAuth: false },
+      isAdmin 
+        ? { href: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard }
+        : { href: '/admin/login', label: 'Administrator Login', icon: UserCog },
+      { href: '/download-app', label: 'Download APK', icon: Download },
+      { href: '/about', label: 'About', icon: Info },
     ];
 
 
