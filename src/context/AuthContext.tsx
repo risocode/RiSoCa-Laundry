@@ -9,6 +9,7 @@ import React,
     useEffect,
     ReactNode
 } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Session, User } from '@supabase/supabase-js';
 
@@ -35,34 +36,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         const fetchUserProfile = async (currentUser: User) => {
-            // Fetch basic profile info (name, etc.)
+            
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('first_name, last_name')
                 .eq('id', currentUser.id)
                 .single();
 
-            // Fetch role from the 'users' table
             const { data: userData, error: userError } = await supabase
                 .from('users')
                 .select('role')
                 .eq('id', currentUser.id)
                 .single();
-
+            
+            // If either query returns an error (e.g., profile not found), log it and return null.
             if (profileError || userError) {
-                console.error("Error fetching user profile or role:", profileError || userError);
+                // Don't log if the error is just that the row doesn't exist, which is a valid case.
+                if (profileError && profileError.code !== 'PGRST116') {
+                    console.error("Error fetching user profile:", profileError);
+                }
+                if (userError && userError.code !== 'PGRST116') {
+                    console.error("Error fetching user role:", userError);
+                }
                 return null;
             }
 
-            return {
-                id: currentUser.id,
-                first_name: profileData.first_name,
-                last_name: profileData.last_name,
-                role: userData.role,
-            };
+            // If we have both profile and user data, construct the full profile.
+            if (profileData && userData) {
+                return {
+                    id: currentUser.id,
+                    first_name: profileData.first_name,
+                    last_name: profileData.last_name,
+                    role: userData.role,
+                };
+            }
+
+            return null;
         };
 
         const getInitialSession = async () => {
@@ -103,7 +116,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const signOut = async () => {
         await supabase.auth.signOut();
-        // The onAuthStateChange listener will handle setting user and profile to null
         router.push('/login');
     };
 
