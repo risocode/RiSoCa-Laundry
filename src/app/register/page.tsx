@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 
 import { AppHeader } from '@/components/app-header'
 import { AppFooter } from '@/components/app-footer'
@@ -32,9 +33,50 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
 
-    // Simulate a successful signup for demonstration
-    setTimeout(() => {
-      setLoading(false)
+    const formData = new FormData(e.currentTarget)
+    const firstName = formData.get('firstName') as string
+    const lastName = formData.get('lastName') as string
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
+      });
+
+      if (authError) {
+        throw authError;
+      }
+      
+      // After successful signup in auth, insert into public.users table
+      if (authData.user) {
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({ 
+            id: authData.user.id, 
+            first_name: firstName, 
+            last_name: lastName,
+            role: 'customer' // Default role
+          });
+
+        if (insertError) {
+          // If inserting into public.users fails, we should ideally handle this.
+          // For now, we'll log the error and proceed with the success toast.
+          console.error('Error saving user to public table:', insertError);
+          setError(`Account created, but failed to save profile: ${insertError.message}`);
+        }
+      } else {
+        // This case should ideally not happen if authError is null
+         throw new Error("Signup succeeded but no user data was returned.");
+      }
+
 
       let countdown = 3;
       const { id: toastId, update } = toast({
@@ -54,7 +96,12 @@ export default function RegisterPage() {
           router.push('/login');
         }
       }, 1000);
-    }, 1000);
+
+    } catch (e: any) {
+       setError(e.message || 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
