@@ -67,10 +67,10 @@ export default function RegisterPage() {
           });
 
         if (insertError) {
-          // If inserting into public.profiles fails, we should ideally handle this.
-          // For now, we'll log the error and proceed with the success toast.
-          console.error('Error saving user to public table:', insertError);
-          setError(`Account created, but failed to save profile: ${insertError.message}`);
+          // This error is critical. If the profile isn't created, the user might not be able to log in properly.
+          // We'll now throw this error to stop the process and show a meaningful message.
+          console.error('Error saving user to public.profiles table:', insertError);
+          throw new Error(`Account created, but failed to save profile. Please contact support. Details: ${insertError.message}`);
         }
       } else {
         // This case should ideally not happen if authError is null
@@ -82,7 +82,7 @@ export default function RegisterPage() {
       toast({
         variant: 'default',
         title: 'Signup Successful!',
-        description: `Redirecting to home in ${countdown}s...`,
+        description: `Redirecting to login in ${countdown}s...`,
         className: 'bg-green-500 text-white',
         duration: 3000,
       });
@@ -91,7 +91,7 @@ export default function RegisterPage() {
         countdown -= 1;
         if (countdown <= 0) {
           clearInterval(interval);
-          router.push('/');
+          router.push('/login');
         }
       }, 1000);
 
