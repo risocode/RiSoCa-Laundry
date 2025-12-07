@@ -10,7 +10,7 @@ const branches = [
     { 
         name: "Main Branch", 
         address: "228 Divisoria Enrile Cagayan", 
-        mapLink: "https://www.google.com/maps/search/?api=1&query=228+Divisoria+Enrile+Cagayan",
+        mapLink: "https://maps.app.goo.gl/CDcYYu91x34uhuHm9",
         phoneNumbers: [
             "09157079908",
             "09459787490",
@@ -44,7 +44,7 @@ export default function BranchesPage() {
                         <Button asChild variant="outline" className="w-full">
                             <Link href={branch.mapLink} target="_blank" rel="noopener noreferrer">
                                 <LinkIcon className="mr-2 h-4 w-4" />
-                                View on Google Maps
+                                RKR Laundry - link
                             </Link>
                         </Button>
                         <div className="space-y-2">
