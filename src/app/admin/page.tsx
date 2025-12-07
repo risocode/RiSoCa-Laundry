@@ -34,7 +34,7 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      <AppHeader />
+      <AppHeader showLogo={true} />
       <main className="flex-1 overflow-y-auto container mx-auto px-4 py-8">
         <Card>
           <CardHeader>

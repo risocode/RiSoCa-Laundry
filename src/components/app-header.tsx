@@ -1,7 +1,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Menu, UserCog, Download, Info, LogOut } from 'lucide-react';
+import { Menu, UserCog, Download, Info, LogOut, WashingMachine } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,10 +16,16 @@ const navLinks = [
   { href: '#', label: 'Exit System', icon: LogOut },
 ];
 
-export function AppHeader() {
+export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
   return (
     <header className="w-full border-b bg-background/95">
-      <div className="container flex h-14 items-center justify-end px-4 relative">
+      <div className="container flex h-14 items-center justify-between px-4">
+        {showLogo ? (
+          <Link href="/" className="flex items-center gap-2">
+            <WashingMachine className="h-8 w-8 text-primary" />
+            <span className="font-bold text-primary text-xl hidden sm:inline">RKR Laundry</span>
+          </Link>
+        ) : <div />}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">

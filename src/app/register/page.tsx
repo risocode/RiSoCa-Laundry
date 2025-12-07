@@ -17,7 +17,7 @@ import { UserPlus } from "lucide-react"
 export default function RegisterPage() {
   return (
     <div className="flex flex-col h-screen">
-      <AppHeader />
+      <AppHeader showLogo={true} />
       <main className="flex-1 overflow-hidden flex items-center justify-center px-4">
         <Card className="mx-auto max-w-sm w-full">
           <CardHeader className="p-4">

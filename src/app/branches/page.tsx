@@ -14,7 +14,7 @@ const branches = [
 export default function BranchesPage() {
   return (
     <div className="flex flex-col h-screen">
-      <AppHeader />
+      <AppHeader showLogo={true} />
       <main className="flex-1 overflow-hidden container mx-auto px-4 flex flex-col items-center justify-center">
         <div className="flex flex-col items-center text-center mb-8">
             <h1 className="text-2xl md:text-4xl font-bold text-primary">Our Branches</h1>

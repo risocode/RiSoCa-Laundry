@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 function CreateOrderForm() {
     return (
         <div className="flex flex-col h-screen">
-          <AppHeader />
+          <AppHeader showLogo={true} />
           <main className="flex-1 overflow-y-auto flex items-center justify-center container mx-auto px-4 py-4">
             <div className="w-full max-w-2xl">
               <OrderForm />

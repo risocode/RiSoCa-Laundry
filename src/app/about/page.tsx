@@ -7,7 +7,7 @@ import { Info } from 'lucide-react';
 export default function AboutPage() {
   return (
     <div className="flex flex-col h-screen">
-      <AppHeader />
+      <AppHeader showLogo={true} />
       <main className="flex-1 overflow-hidden container mx-auto px-4 flex flex-col items-center justify-center">
         <Card className="w-full max-w-lg">
           <CardHeader>

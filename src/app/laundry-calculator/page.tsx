@@ -46,7 +46,7 @@ export default function LaundryCalculatorPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      <AppHeader />
+      <AppHeader showLogo={true} />
       <main className="flex-1 overflow-hidden flex items-center justify-center container mx-auto px-4">
         <Card className="w-full max-w-md">
             <CardHeader className="p-4">
