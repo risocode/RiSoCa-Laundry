@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Lightbulb, Loader2, Package, Truck, AlertCircle, Weight, Layers } from 'lucide-react';
+import { Loader2, Package, Truck, AlertCircle, Weight, Layers } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 const packages = [
@@ -37,9 +37,6 @@ type OrderFormValues = z.infer<typeof orderSchema>;
 
 interface PricingResult {
   computedPrice: number;
-  isValidCombination: boolean;
-  suggestedServices: string[];
-  invalidServiceChoices: string[];
 }
 
 export function OrderForm() {
@@ -64,7 +61,8 @@ export function OrderForm() {
     startTransition(() => {
       const { servicePackage, weight = 0, distance } = values;
 
-      const loads = Math.max(1, Math.ceil(weight / 7.5));
+      const effectiveWeight = weight < 7.5 ? 7.5 : weight;
+      const loads = Math.max(1, Math.ceil(effectiveWeight / 7.5));
       setCalculatedLoads(loads);
       const baseCost = loads * 180;
 
@@ -79,18 +77,8 @@ export function OrderForm() {
       
       const computedPrice = baseCost + transportFee;
 
-      let suggestedServices: string[] = [];
-      if (servicePackage === 'package2') {
-        suggestedServices.push('Consider Package 3 for a convenient "All-In" option with both pickup and delivery.');
-      } else if (servicePackage === 'package1' && distance > 0) {
-          suggestedServices.push('You have entered a distance. Consider a package with delivery for convenience.');
-      }
-
       setPricingResult({
         computedPrice,
-        isValidCombination: true,
-        suggestedServices,
-        invalidServiceChoices: [],
       });
     });
   };
@@ -214,24 +202,6 @@ export function OrderForm() {
                                 ₱{pricingResult.computedPrice.toFixed(2)}
                             </span>
                         </div>
-                        {pricingResult.isValidCombination && pricingResult.suggestedServices.length > 0 && (
-                            <Alert className='bg-primary/5 border-primary/20 p-2'>
-                                <Lightbulb className="h-4 w-4 text-primary" />
-                                <AlertTitle className='text-primary text-xs font-semibold'>Suggestion</AlertTitle>
-                                <AlertDescription className="text-xs">
-                                    {pricingResult.suggestedServices[0]}
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                        {!pricingResult.isValidCombination && pricingResult.invalidServiceChoices && pricingResult.invalidServiceChoices.length > 0 && (
-                            <Alert variant="destructive" className="p-2">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertTitle className="text-xs font-semibold">Invalid Selection</AlertTitle>
-                                <AlertDescription className="text-xs">
-                                    {pricingResult.invalidServiceChoices[0]}
-                                </AlertDescription>
-                            </Alert>
-                        )}
                     </>
                 ) : (
                     <div className="text-center text-muted-foreground h-16 flex items-center justify-center text-sm">Select a package to see the price.</div>
@@ -243,7 +213,7 @@ export function OrderForm() {
           <Button 
             type="submit" 
             className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-base py-5"
-            disabled={isPending || !pricingResult?.isValidCombination || !form.formState.isValid}
+            disabled={isPending || !form.formState.isValid}
           >
             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Place Order
