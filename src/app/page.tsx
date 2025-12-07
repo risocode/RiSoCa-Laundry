@@ -32,7 +32,7 @@ export default function Home() {
            </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-4 mb-12">
+        <div className="flex flex-row items-center gap-4 mb-12">
           <Link href="/login" passHref>
             <Button size="lg" className="w-40 h-12 text-base rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-shadow">
               <LogIn className="mr-2 h-4 w-4" />
