@@ -1,0 +1,332 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user profile in the RKR Laundry application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user profile."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "User's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "User's last name."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "User's phone number."
+        },
+        "addressIds": {
+          "type": "array",
+          "description": "References to Addresses. (Relationship: UserProfile 1:N Address)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "loyaltyPoints": {
+          "type": "number",
+          "description": "User's accumulated loyalty points."
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "phone"
+      ]
+    },
+    "Address": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Address",
+      "type": "object",
+      "description": "Represents a user's saved address for pickup or delivery.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the address."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Address)"
+        },
+        "street": {
+          "type": "string",
+          "description": "Street address."
+        },
+        "city": {
+          "type": "string",
+          "description": "City."
+        },
+        "state": {
+          "type": "string",
+          "description": "State."
+        },
+        "zipCode": {
+          "type": "string",
+          "description": "Zip code."
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Latitude for precise location."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Longitude for precise location."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "street",
+        "city",
+        "state",
+        "zipCode",
+        "latitude",
+        "longitude"
+      ]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a laundry order placed by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the order."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Order)"
+        },
+        "pickupAddressId": {
+          "type": "string",
+          "description": "Reference to Address for pickup location. (Relationship: Order 1:1 Address)"
+        },
+        "deliveryAddressId": {
+          "type": "string",
+          "description": "Reference to Address for delivery location. (Relationship: Order 1:1 Address)"
+        },
+        "orderDate": {
+          "type": "string",
+          "description": "Date the order was placed.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the order (e.g., placed, in progress, completed)."
+        },
+        "totalCost": {
+          "type": "number",
+          "description": "Total cost of the order."
+        },
+        "serviceIds": {
+          "type": "array",
+          "description": "References to Services. (Relationship: Order N:N Service)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "pickupAddressId",
+        "deliveryAddressId",
+        "orderDate",
+        "status",
+        "totalCost"
+      ]
+    },
+    "Service": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Service",
+      "type": "object",
+      "description": "Represents a laundry service offered by RKR Laundry.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the service."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the service (e.g., Wash & Fold, Dry Cleaning)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the service."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the service."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "price"
+      ]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a notification sent to the user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the notification."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Notification)"
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. (Relationship: Order 1:N Notification)"
+        },
+        "message": {
+          "type": "string",
+          "description": "Notification message."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of when the notification was sent.",
+          "format": "date-time"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of notification (e.g., SMS, Email, In-App)."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the notification (e.g., Sent, Failed)."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "message",
+        "timestamp",
+        "type",
+        "status"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profiles.  Path-based ownership ensures only the authenticated user (userId) can access their profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/addresses/{addressId}",
+        "definition": {
+          "entityName": "Address",
+          "schema": {
+            "$ref": "#/backend/entities/Address"
+          },
+          "description": "Stores addresses associated with a specific user. Path-based ownership ensures only the authenticated user (userId) can access their addresses.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "addressId",
+              "description": "The unique identifier of the address."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Stores laundry orders placed by a specific user. Path-based ownership ensures only the authenticated user (userId) can access their orders.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "orderId",
+              "description": "The unique identifier of the order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/services/{serviceId}",
+        "definition": {
+          "entityName": "Service",
+          "schema": {
+            "$ref": "#/backend/entities/Service"
+          },
+          "description": "Stores information about laundry services offered.  This data is generally readable by all users.",
+          "params": [
+            {
+              "name": "serviceId",
+              "description": "The unique identifier of the service."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "Stores notifications associated with a specific user. Path-based ownership ensures only the authenticated user (userId) can access their notifications.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "notificationId",
+              "description": "The unique identifier of the notification."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to provide a secure, scalable, and maintainable backend for the RKR Laundry application, focusing on Authorization Independence and clear separation of data.  It uses path-based ownership for user-specific data and enforces Structural Segregation, ensuring that each collection has a homogeneous security posture.\n\n**Authorization Independence (CRITICAL):**\n\n*   The primary strategy for achieving authorization independence is using path-based ownership for `UserProfile`, `Address`, `Order`, and `Notification` entities, with the user ID embedded in the path (`/users/{userId}/...`). This eliminates the need for `get()` calls in security rules to validate ownership and enables atomic operations. No denormalization is required since these are simple path-based ownership scenarios.\n\n**Structural Segregation (Homogeneous Security Posture):**\n\n*   Each top-level collection (`/users`, `/services`) represents distinct data types with different access patterns. User-specific data is grouped under the `/users/{userId}` path, ensuring clear ownership. The `/services` collection stores global data accessible to all users.\n\n**Access Modeling (Standardization and Consistency):**\n\n*   **Private Data:** User profiles and associated data (addresses, orders, notifications) are stored under `/users/{userId}`, ensuring that only the authenticated user can access their data.\n*   **Global Data:** The `/services` collection stores information about laundry services offered by RKR Laundry. This data is generally readable by all users.\n\n**QAPs (Rules are not Filters):**\n\n*   The structure is designed to support secure list operations. Rules can easily validate that a user has access to documents based on the path.\n    *   Listing addresses, orders, and notifications under `/users/{userId}` inherently limits results to the current user, making list operations secure without complex filtering in rules.\n    *   Listing services is inherently public.\n\n**Invariants:**\n\n*   Path-based ownership enforces the invariant that only the user can create, modify, or delete their own data (addresses, orders, notifications).\n\nThis design promotes clear, concise security rules, simplifies data management, and ensures a scalable and secure application."
+  }
+}
