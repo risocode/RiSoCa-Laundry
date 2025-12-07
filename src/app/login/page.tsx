@@ -3,7 +3,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 
 import { AppHeader } from '@/components/app-header'
@@ -48,9 +47,9 @@ export default function LoginPage() {
         throw new Error("Login failed, please try again.");
       }
 
-      // After successful sign-in, fetch the user's role from the `users` table
+      // After successful sign-in, fetch the user's role from the `profiles` table
       const { data: userProfile, error: profileError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('role')
         .eq('id', signInData.user.id)
         .single();
@@ -115,12 +114,6 @@ export default function LoginPage() {
               <div className="grid gap-1.5">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <Link
-                    href="#"
-                    className="ml-auto inline-block text-xs underline"
-                  >
-                    Forgot?
-                  </Link>
                 </div>
                 <Input
                   id="password"
@@ -141,13 +134,6 @@ export default function LoginPage() {
                 {loading ? 'Logging in...' : 'Login'}
               </Button>
             </form>
-
-            <div className="mt-3 text-center text-xs">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="underline">
-                Sign up
-              </Link>
-            </div>
           </CardContent>
         </Card>
       </main>
