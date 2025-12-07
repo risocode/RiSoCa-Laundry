@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Loader2, Weight, Layers, Info, MapPin, User, Phone } from 'lucide-react';
+import { Loader2, Weight, Layers, Info, MapPin, User, Phone, Bike, PersonStanding } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -39,6 +39,7 @@ const orderSchema = z.object({
 const customerInfoSchema = z.object({
     customerName: z.string().min(2, "Name is required."),
     contactNumber: z.string().min(10, "A valid contact number is required."),
+    deliveryOption: z.string().optional(),
 });
 
 type OrderFormValues = z.infer<typeof orderSchema>;
@@ -83,7 +84,8 @@ export function OrderForm() {
     resolver: zodResolver(customerInfoSchema),
     defaultValues: {
         customerName: '',
-        contactNumber: ''
+        contactNumber: '',
+        deliveryOption: 'drop-off',
     }
   });
 
@@ -389,6 +391,33 @@ export function OrderForm() {
                         <p className="text-xs font-medium text-destructive">{customerForm.formState.errors.contactNumber.message}</p>
                     )}
                 </div>
+                {pendingOrder?.orderData.servicePackage === 'package2' && (
+                    <div className="space-y-2">
+                        <Label className="flex items-center gap-2">Transport Option</Label>
+                        <Controller
+                            name="deliveryOption"
+                            control={customerForm.control}
+                            render={({ field }) => (
+                                <RadioGroup
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                className="grid grid-cols-2 gap-2"
+                                >
+                                    <Label htmlFor="drop-off" className={`flex items-center gap-2 rounded-lg border p-3 transition-all cursor-pointer hover:bg-muted/50 ${field.value === 'drop-off' ? 'border-primary bg-primary/5' : ''}`}>
+                                        <RadioGroupItem value="drop-off" id="drop-off"/>
+                                        <PersonStanding className="h-4 w-4" />
+                                        <span className="font-semibold text-sm">Customer Drop-off</span>
+                                    </Label>
+                                    <Label htmlFor="pick-up" className={`flex items-center gap-2 rounded-lg border p-3 transition-all cursor-pointer hover:bg-muted/50 ${field.value === 'pick-up' ? 'border-primary bg-primary/5' : ''}`}>
+                                        <RadioGroupItem value="pick-up" id="pick-up"/>
+                                        <Bike className="h-4 w-4" />
+                                        <span className="font-semibold text-sm">Rider Pick-up</span>
+                                    </Label>
+                                </RadioGroup>
+                            )}
+                        />
+                    </div>
+                )}
                 <DialogFooter>
                     <Button type="submit">Confirm Order</Button>
                 </DialogFooter>
@@ -398,3 +427,5 @@ export function OrderForm() {
     </>
   );
 }
+
+    
