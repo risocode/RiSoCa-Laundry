@@ -18,7 +18,7 @@ import {z} from 'genkit';
 // Define the input schema
 const PricingLogicGuidanceInputSchema = z.object({
   servicePackage: z.string().describe('The service package selected by the user (e.g., package1, package2).'),
-  loads: z.number().optional().describe('The number of laundry loads.'),
+  weight: z.number().optional().describe('The weight of the laundry in kilograms.'),
   distance: z.number().describe('The distance for pickup and/or delivery, in kilometers.'),
 });
 export type PricingLogicGuidanceInput = z.infer<typeof PricingLogicGuidanceInputSchema>;
@@ -41,8 +41,8 @@ export type PricingLogicGuidanceOutput = z.infer<typeof PricingLogicGuidanceOutp
 
 // Define the main function
 export async function pricingLogicGuidance(input: PricingLogicGuidanceInput): Promise<PricingLogicGuidanceOutput> {
-  // If loads is not provided, default to 1 for calculation
-  const safeInput = { ...input, loads: input.loads ?? 1 };
+  // If weight is not provided, default to 1 for calculation
+  const safeInput = { ...input, weight: input.weight ?? 1 };
   return pricingLogicGuidanceFlow(safeInput);
 }
 
@@ -54,7 +54,7 @@ const pricingLogicGuidancePrompt = ai.definePrompt({
   prompt: `You are an AI assistant for a laundry service, designed to calculate the price of an order in Philippine Pesos (PHP).
 
   Here is the pricing structure:
-  - Package 1 (Wash, Dry, Fold): ₱180 per load.
+  - Package 1 (Wash, Dry, Fold): ₱180 per kg.
   - Transport Fee: ₱10 per kilometer (applies to pick-up or delivery, one way).
 
   Packages:
@@ -64,13 +64,13 @@ const pricingLogicGuidancePrompt = ai.definePrompt({
 
   User Selections:
   - Package: {{{servicePackage}}}
-  - Number of Loads: {{{loads}}}
+  - Weight (kg): {{{weight}}}
   - Distance: {{{distance}}} km
 
   Tasks:
   1.  **isValidCombination**: This is always true.
-  2.  **computedPrice**: Calculate the total price in PHP based on the selected package, number of loads, and distance.
-      - Calculate the base cost: {{{loads}}} * 180.
+  2.  **computedPrice**: Calculate the total price in PHP based on the selected package, weight, and distance.
+      - Calculate the base cost: {{{weight}}} * 180.
       - For Package 2, add a one-way transport fee: {{{distance}}} * 10.
       - For Package 3, add a two-way transport fee: ({{{distance}}} * 10) * 2.
       - Sum the costs to get the final price.
@@ -87,7 +87,7 @@ const pricingLogicGuidanceFlow = ai.defineFlow(
     name: 'pricingLogicGuidanceFlow',
     inputSchema: z.object({
         servicePackage: z.string(),
-        loads: z.number(),
+        weight: z.number(),
         distance: z.number(),
     }),
     outputSchema: PricingLogicGuidanceOutputSchema,
@@ -97,4 +97,3 @@ const pricingLogicGuidanceFlow = ai.defineFlow(
     return output!;
   }
 );
-

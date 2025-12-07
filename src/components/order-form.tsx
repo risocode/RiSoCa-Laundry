@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { pricingLogicGuidance, PricingLogicGuidanceOutput } from '@/ai/flows/pricing-logic-guidance';
-import { Lightbulb, Loader2, Package, Truck, AlertCircle, ShoppingCart } from 'lucide-react';
+import { Lightbulb, Loader2, Package, Truck, AlertCircle, ShoppingCart, Weight } from 'lucide-react';
 import { Separator } from './ui/separator';
 
 const packages = [
@@ -30,7 +30,7 @@ const packages = [
 
 const orderSchema = z.object({
   servicePackage: z.string().min(1, "Please select a package."),
-  loads: z.coerce.number().max(10, "Maximum of 10 loads per order.").optional(),
+  weight: z.coerce.number().max(10, "Maximum of 10kg per order.").optional(),
   distance: z.coerce.number().min(0, "Distance cannot be negative.").max(50, "We don't deliver beyond 50 km."),
 });
 
@@ -44,7 +44,7 @@ export function OrderForm() {
     resolver: zodResolver(orderSchema),
     defaultValues: {
       servicePackage: 'package1',
-      loads: 1,
+      weight: 1,
       distance: 5,
     },
     mode: 'onChange'
@@ -126,20 +126,20 @@ export function OrderForm() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-                <Label htmlFor="loads" className="text-base font-semibold">2. Loads (Optional)</Label>
+                <Label htmlFor="weight" className="text-base font-semibold">2. Weight (kg)</Label>
                 <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-md">
-                    <ShoppingCart className="h-5 w-5 text-muted-foreground" />
+                    <Weight className="h-5 w-5 text-muted-foreground" />
                     <div className='flex-grow'>
-                        <Label htmlFor="loads" className="text-xs font-medium text-muted-foreground">Number of Loads</Label>
+                        <Label htmlFor="weight" className="text-xs font-medium text-muted-foreground">Weight in KG (Optional)</Label>
                         <Controller
-                            name="loads"
+                            name="weight"
                             control={form.control}
-                            render={({ field }) => <Input id="loads" type="number" placeholder="1" className="bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0" {...field} value={field.value ?? ''}/>}
+                            render={({ field }) => <Input id="weight" type="number" placeholder="1" className="bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" {...field} value={field.value ?? ''}/>}
                         />
                     </div>
                 </div>
-                 {form.formState.errors.loads && (
-                    <p className="text-xs font-medium text-destructive">{form.formState.errors.loads.message}</p>
+                 {form.formState.errors.weight && (
+                    <p className="text-xs font-medium text-destructive">{form.formState.errors.weight.message}</p>
                 )}
             </div>
             <div className="space-y-2">
