@@ -22,9 +22,9 @@ export default function Home() {
   return (
     <div className="flex flex-col h-screen">
       <AppHeader />
-      <main className="flex-1 overflow-y-auto flex flex-col items-center justify-center container mx-auto px-4 text-center py-4">
+      <main className="flex-1 overflow-y-auto flex flex-col items-center container mx-auto px-4 text-center pt-8">
         
-        <div className="flex flex-col items-center mb-6 pt-4">
+        <div className="flex flex-col items-center mb-6">
             <div className="flex items-center gap-2 md:gap-3">
               <WashingMachine className="h-16 w-16 md:h-20 md:w-20 text-primary" />
               <span className="font-bold text-primary text-5xl md:text-6xl">RKR Laundry</span>
