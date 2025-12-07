@@ -39,78 +39,100 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const router = useRouter();
 
     useEffect(() => {
-        const fetchUserProfile = async (currentUser: User) => {
+        const fetchSessionAndProfile = async () => {
+            // 1. Get the initial session
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
             
-            const { data: profileData, error: profileError } = await supabase
-                .from('profiles')
-                .select('first_name, last_name')
-                .eq('id', currentUser.id)
-                .single();
-
-            const { data: userData, error: userError } = await supabase
-                .from('users')
-                .select('role')
-                .eq('id', currentUser.id)
-                .single();
-            
-            // If either query returns an error (e.g., profile not found), log it and return null.
-            if (profileError || userError) {
-                // Don't log if the error is just that the row doesn't exist, which is a valid case.
-                if (profileError && profileError.code !== 'PGRST116') {
-                    console.error("Error fetching user profile:", profileError);
-                }
-                if (userError && userError.code !== 'PGRST116') {
-                    console.error("Error fetching user role:", userError);
-                }
-                return null;
+            if (sessionError) {
+                console.error("Error fetching session:", sessionError);
+                setLoading(false);
+                return;
             }
 
-            // If we have both profile and user data, construct the full profile.
-            if (profileData && userData) {
-                return {
-                    id: currentUser.id,
-                    first_name: profileData.first_name,
-                    last_name: profileData.last_name,
-                    role: userData.role,
-                };
-            }
-
-            return null;
-        };
-
-        const getInitialSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
             const currentUser = session?.user ?? null;
             setUser(currentUser);
-            
+
+            // 2. If a user exists, fetch their profile and role
             if (currentUser) {
-                const fullProfile = await fetchUserProfile(currentUser);
-                setProfile(fullProfile);
+                const { data: profileData, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('first_name, last_name')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (profileError || userError) {
+                    if ((profileError && profileError.code !== 'PGRST116') || (userError && userError.code !== 'PGRST116')) {
+                         console.error("Error fetching user profile or role:", profileError || userError);
+                    }
+                    // Even with an error, the user is technically logged in.
+                    // We just don't have their profile details.
+                    setProfile(null);
+                } else if (profileData && userData) {
+                    setProfile({
+                        id: currentUser.id,
+                        first_name: profileData.first_name,
+                        last_name: profileData.last_name,
+                        role: userData.role,
+                    });
+                }
             }
+            
+            // 3. Set loading to false only after all async operations are done
             setLoading(false);
         };
+        
+        fetchSessionAndProfile();
 
-        getInitialSession();
-
+        // 4. Set up a listener for auth state changes
         const { data: authListener } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
-                setSession(session);
-                const currentUser = session?.user ?? null;
+            async (_event, newSession) => {
+                setSession(newSession);
+                const currentUser = newSession?.user ?? null;
                 setUser(currentUser);
 
-                if (currentUser) {
-                    const fullProfile = await fetchUserProfile(currentUser);
-                    setProfile(fullProfile);
-                } else {
+                // If user logs out, clear profile
+                if (!currentUser) {
                     setProfile(null);
+                    setLoading(false);
+                    return;
                 }
-                 setLoading(false);
+                
+                // If user logs in, fetch their profile
+                const { data: profileData, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('first_name, last_name')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', currentUser.id)
+                    .single();
+
+                if (profileData && userData) {
+                     setProfile({
+                        id: currentUser.id,
+                        first_name: profileData.first_name,
+                        last_name: profileData.last_name,
+                        role: userData.role,
+                    });
+                } else {
+                     setProfile(null);
+                }
+                setLoading(false);
             }
         );
 
         return () => {
-            authListener.subscription.unsubscribe();
+            authListener?.subscription.unsubscribe();
         };
     }, []);
 
@@ -127,6 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loading,
     };
 
+    // Render a loading state or children
     return (
         <AuthContext.Provider value={value}>
             {children}

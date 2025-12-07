@@ -92,23 +92,18 @@ export default function RegisterPage() {
          throw new Error("Signup succeeded but no user data was returned.");
       }
 
-
-      let countdown = 3;
       toast({
         variant: 'default',
         title: 'Signup Successful!',
-        description: `Redirecting to login in ${countdown}s...`,
+        description: `Redirecting to login...`,
         className: 'bg-green-500 text-white',
         duration: 3000,
       });
+      
+      setTimeout(() => {
+        router.push('/login');
+      }, 3000)
 
-      const interval = setInterval(() => {
-        countdown -= 1;
-        if (countdown <= 0) {
-          clearInterval(interval);
-          router.push('/login');
-        }
-      }, 1000);
 
     } catch (e: any) {
        setError(e.message || 'An unexpected error occurred.');
