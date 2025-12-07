@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +6,7 @@ import L, { LatLng } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default Leaflet icon path in Next.js
-// This needs to be done once in a client component
+// This needs to be done once in a client component.
 const DefaultIcon = L.icon({
     iconUrl: '/marker-icon.png',
     iconRetinaUrl: '/marker-icon-2x.png',
@@ -92,5 +91,3 @@ export function LocationMap({ onPositionChange }: { onPositionChange: (pos: LatL
         </div>
     );
 }
-
-    
