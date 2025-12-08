@@ -7,18 +7,17 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { OrderList, Order } from '@/components/order-list';
+import { OrderList } from '@/components/order-list';
+import type { Order } from '@/components/order-list';
 import { Loader2, Inbox } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useOrders } from '@/context/OrderContext';
 
 export default function AdminOrdersPage() {
   const { toast } = useToast();
-  // Use 'allOrders' and 'loadingAdmin' from the context for the admin view.
   const { allOrders, loadingAdmin, updateOrderStatus } = useOrders();
 
   const handleUpdateOrder = async (updatedOrder: Order) => {
-    // The context's updateOrderStatus now handles the batch write.
     await updateOrderStatus(updatedOrder.id, updatedOrder.status, updatedOrder.userId);
 
     toast({

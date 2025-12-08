@@ -4,6 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { Order } from '@/components/order-list';
+import { format } from 'date-fns';
 
 type CustomerOrderListProps = {
   orders: Order[];
@@ -44,8 +45,13 @@ export function CustomerOrderList({ orders, onOrderSelect }: CustomerOrderListPr
               className="w-full cursor-pointer hover:border-primary transition-colors"
               onClick={() => onOrderSelect(order)}
             >
-              <CardHeader className="p-4 flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">{order.id}</CardTitle>
+              <CardHeader className="p-4 flex flex-row items-start justify-between">
+                 <div>
+                    <CardTitle className="text-base">{order.id}</CardTitle>
+                     <p className="text-xs text-muted-foreground">
+                        {order.orderDate ? format(order.orderDate.toDate(), 'PPP') : 'Date not available'}
+                    </p>
+                 </div>
                 <Badge className={`${getStatusColor(order.status)} hover:${getStatusColor(order.status)} text-white`}>
                   {order.status}
                 </Badge>

@@ -104,6 +104,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
         <TableRow>
             <TableCell className="font-medium">{order.id}</TableCell>
             <TableCell>{order.customerName}</TableCell>
+            <TableCell>{order.contactNumber}</TableCell>
             <TableCell>
                 {isEditing ? (
                     <Input type="number" value={editableOrder.weight} onChange={e => handleFieldChange('weight', e.target.value)} className="h-8 w-24" disabled={isSaving}/>
@@ -273,6 +274,7 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
             <TableRow>
               <TableHead>Order ID</TableHead>
               <TableHead>Customer</TableHead>
+              <TableHead>Contact</TableHead>
               <TableHead>Weight (kg)</TableHead>
               <TableHead>Load</TableHead>
               <TableHead>Total (₱)</TableHead>

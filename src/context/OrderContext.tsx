@@ -21,20 +21,18 @@ const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
-  const { profile } = useAuth();
+  const { profile, loading: profileLoading } = useAuth();
   const firestore = useFirestore();
 
   // --- Customer-specific data fetching ---
   const customerOrdersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // Securely query only the nested subcollection for the logged-in user.
     return query(collection(firestore, `users/${user.uid}/orders`), orderBy("orderDate", "desc"));
   }, [user, firestore]);
   const { data: customerOrdersData, isLoading: customerOrdersLoading } = useCollection<Order>(customerOrdersQuery);
 
   // --- Admin-specific data fetching ---
   const adminOrdersQuery = useMemoFirebase(() => {
-    // Only admins should query the /allOrders collection.
     if (!firestore || !profile || profile.role !== 'admin') return null;
     return query(collection(firestore, 'allOrders'), orderBy("orderDate", "desc"));
   }, [firestore, profile]);
@@ -57,8 +55,8 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
 
     const batch = writeBatch(firestore);
     
-    // Use the same payload but ensure the ID is set for the admin copy
-    batch.set(userOrderRef, orderPayload);
+    // Use the same payload and add the generated ID for consistency
+    batch.set(userOrderRef, { ...orderPayload, id: newOrderId });
     batch.set(adminOrderRef, { ...orderPayload, id: newOrderId });
 
     batch.commit().catch(err => {
@@ -86,7 +84,7 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
     batch.commit().catch(err => {
         console.error("Order status update failed:", err);
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: `allOrders/${orderId}`, // Emit error for the more restrictive path.
+        path: `allOrders/${orderId}`,
         operation: 'update',
         requestResourceData: { status },
         }));
@@ -96,14 +94,17 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const memoizedCustomerOrders = useMemo(() => customerOrdersData || [], [customerOrdersData]);
   const memoizedAdminOrders = useMemo(() => allOrdersData || [], [allOrdersData]);
 
+  const isLoading = customerOrdersLoading || (user ? profileLoading : false);
+  const isAdminLoading = adminOrdersLoading || (user && profile ? profileLoading : false);
+
   return (
     <OrderContext.Provider value={{ 
         orders: memoizedCustomerOrders, 
         allOrders: memoizedAdminOrders,
         addOrder, 
         updateOrderStatus, 
-        loading: customerOrdersLoading, 
-        loadingAdmin: adminOrdersLoading
+        loading: isLoading, 
+        loadingAdmin: isAdminLoading
     }}>
       {children}
     </OrderContext.Provider>

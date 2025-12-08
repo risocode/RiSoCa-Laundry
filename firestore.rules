@@ -54,7 +54,7 @@ service cloud.firestore {
       
       // Orders are nested under the user, only the user can manage them.
       match /orders/{orderId} {
-        allow read, write: if isOwner(userId) || isAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
     
