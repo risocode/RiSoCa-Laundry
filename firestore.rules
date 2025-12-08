@@ -1,23 +1,22 @@
 /**
- * Core Philosophy: This ruleset enforces a strict user-ownership model for user data and a role-based access model
- * for global data like orders. User-specific data is nested, ensuring privacy, while a global `orders` collection
- * allows admins to manage all orders.
+ * Core Philosophy: This ruleset enforces a strict user-ownership model for user data. All user-specific data,
+ * including orders, is nested under the user's own document to ensure privacy. A separate, top-level `/orders`
+ * collection exists exclusively for admin access, allowing them to manage all orders without accessing user
+ * private data directly.
  *
  * Data Structure:
  * - /users/{userId}: A collection storing individual UserProfile documents.
  *   - /addresses/{addressId}: Subcollection for a user's addresses.
  *   - /notifications/{notificationId}: Subcollection for a user's notifications.
- * - /orders/{orderId}: A top-level collection for all laundry orders. Admins have full access. Users can create
- *   orders and read/update their own.
+ *   - /orders/{orderId}: Subcollection for a user's private order history.
+ * - /orders/{orderId}: A top-level collection for all laundry orders. This is a mirror of user orders, for admin use.
  * - /services/{serviceId}: A top-level collection for public service information.
- * - /service_rates/{rateId}: A top-level collection for service pricing. Admins have full access.
  *
  * Key Security Decisions:
- * - User Data Privacy: Data under `/users/{userId}` is private to the owning user.
- * - Admin Role: An `admin` role is defined in the user's profile. This role grants broader permissions,
- *   specifically for managing the global `/orders` and `/service_rates` collections.
- * - Centralized Orders: All orders are stored in a single `/orders` collection. Security rules ensure users
- *   can only see their own orders, while admins can see all of them. This simplifies admin-related queries.
+ * - User Data Privacy: All data under `/users/{userId}` is private to the owning user.
+ * - Admin Role: An `admin` role in a user's profile grants broader permissions for managing global collections.
+ * - Dual-Write for Orders: Orders are written to both the user's private subcollection and the global admin collection.
+ *   This keeps user data isolated while providing admins a central place to manage operations.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -35,69 +34,66 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-    
-    function isNewUserProfile(userId) {
-      return isOwner(userId) && request.resource.data.id == userId;
-    }
-    
-    function isImmutableUserId() {
-      return request.resource.data.id == resource.data.id;
-    }
-    
     function isNewOwnedDocument(userId) {
       return isOwner(userId) && request.resource.data.userId == userId;
     }
-    
-    function isImmutableOwnerLink() {
-      return request.resource.data.userId == resource.data.userId;
-    }
-    
+
     function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      // Check for 'admin' role on the user's own profile document.
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     //-------------------------------------------------------------------------
-    // User Data
+    // User Data Collections
     //-------------------------------------------------------------------------
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
-      allow create: if isNewUserProfile(userId);
-      allow update: if isExistingOwner(userId) && isImmutableUserId();
-      allow delete: if isOwner(userId) || isAdmin();
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId); // Allow user to create their own profile document
+      allow update, delete: if isOwner(userId);
+      allow list: if isAdmin(); // Only admins can list all users
 
+      // Nested user-specific data
       match /addresses/{addressId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isOwner(userId);
       }
 
       match /notifications/{notificationId} {
-        allow get, list, create, update, delete: if isOwner(userId);
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Orders are nested under the user for privacy and ownership.
+      match /orders/{orderId} {
+        allow read, list: if isOwner(userId);
+        // Users create orders via a batch write managed by the OrderContext.
+        // Direct creation here is allowed as part of that batch.
+        allow create: if isNewOwnedDocument(userId);
+        // Only admins can update the user's copy of the order status.
+        allow update: if isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
       }
     }
     
     //-------------------------------------------------------------------------
-    // Global Data
+    // Global & Admin-Facing Collections
     //-------------------------------------------------------------------------
     
+    // Admin-only collection for managing all orders.
     match /orders/{orderId} {
-        allow get: if isOwner(resource.data.userId) || isAdmin();
-        allow list: if isAdmin(); // Admins can list all orders. Users query with 'where' clause, enforced by client logic.
+        allow read, list, update, delete: if isAdmin();
+        // Users create orders via a batch write that also writes here.
         allow create: if isNewOwnedDocument(request.auth.uid);
-        allow update: if isAdmin(); // Only admins can update order status, weight, etc.
-        allow delete: if isAdmin();
     }
 
+    // Publicly readable, admin-writable services.
     match /services/{serviceId} {
       allow get, list: if true;
       allow create, update, delete: if isAdmin();
     }
-    
+
+    // Publicly readable, admin-writable service rates.
     match /service_rates/{rateId} {
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+        allow get, list: if true;
+        allow create, update, delete: if isAdmin();
     }
   }
 }

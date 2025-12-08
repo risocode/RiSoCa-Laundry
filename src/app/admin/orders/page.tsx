@@ -18,11 +18,12 @@ export default function AdminOrdersPage() {
 
   const handleUpdateOrder = async (updatedOrder: Order) => {
     // The logic is now simplified as it's handled globally in OrderContext
-    await updateOrderStatus(updatedOrder.id, updatedOrder.status);
+    // We must pass the userId to construct the correct path for the batch update
+    await updateOrderStatus(updatedOrder.id, updatedOrder.status, updatedOrder.userId);
 
     toast({
         title: 'Order Updated',
-        description: `Order ${updatedOrder.id} has been successfully updated.`,
+        description: `Order #${updatedOrder.id.substring(0, 7)}... has been updated.`,
     });
   }
 
