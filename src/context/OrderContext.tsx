@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import type { Order } from '@/components/order-list';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp, query, orderBy, getDocs } from 'firebase/firestore';
@@ -11,7 +11,7 @@ import { useAuth } from './AuthContext';
 interface OrderContextType {
   orders: Order[];
   allOrders: Order[];
-  addOrder: (order: Omit<Order, 'id' | 'orderDate' | 'userId'>) => Promise<void>;
+  addOrder: (order: Omit<Order, 'id' | 'orderDate'>) => Promise<void>;
   updateOrderStatus: (orderId: string, status: string, userId: string) => Promise<void>;
   loading: boolean;
   loadingAdmin: boolean;
@@ -23,48 +23,53 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
   const { profile, loading: profileLoading } = useAuth();
   const firestore = useFirestore();
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [loadingAdmin, setLoadingAdmin] = useState(true);
 
+  // Customer-specific orders query from their nested subcollection.
   const ordersQuery = useMemoFirebase(() => {
-    if (profileLoading || !firestore || !user) {
+    if (!firestore || !user) {
       return null;
     }
-    // All users, including admins, fetch from their own nested collection for the main app view.
     return query(collection(firestore, `users/${user.uid}/orders`), orderBy("orderDate", "desc"));
-  }, [user, firestore, profileLoading]);
+  }, [user, firestore]);
   
   const { data: ordersData, isLoading: ordersLoading } = useCollection<Order>(ordersQuery);
 
-  // Admin-specific logic for fetching all orders. This should be used carefully on admin pages.
-   const adminOrdersQuery = useMemoFirebase(async () => {
-    if (profileLoading || !firestore || !user || !profile || profile.role !== 'admin') {
-      return [];
-    }
-    
-    // In a real-world, large-scale app, this is inefficient.
-    // A better approach would be a separate 'allOrders' collection managed by backend functions.
-    // For this project, we will fetch users and then their orders.
-    const usersSnapshot = await getDocs(collection(firestore, 'users'));
-    const allOrders: Order[] = [];
-    for (const userDoc of usersSnapshot.docs) {
-      const ordersSnapshot = await getDocs(collection(firestore, `users/${userDoc.id}/orders`));
-      ordersSnapshot.forEach(orderDoc => {
-        allOrders.push({ id: orderDoc.id, ...orderDoc.data() } as Order);
+  // Admin-specific logic for fetching all orders.
+  useEffect(() => {
+    async function fetchAllOrders() {
+      if (profileLoading || !firestore || !profile || profile.role !== 'admin') {
+        setLoadingAdmin(false);
+        setAllOrders([]);
+        return;
+      }
+      
+      setLoadingAdmin(true);
+      // In a real-world, large-scale app, this is inefficient.
+      // A better approach would be a separate 'allOrders' collection managed by backend functions.
+      // For this project, we will fetch users and then their orders.
+      const usersSnapshot = await getDocs(collection(firestore, 'users'));
+      const ordersPromises = usersSnapshot.docs.map(userDoc => 
+        getDocs(collection(firestore, `users/${userDoc.id}/orders`))
+      );
+      
+      const allOrdersSnapshots = await Promise.all(ordersPromises);
+      const fetchedOrders: Order[] = [];
+      allOrdersSnapshots.forEach(ordersSnapshot => {
+        ordersSnapshot.forEach(orderDoc => {
+          fetchedOrders.push({ id: orderDoc.id, ...orderDoc.data() } as Order);
+        });
       });
+
+      setAllOrders(fetchedOrders.sort((a, b) => b.orderDate.toMillis() - a.orderDate.toMillis()));
+      setLoadingAdmin(false);
     }
-    return allOrders.sort((a, b) => b.orderDate.toMillis() - a.orderDate.toMillis());
-  }, [firestore, profile, profileLoading, user]);
 
-  const [allOrders, setAllOrders] = React.useState<Order[]>([]);
-  const [loadingAdmin, setLoadingAdmin] = React.useState(true);
+    fetchAllOrders();
+  }, [firestore, profile, profileLoading]);
 
-  React.useEffect(() => {
-      adminOrdersQuery.then(data => {
-          setAllOrders(data);
-          setLoadingAdmin(false);
-      })
-  }, [adminOrdersQuery]);
-
-  const addOrder = async (newOrderData: Omit<Order, 'id' | 'orderDate' | 'userId'>) => {
+  const addOrder = async (newOrderData: Omit<Order, 'id' | 'orderDate'>) => {
     if (!user || !firestore) return;
 
     const orderPayload = {
@@ -73,6 +78,7 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
       userId: user.uid,
     };
     
+    // Write ONLY to the user's nested subcollection.
     const ordersColRef = collection(firestore, `users/${user.uid}/orders`);
     addDoc(ordersColRef, orderPayload).catch(err => {
       console.error("Add order failed:", err);
@@ -85,7 +91,7 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateOrderStatus = async (orderId: string, status: string, userId: string) => {
-    if (!firestore) return;
+    if (!firestore || !userId) return;
 
     // Admin updates the order in the specific user's subcollection.
     const orderRef = doc(firestore, `users/${userId}/orders`, orderId);
