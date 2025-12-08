@@ -20,22 +20,30 @@ interface OrderContextType {
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const { profile, loading: profileLoading } = useAuth();
   const firestore = useFirestore();
 
   // --- Customer-specific data fetching ---
   const customerOrdersQuery = useMemoFirebase(() => {
-    if (!firestore || !user || (profile && profile.role === 'admin')) return null;
+    // Only create the query if we are certain the user is a logged-in customer.
+    if (profileLoading || !firestore || !user || profile?.role === 'admin') {
+      return null;
+    }
     return query(collection(firestore, `users/${user.uid}/orders`), orderBy("orderDate", "desc"));
-  }, [firestore, user, profile]);
+  }, [firestore, user, profile, profileLoading]);
+  
   const { data: customerOrdersData, isLoading: customerOrdersLoading } = useCollection<Order>(customerOrdersQuery);
 
   // --- Admin-specific data fetching ---
   const adminOrdersQuery = useMemoFirebase(() => {
-    if (!firestore || !profile || profile.role !== 'admin') return null;
+    // Only create the query if we are certain the user is an admin.
+    if (profileLoading || !firestore || !profile || profile.role !== 'admin') {
+      return null;
+    }
     return query(collection(firestore, 'orders'), orderBy("orderDate", "desc"));
-  }, [firestore, profile]);
+  }, [firestore, profile, profileLoading]);
+
   const { data: allOrdersData, isLoading: adminOrdersLoading } = useCollection<Order>(adminOrdersQuery);
 
 
@@ -91,18 +99,15 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   
   const memoizedCustomerOrders = useMemo(() => customerOrdersData || [], [customerOrdersData]);
   const memoizedAdminOrders = useMemo(() => allOrdersData || [], [allOrdersData]);
-
-  const isLoading = isUserLoading || customerOrdersLoading;
-  const isAdminLoading = profileLoading || adminOrdersLoading;
-
+  
   return (
     <OrderContext.Provider value={{ 
         orders: memoizedCustomerOrders, 
         allOrders: memoizedAdminOrders,
         addOrder, 
         updateOrderStatus, 
-        loading: isLoading, 
-        loadingAdmin: isAdminLoading
+        loading: customerOrdersLoading, 
+        loadingAdmin: adminOrdersLoading
     }}>
       {children}
     </OrderContext.Provider>

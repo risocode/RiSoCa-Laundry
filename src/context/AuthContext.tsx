@@ -27,23 +27,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [profileLoading, setProfileLoading] = useState(true);
 
     useEffect(() => {
-        setProfileLoading(true);
-
         if (isUserLoading || !firestore) {
+            // We can't do anything until we know if a user is logged in
+            // and we have a firestore instance.
+            setProfileLoading(true);
             return;
         }
 
         if (!user) {
+            // User is not logged in, so there's no profile to fetch.
             setProfile(null);
             setProfileLoading(false);
             return;
         }
         
+        // At this point, we have a user and firestore, so we can fetch the profile.
+        setProfileLoading(true);
         const profileDocRef = doc(firestore, 'users', user.uid);
         const unsubscribe = onSnapshot(profileDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 setProfile(docSnap.data() as UserProfile);
             } else {
+                // This case can happen if a user is authenticated but their profile doc hasn't been created yet.
                 setProfile(null);
             }
             setProfileLoading(false);
@@ -56,6 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubscribe();
     }, [user, isUserLoading, firestore]);
 
+    // The overall loading state is true if we are still checking the auth state OR fetching the profile.
     const isLoading = isUserLoading || profileLoading;
 
     return (
