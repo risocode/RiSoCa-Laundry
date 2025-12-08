@@ -18,11 +18,22 @@ export default function AdminOrdersPage() {
   const { allOrders, loadingAdmin, updateOrderStatus } = useOrders();
 
   const handleUpdateOrder = async (updatedOrder: Order) => {
-    await updateOrderStatus(updatedOrder.id, updatedOrder.status, updatedOrder.userId);
+    // The context needs the original userId to update the user's private collection
+    const originalOrder = allOrders.find(o => o.id === updatedOrder.id);
+    if (!originalOrder) {
+        toast({
+            variant: 'destructive',
+            title: 'Update Failed',
+            description: 'Could not find the original order to update.',
+        });
+        return;
+    }
+    
+    await updateOrderStatus(updatedOrder.id, updatedOrder.status, originalOrder.userId);
 
     toast({
         title: 'Order Updated',
-        description: `Order ${updatedOrder.id} has been updated to ${updatedOrder.status}.`,
+        description: `Order #${updatedOrder.id.substring(0, 7)} has been updated to ${updatedOrder.status}.`,
     });
   }
 
