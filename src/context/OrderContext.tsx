@@ -3,7 +3,7 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import type { Order } from '@/components/order-list';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, updateDoc, doc, serverTimestamp, query, orderBy, writeBatch } from 'firebase/firestore';
+import { collection, writeBatch, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useAuth } from './AuthContext';
@@ -20,7 +20,7 @@ interface OrderContextType {
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 export const OrderProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const { profile, loading: profileLoading } = useAuth();
   const firestore = useFirestore();
 
@@ -47,7 +47,6 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
       userId: user.uid,
     };
     
-    // Generate a new ID once for both documents.
     const newOrderId = doc(collection(firestore, 'id_generator')).id;
 
     const userOrderRef = doc(firestore, `users/${user.uid}/orders`, newOrderId);
@@ -55,13 +54,11 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
 
     const batch = writeBatch(firestore);
     
-    // Use the same payload and add the generated ID for consistency
     batch.set(userOrderRef, { ...orderPayload, id: newOrderId });
     batch.set(adminOrderRef, { ...orderPayload, id: newOrderId });
 
     batch.commit().catch(err => {
       console.error("Batch order creation failed:", err);
-      // It's hard to know which write failed, but we can emit a generic one.
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: `users/${user.uid}/orders`,
         operation: 'create',
@@ -94,8 +91,11 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const memoizedCustomerOrders = useMemo(() => customerOrdersData || [], [customerOrdersData]);
   const memoizedAdminOrders = useMemo(() => allOrdersData || [], [allOrdersData]);
 
-  const isLoading = customerOrdersLoading || (user ? profileLoading : false);
-  const isAdminLoading = adminOrdersLoading || (user && profile ? profileLoading : false);
+  // Combined loading state for customer orders. It's loading if we are checking auth or fetching orders.
+  const isLoading = isUserLoading || customerOrdersLoading;
+  
+  // Loading state for admin. It's loading if the profile is loading (to check the role) or if admin-specific data is fetching.
+  const isAdminLoading = profileLoading || adminOrdersLoading;
 
   return (
     <OrderContext.Provider value={{ 
