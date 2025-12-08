@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
@@ -24,18 +25,22 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   const { profile, loading: profileLoading } = useAuth();
   const firestore = useFirestore();
 
-  // Unified query for all orders. Security rules will handle filtering.
+  // Unified query. It will be null until all dependencies are ready.
   const ordersQuery = useMemoFirebase(() => {
+    // CRITICAL FIX: Do not proceed until profile loading is complete and we have a user and firestore instance.
     if (profileLoading || !firestore || !user) {
       return null;
     }
     
-    // Admin gets all orders
+    // At this point, `profile` is either loaded or null.
+    
+    // Admin gets all orders.
     if (profile?.role === 'admin') {
       return query(collection(firestore, 'orders'), orderBy("orderDate", "desc"));
     }
     
-    // Customer gets only their orders
+    // Customer gets only their orders.
+    // This runs for customers or if the profile is somehow null after loading.
     return query(collection(firestore, 'orders'), where("userId", "==", user.uid), orderBy("orderDate", "desc"));
 
   }, [user, firestore, profile, profileLoading]);
@@ -51,7 +56,6 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
       userId: user.uid, // Ensure userId is always set
     };
     
-    // Add to the single, global collection
     const ordersColRef = collection(firestore, 'orders');
     addDoc(ordersColRef, orderPayload).catch(err => {
       console.error("Add order failed:", err);
@@ -80,7 +84,7 @@ export const OrderProvider = ({ children }: { children: ReactNode }) => {
   
   const memoizedOrders = useMemo(() => ordersData || [], [ordersData]);
 
-  // Admin and customer now use the same loading flag and data source
+  // The hook is loading if the profile is loading OR if the orders query is still running.
   const isLoadingCombined = profileLoading || ordersLoading;
 
   return (
