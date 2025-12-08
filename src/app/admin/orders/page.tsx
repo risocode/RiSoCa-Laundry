@@ -14,17 +14,14 @@ import { useOrders } from '@/context/OrderContext';
 
 export default function AdminOrdersPage() {
   const { toast } = useToast();
-  // allOrders is now the single source of truth from the context
   const { allOrders, loadingAdmin: ordersLoading, updateOrderStatus } = useOrders();
 
   const handleUpdateOrder = async (updatedOrder: Order) => {
-    // The logic is now simplified as it's handled globally in OrderContext
-    // We no longer need to pass the userId since the admin operates on the global list
-    await updateOrderStatus(updatedOrder.id, updatedOrder.status);
+    await updateOrderStatus(updatedOrder.id, updatedOrder.status, updatedOrder.userId);
 
     toast({
         title: 'Order Updated',
-        description: `Order #${updatedOrder.id.substring(0, 7)}... has been updated to ${updatedOrder.status}.`,
+        description: `Order for ${updatedOrder.customerName} has been updated to ${updatedOrder.status}.`,
     });
   }
 
@@ -32,7 +29,7 @@ export default function AdminOrdersPage() {
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Manage Orders</CardTitle>
+          <CardTitle>Manage All Orders</CardTitle>
           <CardDescription>View and update all customer orders.</CardDescription>
         </div>
       </CardHeader>
@@ -50,7 +47,7 @@ export default function AdminOrdersPage() {
         ) : (
           <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
             <Inbox className="h-12 w-12 mb-2" />
-            <p>No orders have been placed yet.</p>
+            <p>No orders have been placed yet across the platform.</p>
           </div>
         )}
       </CardContent>

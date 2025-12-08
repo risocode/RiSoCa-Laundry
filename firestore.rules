@@ -1,20 +1,16 @@
 /**
- * Core Philosophy: This ruleset enforces a strict user-ownership model for most data. A global /orders collection is used,
- * but access is controlled by roles and ownership, preventing unauthorized access.
+ * Core Philosophy: This ruleset enforces a strict user-ownership model for all user-specific data.
  *
  * Data Structure:
  * - /users/{userId}: A collection storing individual UserProfile documents. Access is restricted to the owner or an admin.
- *   - /addresses/{addressId}: Subcollection for a user's addresses.
- *   - /notifications/{notificationId}: Subcollection for a user's notifications.
- * - /orders/{orderId}: A top-level collection for all laundry orders. Admins can manage all orders, while customers can only
- *   read/create their own orders, enforced by checking the `userId` field on the document.
+ *   - /addresses/{addressId}: Subcollection for a user's addresses. Owner-only access.
+ *   - /notifications/{notificationId}: Subcollection for a user's notifications. Owner-only access.
+ *   - /orders/{orderId}: Subcollection for a user's laundry orders. Owner-only access.
  * - /services/{serviceId} & /service_rates: Publicly readable collections for application configuration.
  *
  * Key Security Decisions:
- * - User Data Privacy: All data under `/users/{userId}` is private to the owning user.
+ * - User Data Privacy: All data under `/users/{userId}` and its subcollections is private to the owning user.
  * - Admin Role: An `admin` role in a user's profile grants broader permissions for managing global collections.
- * - Centralized Orders: A single /orders collection simplifies management, with rules enforcing access control.
- *   This avoids complex dual-writes and potential data inconsistencies.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -31,19 +27,9 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-    
-    function resourceData() {
-      return request.resource.data;
-    }
-
-    // Function to check if the incoming data for an order belongs to the requesting user.
-    function isCreatingOwnOrder() {
-        return isOwner(resourceData().userId);
-    }
 
     function isAdmin() {
       // Check for 'admin' role on the user's own profile document.
-      // This get() call is allowed in rules for different paths.
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
@@ -64,23 +50,16 @@ service cloud.firestore {
       match /notifications/{notificationId} {
         allow read, write: if isOwner(userId);
       }
+      
+      // Orders are nested under the user, only the user can manage them.
+      match /orders/{orderId} {
+        allow read, write: if isOwner(userId);
+      }
     }
     
     //-------------------------------------------------------------------------
     // Global & Admin-Facing Collections
     //-------------------------------------------------------------------------
-    
-    // Centralized collection for all orders.
-    match /orders/{orderId} {
-        // READ: Admins can read any order. Customers can only read their own.
-        allow get, list: if isAdmin() || isOwner(resource.data.userId);
-
-        // CREATE: Any signed-in user can create an order, but only for themselves.
-        allow create: if isSignedIn() && isCreatingOwnOrder();
-
-        // UPDATE/DELETE: Only admins can modify or delete orders.
-        allow update, delete: if isAdmin();
-    }
 
     // Publicly readable, admin-writable services.
     match /services/{serviceId} {

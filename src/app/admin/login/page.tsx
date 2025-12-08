@@ -14,14 +14,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { LogIn } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { useFirestore } from '@/firebase'
-import { signInWithEmailAndPassword, getAuth, signOut } from 'firebase/auth'
+import { useFirestore, useAuth as useFirebaseAuth } from '@/firebase'
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const auth = getAuth()
+  const auth = useFirebaseAuth()
   const firestore = useFirestore()
 
   const [email, setEmail] = useState('')
@@ -33,17 +33,18 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
+        if (!auth || !firestore) throw new Error("Firebase services not available.");
+
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
         if (!user) throw new Error("Login failed, please try again.");
 
-        // After successful login, check the user's role
         const userDocRef = doc(firestore, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists() || userDoc.data().role !== 'admin') {
-            await signOut(auth); // Log out non-admin users
+            await signOut(auth);
             throw new Error("Access denied. You are not an administrator.");
         }
 
@@ -51,7 +52,7 @@ export default function AdminLoginPage() {
             title: 'Login Successful',
             description: 'Welcome, Admin!',
         })
-        router.push('/admin'); // Redirect to admin dashboard
+        router.push('/admin');
 
     } catch (error: any) {
         toast({
