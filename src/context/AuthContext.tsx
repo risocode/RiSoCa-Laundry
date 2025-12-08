@@ -38,8 +38,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
 
+        // CRITICAL FIX: Wait for firestore instance to be available.
+        // This prevents a race condition on login where `useFirestore()` might not be ready
+        // at the exact moment `useUser()` updates.
         if (!firestore) {
-             setProfileLoading(false);
+             setProfileLoading(false); // Stop loading, as we can't proceed.
              return;
         }
 
