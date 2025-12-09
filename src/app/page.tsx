@@ -53,7 +53,7 @@ export default function Home() {
               </>
             </div>
 
-            <div className="grid gap-x-2 gap-y-2 sm:gap-x-4 sm:gap-y-4 w-full max-w-sm sm:max-w-md pb-4 grid-cols-3">
+            <div className="grid">
               {/* Grid items will be rendered by HomePageWrapper */}
             </div>
 
