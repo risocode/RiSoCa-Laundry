@@ -140,7 +140,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
               id="weight"
               type="number"
               step="0.1"
-              placeholder="e.g., 7.5"
+              placeholder="e.g., 7.5 kg"
               {...form.register('weight')}
               disabled={isSaving}
               className="text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -169,7 +169,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="total">Price to Pay (₱180 / Load)</Label>
+            <Label htmlFor="total">Price to Pay (₱)</Label>
             <Controller
                 name="total"
                 control={form.control}
@@ -178,7 +178,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                         id="total"
                         type="number"
                         step="0.01"
-                        placeholder="e.g., 180"
+                        placeholder="e.g., 180 / Load"
                         {...field}
                         value={field.value || ''}
                         disabled={isSaving}
