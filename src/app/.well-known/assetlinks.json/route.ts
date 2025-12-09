@@ -7,27 +7,42 @@ import { join } from 'path';
  * Serves assetlinks.json at /.well-known/assetlinks.json
  * Required for TWA (Trusted Web Activity) verification
  * 
- * IMPORTANT: Update the assetlinks.json file with your actual:
- * - package_name: Your Android app's package name (e.g., "com.rkrlaundry.app")
- * - sha256_cert_fingerprints: Your app's signing certificate SHA-256 fingerprint
+ * This route handler serves as a fallback if the static file
+ * at public/.well-known/assetlinks.json is not accessible.
  */
 export async function GET() {
   try {
-    const filePath = join(process.cwd(), 'public', 'assetlinks.json');
-    const fileContents = readFileSync(filePath, 'utf8');
+    // Try to read from .well-known directory first
+    const wellKnownPath = join(process.cwd(), 'public', '.well-known', 'assetlinks.json');
+    let fileContents: string;
+    
+    try {
+      fileContents = readFileSync(wellKnownPath, 'utf8');
+    } catch {
+      // Fallback to root public directory
+      const filePath = join(process.cwd(), 'public', 'assetlinks.json');
+      fileContents = readFileSync(filePath, 'utf8');
+    }
+    
     const assetlinks = JSON.parse(fileContents);
     
     return NextResponse.json(assetlinks, {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=3600',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   } catch (error) {
     console.error('Error reading assetlinks.json:', error);
     return NextResponse.json(
       { error: 'Asset links file not found' },
-      { status: 404 }
+      { 
+        status: 404,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
 }
