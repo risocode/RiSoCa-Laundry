@@ -19,7 +19,6 @@ import { Loader2, Layers } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { Separator } from './ui/separator';
 import { cn } from '@/lib/utils';
-import { generateOrderId } from '@/lib/constants';
 
 const manualOrderSchema = z.object({
   customerName: z.string().min(2, 'Name is required.'),
@@ -37,11 +36,10 @@ type ManualOrderFormValues = z.infer<typeof manualOrderSchema>;
 type ManualOrderDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  onAddOrder: (order: Omit<Order, 'userId'>) => Promise<void>;
-  existingOrders: Order[];
+  onAddOrder: (order: Omit<Order, 'id' | 'userId'>) => Promise<void>;
 };
 
-export function ManualOrderDialog({ isOpen, onClose, onAddOrder, existingOrders }: ManualOrderDialogProps) {
+export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const form = useForm<ManualOrderFormValues>({
     resolver: zodResolver(manualOrderSchema),
@@ -101,10 +99,8 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder, existingOrders 
   const onSubmit = async (data: ManualOrderFormValues) => {
     setIsSaving(true);
     const initialStatus = 'Order Placed';
-    const newOrderId = generateOrderId(existingOrders);
-
-    const newOrder: Omit<Order, 'userId'> = {
-      id: newOrderId,
+    
+    const newOrder: Omit<Order, 'id' | 'userId'> = {
       customerName: data.customerName,
       contactNumber: data.contactNumber || 'N/A',
       load: loads,

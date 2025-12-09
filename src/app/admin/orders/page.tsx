@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ManualOrderDialog } from '@/components/manual-order-dialog';
-import { RKR_ORDERS_KEY } from '@/lib/constants';
+import { RKR_ORDERS_KEY, generateOrderId } from '@/lib/constants';
 
 export default function AdminOrdersPage() {
   const { toast } = useToast();
@@ -54,10 +54,11 @@ export default function AdminOrdersPage() {
     });
   }
 
-  const handleAddOrder = async (newOrder: Omit<Order, 'id' | 'orderDate' | 'userId'>) => {
-    // We pass allOrders to generateOrderId to ensure it has the latest list
+  const handleAddOrder = async (newOrder: Omit<Order, 'id' | 'userId'>) => {
+    // ID generation is now handled here to ensure it has the latest list of orders.
     const orderToAdd: Order = {
       ...newOrder,
+      id: generateOrderId(allOrders),
       userId: 'admin-manual',
       orderDate: new Date(),
     };
@@ -104,7 +105,6 @@ export default function AdminOrdersPage() {
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onAddOrder={handleAddOrder}
-        existingOrders={allOrders}
       />
     </>
   );
