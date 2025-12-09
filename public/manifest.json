@@ -1,0 +1,22 @@
+
+{
+  "name": "RKR Laundry Service",
+  "short_name": "RKR Laundry",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3e8ff",
+  "theme_color": "#6d28d9",
+  "description": "Fast, clean, and convenient laundry service.",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

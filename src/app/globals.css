@@ -1,0 +1,113 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  overflow: hidden;
+  height: 100vh;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: 259 53% 96%;
+    --foreground: 260 10% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 260 10% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 260 10% 15%;
+    --primary: 262 52% 47%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 265 44% 88%;
+    --secondary-foreground: 260 10% 15%;
+    --muted: 265 44% 92%;
+    --muted-foreground: 260 8% 45%;
+    --accent: 42 100% 50%;
+    --accent-foreground: 42 90% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 265 25% 85%;
+    --input: 265 25% 88%;
+    --ring: 262 52% 47%;
+    --radius: 0.75rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+    --card: 224 71% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 224 71% 4%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 210 40% 98%;
+    --accent-foreground: 224 71% 4%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 210 40% 98%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+body {
+  background-image: radial-gradient(hsl(var(--muted)) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+@layer utilities {
+  .form-group {
+    @apply relative;
+  }
+  .form-input {
+    @apply pt-4;
+  }
+
+  .form-label {
+    @apply absolute text-muted-foreground transition-all duration-200 ease-in-out pointer-events-none;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .form-input:focus + .form-label,
+  .form-input:not(:placeholder-shown) + .form-label {
+    @apply text-xs;
+    transform: translateY(-1.2rem) scale(0.8);
+    background-color: hsl(var(--card));
+    padding: 0 0.2em;
+    color: hsl(var(--primary));
+  }
+
+  .form-input:focus {
+     @apply border-primary;
+  }
+}
