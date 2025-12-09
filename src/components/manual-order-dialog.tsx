@@ -21,6 +21,7 @@ import { useState } from 'react';
 
 const manualOrderSchema = z.object({
   customerName: z.string().min(2, 'Name is required.'),
+  contactNumber: z.string().optional(),
   load: z.coerce.number().min(0.1, 'Load must be greater than 0.'),
   weight: z.coerce.number().min(0.1, 'Weight must be greater than 0.'),
   total: z.coerce.number().min(0, 'Price must be 0 or greater.'),
@@ -41,6 +42,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
     resolver: zodResolver(manualOrderSchema),
     defaultValues: {
       customerName: '',
+      contactNumber: '',
       load: undefined,
       weight: undefined,
       total: undefined,
@@ -52,7 +54,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
     setIsSaving(true);
     const newOrder: Omit<Order, 'id' | 'orderDate' | 'userId'> = {
       customerName: data.customerName,
-      contactNumber: 'N/A',
+      contactNumber: data.contactNumber || 'N/A',
       load: data.load,
       weight: data.weight,
       status: data.isPaid ? 'Success' : 'Ready for Pick Up',
@@ -86,6 +88,18 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             />
             {form.formState.errors.customerName && (
               <p className="text-xs text-destructive">{form.formState.errors.customerName.message}</p>
+            )}
+          </div>
+           <div className="space-y-2">
+            <Label htmlFor="contactNumber">Contact Number (Optional)</Label>
+            <Input
+              id="contactNumber"
+              placeholder="e.g., 09123456789"
+              {...form.register('contactNumber')}
+              disabled={isSaving}
+            />
+            {form.formState.errors.contactNumber && (
+              <p className="text-xs text-destructive">{form.formState.errors.contactNumber.message}</p>
             )}
           </div>
           <div className="grid grid-cols-2 gap-4">
