@@ -221,7 +221,7 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
         <Card>
             <Accordion type="single" collapsible>
                 <AccordionItem value={order.id} className="border-b-0">
-                    <AccordionTrigger className="p-4 hover:no-underline [&[data-state=open]>svg]:-rotate-180">
+                    <AccordionTrigger className="p-4 hover:no-underline">
                          <div className="flex flex-col items-start text-left w-full">
                             <div className='flex items-center justify-between w-full'>
                                 <span className="font-bold text-lg">{order.id}</span>
@@ -233,9 +233,8 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                     {order.status}
                                 </Badge>
                             </div>
-                            <span className="text-sm text-muted-foreground">{order.customerName}</span>
+                            <span className="text-sm text-muted-foreground">Name: {order.customerName}</span>
                         </div>
-                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 ml-2" />
                     </AccordionTrigger>
                     <AccordionContent className="p-4 pt-0">
                         <div className="space-y-4">
