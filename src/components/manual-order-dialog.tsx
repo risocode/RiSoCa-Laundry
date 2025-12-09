@@ -26,7 +26,7 @@ const manualOrderSchema = z.object({
   contactNumber: z.string().optional(),
   weight: z.coerce.number().min(0.1, 'Weight must be greater than 0.'),
   total: z.coerce.number().min(0, 'Price must be 0 or greater.'),
-  isPaid: z.boolean(),
+  isPaid: z.boolean().optional(),
 });
 
 type ManualOrderFormValues = z.infer<typeof manualOrderSchema>;
@@ -46,7 +46,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
       contactNumber: '',
       weight: undefined,
       total: undefined,
-      isPaid: false,
+      isPaid: undefined,
     },
   });
 
@@ -91,7 +91,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
       weight: data.weight,
       status: initialStatus,
       total: data.total,
-      isPaid: data.isPaid,
+      isPaid: data.isPaid || false,
       servicePackage: 'package1',
       distance: 0,
       statusHistory: [{ status: initialStatus, timestamp: new Date() }],
@@ -193,19 +193,36 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             )}
           </div>
           
-          <div className="flex justify-center">
-            <Button
-              type="button"
-              onClick={() => form.setValue('isPaid', !isPaid)}
-              className={cn(
-                "w-full",
-                isPaid ? "bg-green-500 hover:bg-green-600" : "bg-destructive hover:bg-destructive/90"
-              )}
-              disabled={isSaving}
-            >
-              {isPaid ? <CheckCircle className="mr-2 h-4 w-4" /> : <CreditCard className="mr-2 h-4 w-4" />}
-              {isPaid ? 'Mark as Unpaid' : 'Mark as Paid'}
-            </Button>
+          <div className="space-y-2 text-center">
+            <Label>Payment Status</Label>
+            <div className="flex justify-center gap-2">
+                <Button
+                    type="button"
+                    onClick={() => form.setValue('isPaid', true)}
+                    className={cn(
+                        "w-24",
+                        isPaid === true
+                        ? 'bg-green-500 hover:bg-green-600'
+                        : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
+                    )}
+                    disabled={isSaving}
+                >
+                    Paid
+                </Button>
+                <Button
+                    type="button"
+                    onClick={() => form.setValue('isPaid', false)}
+                     className={cn(
+                        "w-24",
+                        isPaid === false
+                        ? 'bg-red-500 hover:bg-red-600'
+                        : 'bg-gray-300 hover:bg-gray-400 text-gray-800'
+                    )}
+                    disabled={isSaving}
+                >
+                    Unpaid
+                </Button>
+            </div>
           </div>
 
 
@@ -213,7 +230,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             <Button type="button" variant="outline" onClick={() => { form.reset(); onClose(); }} disabled={isSaving}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving || isPaid === undefined}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Add Order
             </Button>
