@@ -25,7 +25,7 @@ export default function BranchesPage() {
     <div className="flex flex-col h-screen">
       <AppHeader />
       <PromoBanner />
-      <main className="flex-1 overflow-y-auto container mx-auto px-4 flex flex-col items-center justify-center">
+      <main className="flex-1 overflow-y-auto container mx-auto px-4 flex flex-col items-center justify-center pb-14">
         <div className="flex flex-col items-center text-center mb-8">
             <h1 className="text-2xl md:text-4xl font-bold text-primary">Our Branches</h1>
             <p className="text-sm md:text-lg text-muted-foreground mt-2">Find an RKR Laundry location near you.</p>

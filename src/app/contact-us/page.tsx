@@ -14,7 +14,7 @@ export default function ContactUsPage() {
     <div className="flex flex-col h-screen">
       <AppHeader />
       <PromoBanner />
-      <main className="flex-1 overflow-hidden flex items-center justify-center container mx-auto px-4">
+      <main className="flex-1 overflow-y-auto flex items-center justify-center container mx-auto px-4 pb-14">
         <Card className="w-full max-w-lg">
             <CardHeader className="p-4">
                 <CardTitle className="text-2xl">Contact Us</CardTitle>

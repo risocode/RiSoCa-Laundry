@@ -55,7 +55,7 @@ export default function LoginPage() {
     <div className="flex flex-col min-h-screen">
       <AppHeader />
       <PromoBanner />
-      <main className="flex-1 flex items-center justify-center px-4">
+      <main className="flex-1 flex items-center justify-center px-4 pb-14">
         <Card className="mx-auto w-full max-w-sm">
           <CardHeader className="p-4">
             <CardTitle className="text-2xl">Login</CardTitle>
