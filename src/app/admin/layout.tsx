@@ -9,7 +9,7 @@ export default function AdminLayout({
   return (
     <div className="flex flex-col h-screen">
       <AppHeader showLogo={true} />
-      <main className="flex-1 overflow-y-auto container mx-auto px-4 py-8 flex items-center justify-center">
+      <main className="flex-1 overflow-y-auto container mx-auto px-4 py-8">
         {children}
       </main>
       <AppFooter />
