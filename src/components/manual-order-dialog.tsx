@@ -25,7 +25,7 @@ const manualOrderSchema = z.object({
   contactNumber: z.string().optional(),
   weight: z.preprocess(
     (val) => (String(val).trim() === '' ? undefined : Number(val)),
-    z.number({invalid_type_error: "Invalid number"}).min(0.1, "Weight must be greater than 0.")
+    z.number({invalid_type_error: "Input Valid Weight"}).min(0.1, "Weight must be greater than 0.")
   ),
   total: z.coerce.number().min(0, 'Price must be 0 or greater.'),
   isPaid: z.boolean().optional(),
