@@ -41,9 +41,9 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
     resolver: zodResolver(manualOrderSchema),
     defaultValues: {
       customerName: '',
-      load: 1,
-      weight: 7.5,
-      total: 180,
+      load: undefined,
+      weight: undefined,
+      total: undefined,
       isPaid: false,
     },
   });
@@ -95,6 +95,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                 id="load"
                 type="number"
                 step="1"
+                placeholder="e.g., 1"
                 {...form.register('load')}
                 disabled={isSaving}
                 className="text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -109,6 +110,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                 id="weight"
                 type="number"
                 step="0.1"
+                placeholder="e.g., 7.5"
                 {...form.register('weight')}
                 disabled={isSaving}
                 className="text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -124,6 +126,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
               id="total"
               type="number"
               step="0.01"
+              placeholder="e.g., 180"
               {...form.register('total')}
               disabled={isSaving}
               className="text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
