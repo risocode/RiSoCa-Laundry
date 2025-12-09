@@ -81,6 +81,8 @@ export default function AdminOrdersPage() {
     }
 
     const patch = {
+      customer_name: updatedOrder.customerName,
+      contact_number: updatedOrder.contactNumber,
       weight: updatedOrder.weight,
       loads: updatedOrder.load,
       total: updatedOrder.total,

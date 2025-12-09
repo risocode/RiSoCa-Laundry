@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -97,6 +97,10 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     const [isSaving, setIsSaving] = useState(false);
     const [editableOrder, setEditableOrder] = useState(order);
 
+    useEffect(() => {
+        setEditableOrder(order);
+    }, [order.id]);
+
     const handleFieldChange = (field: keyof Order, value: string | number | boolean) => {
         let newOrderState = { ...editableOrder };
 
@@ -133,8 +137,32 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     return (
         <TableRow>
             <TableCell className="font-medium">{order.id}</TableCell>
-            <TableCell>{order.customerName}</TableCell>
-            <TableCell>{order.contactNumber}</TableCell>
+            <TableCell>
+                {isEditing ? (
+                    <Input 
+                        type="text" 
+                        value={editableOrder.customerName} 
+                        onChange={e => handleFieldChange('customerName', e.target.value)} 
+                        className="h-8 w-32" 
+                        disabled={isSaving}
+                    />
+                ) : (
+                    order.customerName
+                )}
+            </TableCell>
+            <TableCell>
+                {isEditing ? (
+                    <Input 
+                        type="tel" 
+                        value={editableOrder.contactNumber} 
+                        onChange={e => handleFieldChange('contactNumber', e.target.value)} 
+                        className="h-8 w-32" 
+                        disabled={isSaving}
+                    />
+                ) : (
+                    order.contactNumber
+                )}
+            </TableCell>
             <TableCell>
                 {isEditing ? (
                     <Input type="number" value={editableOrder.weight} onChange={e => handleFieldChange('weight', e.target.value)} className="h-8 w-24" disabled={isSaving}/>
@@ -222,6 +250,10 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     const [isSaving, setIsSaving] = useState(false);
     const [editableOrder, setEditableOrder] = useState(order);
 
+    useEffect(() => {
+        setEditableOrder(order);
+    }, [order.id]);
+
     const handleFieldChange = (field: keyof Order, value: string | number | boolean) => {
         let newOrderState = { ...editableOrder };
 
@@ -281,6 +313,30 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                     </AccordionTrigger>
                     <AccordionContent className="p-4 pt-0">
                         <div className="space-y-4">
+                            <div className="grid grid-cols-1 gap-3">
+                                <div className="space-y-1">
+                                    <Label htmlFor={`customer-name-mob-${order.id}`}>Customer Name</Label>
+                                    <Input 
+                                        id={`customer-name-mob-${order.id}`} 
+                                        type="text" 
+                                        value={editableOrder.customerName} 
+                                        onChange={e => handleFieldChange('customerName', e.target.value)} 
+                                        className="h-8" 
+                                        disabled={!isEditing || isSaving} 
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor={`contact-number-mob-${order.id}`}>Contact Number</Label>
+                                    <Input 
+                                        id={`contact-number-mob-${order.id}`} 
+                                        type="tel" 
+                                        value={editableOrder.contactNumber} 
+                                        onChange={e => handleFieldChange('contactNumber', e.target.value)} 
+                                        className="h-8" 
+                                        disabled={!isEditing || isSaving} 
+                                    />
+                                </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
                                     <Label htmlFor={`load-mob-${order.id}`}>Load</Label>
