@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 const manualOrderSchema = z.object({
   customerName: z.string().min(2, 'Name is required.'),
   contactNumber: z.string().optional(),
-  weight: z.coerce.number().min(0.1, 'Weight must be greater than 0.'),
+  weight: z.coerce.number().min(0.1, 'Weight must be greater than 0.').max(75, "Maximum of 10 loads (75kg) per order."),
   total: z.coerce.number().min(0, 'Price must be 0 or greater.'),
   isPaid: z.boolean().optional(),
 });

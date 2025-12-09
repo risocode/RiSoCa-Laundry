@@ -32,7 +32,7 @@ const packages = [
 
 const orderSchema = z.object({
   servicePackage: z.string().min(1, "Please select a package."),
-  weight: z.coerce.number().min(0, "Weight cannot be negative.").max(100, "Maximum of 100kg per order.").optional(),
+  weight: z.coerce.number().min(0, "Weight cannot be negative.").max(75, "Maximum of 10 loads (75kg) per order.").optional(),
   distance: z.coerce.number().min(0, "Distance cannot be negative.").max(50, "We don't deliver beyond 50 km."),
 });
 
