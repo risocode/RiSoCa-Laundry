@@ -3,9 +3,16 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
-  overflow: hidden;
-  height: 100vh;
+html {
+  height: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  height: 100%;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 body {
@@ -109,5 +116,12 @@ body {
 
   .form-input:focus {
      @apply border-primary;
+  }
+
+  /* Mobile touch scrolling */
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 }

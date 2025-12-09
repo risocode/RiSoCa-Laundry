@@ -31,9 +31,9 @@ export default function Home() {
 
   return (
       <HomePageWrapper gridItems={gridItems}>
-        <div className="flex flex-col h-screen select-none">
+        <div className="flex flex-col h-screen select-none overflow-hidden">
           <AppHeader />
-          <main className="flex-1 overflow-y-auto flex flex-col items-center container mx-auto px-4 text-center pt-2 md:pt-4 pb-14">
+          <main className="flex-1 scrollable flex flex-col items-center container mx-auto px-4 text-center pt-2 md:pt-4 pb-14">
             {/* Logo in body - homepage only */}
             <div className="flex flex-col items-center mb-4 pt-4 md:pt-8">
               <div className="flex items-center gap-2 md:gap-3 mb-2">
