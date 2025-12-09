@@ -6,12 +6,12 @@ import { Package, FileText, MapPin, Phone, HelpCircle, UserPlus, ArrowRight, Cli
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
 import { HomePageWrapper } from '@/components/home-page-wrapper';
-import { PesoSign } from '@/components/icons/peso-sign';
+import { PesoCoinIcon } from '@/components/icons/peso-coin-icon';
 
 const customerGridItems = [
   { href: '/order-status', label: 'Order Status', icon: Package },
   { href: '/create-order', label: 'Create Order', icon: FileText },
-  { href: '/service-rates', label: 'Service Rates', icon: PesoSign },
+  { href: '/service-rates', label: 'Service Rates', icon: PesoCoinIcon },
   { href: '/track-rider', label: 'Track Rider', icon: Bike, comingSoon: true },
   { href: '/download-app', label: 'Download App', icon: Download, comingSoon: true },
   { href: '/terms-and-conditions', label: 'Terms & Conditions', icon: ClipboardList },
