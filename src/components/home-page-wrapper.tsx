@@ -32,7 +32,7 @@ export function HomePageWrapper({ children, gridItems }: HomePageWrapperProps) {
       const className = node.props.className || '';
       if (typeof className === 'string' && className.includes('grid')) {
          return (
-            <div key="grid-wrapper" className={`grid gap-x-2 gap-y-2 sm:gap-x-4 sm:gap-y-4 w-full max-w-[280px] sm:max-w-[320px] pb-4 ${isAdmin ? 'grid-cols-3' : 'grid-cols-3'}`}>
+            <div key="grid-wrapper" className={`grid gap-x-2 gap-y-2 sm:gap-x-4 sm:gap-y-4 w-full max-w-[280px] sm:max-w-md pb-4 ${isAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
               {gridItems.map((item) => {
                 const isComingSoon = item.comingSoon;
                 const isOrderStatus = item.label === 'Order Status';
