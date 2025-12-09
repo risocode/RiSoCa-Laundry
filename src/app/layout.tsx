@@ -5,6 +5,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'RKR Laundry Service',
   description: 'Fast, clean, and convenient laundry service at rkrlaundry.com. Real-time tracking and smart pricing for your laundry needs.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
