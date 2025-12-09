@@ -57,7 +57,7 @@ type PendingOrder = {
 // Function to generate a random RKR order ID
 const generateOrderId = () => {
   const orderNumber = Math.floor(Math.random() * 900) + 100; // Random number between 100 and 999
-  return `RKR${orderNumber}`;
+  return `RKR${String(orderNumber).padStart(3, '0')}`;
 };
 
 export function OrderForm() {

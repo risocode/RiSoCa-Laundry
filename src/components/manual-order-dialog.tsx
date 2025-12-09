@@ -97,6 +97,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                 step="1"
                 {...form.register('load')}
                 disabled={isSaving}
+                className="text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
                {form.formState.errors.load && (
                 <p className="text-xs text-destructive">{form.formState.errors.load.message}</p>
@@ -110,6 +111,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                 step="0.1"
                 {...form.register('weight')}
                 disabled={isSaving}
+                className="text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               {form.formState.errors.weight && (
                 <p className="text-xs text-destructive">{form.formState.errors.weight.message}</p>
@@ -124,6 +126,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
               step="0.01"
               {...form.register('total')}
               disabled={isSaving}
+              className="text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
              {form.formState.errors.total && (
               <p className="text-xs text-destructive">{form.formState.errors.total.message}</p>
