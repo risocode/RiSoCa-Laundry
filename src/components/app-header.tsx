@@ -80,7 +80,7 @@ export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
             <div className="container mx-auto flex items-center justify-center gap-2">
                 <Megaphone className="h-5 w-5" />
                 <p>
-                    <span className="font-medium">PROMO:</span> On <span className="font-bold underline">December 17, 2025</span>, our price will be <span className="font-bold text-yellow-300">₱150 per load!</span>
+                    <span className="font-medium">PROMO:</span> On <span className="font-bold text-yellow-300 underline">December 17, 2025</span>, our price will be <span className="font-bold text-yellow-300">₱150 per load!</span>
                 </p>
             </div>
         </div>
