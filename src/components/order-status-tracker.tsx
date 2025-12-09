@@ -2,8 +2,10 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Shirt, Truck, PackageCheck, CircleCheck, Wind, WashingMachine, Package, CheckCircle2 } from 'lucide-react';
+import { Shirt, Truck, PackageCheck, CircleCheck, Wind, WashingMachine, Package, CheckCircle2, User, Weight as WeightIcon, Layers, Wallet } from 'lucide-react';
 import type { Order } from '@/components/order-list';
+import { Badge } from './ui/badge';
+import { Separator } from './ui/separator';
 
 const statuses = [
   { name: 'Order Placed', icon: CircleCheck },
@@ -44,6 +46,7 @@ export function OrderStatusTracker({ order }: { order: Order }) {
   }, [order]);
 
   const CurrentIcon = statuses[currentStatusIndex]?.icon || CircleCheck;
+  const isPaid = order.status === 'Success' || order.status === 'Delivered';
 
   return (
     <Card className="shadow-lg h-full">
@@ -66,6 +69,45 @@ export function OrderStatusTracker({ order }: { order: Order }) {
               <span>Delivered</span>
             </div>
           </div>
+          
+          <Separator />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="space-y-2">
+                <h4 className="font-semibold text-sm text-foreground/80">Order Details</h4>
+                <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{order.customerName}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <WeightIcon className="h-4 w-4 text-muted-foreground" />
+                    <span>{order.weight} kg</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Layers className="h-4 w-4 text-muted-foreground" />
+                    <span>{order.load} load(s)</span>
+                </div>
+            </div>
+            <div className="space-y-2">
+                <h4 className="font-semibold text-sm text-foreground/80">Billing Summary</h4>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-semibold">Total Price:</span>
+                    </div>
+                    <span className="font-bold text-primary">₱{order.total.toFixed(2)}</span>
+                </div>
+                 <div className="flex items-center justify-between">
+                    <span className="font-semibold">Status:</span>
+                    <Badge variant={isPaid ? 'default' : 'destructive'} className={isPaid ? 'bg-green-500' : 'bg-red-500'}>
+                        {isPaid ? 'Paid' : 'Unpaid'}
+                    </Badge>
+                </div>
+            </div>
+          </div>
+
+          <Separator />
+
           <div className="space-y-2">
             <h4 className="font-semibold text-sm text-foreground/80">Status Log</h4>
             <div className="max-h-60 overflow-y-auto pr-2 -mr-2">
