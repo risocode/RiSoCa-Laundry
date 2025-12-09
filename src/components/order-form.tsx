@@ -217,6 +217,8 @@ export function OrderForm() {
   const onCustomerInfoSubmit = async (customerData: CustomerFormValues) => {
     if (!pendingOrder || !user) return;
 
+    // IMPORTANT: Uses the same ID generation as admin manual orders to ensure sequential numbering
+    // If customer creates RKR001, next admin order will be RKR002, and vice versa
     const { latestId, error: latestError } = await fetchLatestOrderId();
     if (latestError) {
         toast({ variant: 'destructive', title: 'Order ID error', description: 'Could not generate order ID.' });
@@ -258,6 +260,52 @@ export function OrderForm() {
     });
 
     if (error) {
+        // Handle duplicate ID error (race condition)
+        if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
+          // Retry with a fresh ID fetch
+          const { latestId: retryLatestId, error: retryError } = await fetchLatestOrderId();
+          if (!retryError && retryLatestId) {
+            const retryId = generateNextOrderId(retryLatestId);
+            const retryOrder: Order = {
+              ...newOrder,
+              id: retryId,
+            };
+            const { error: retryCreateError } = await createOrderWithHistory({
+              id: retryOrder.id,
+              customer_id: user.id,
+              customer_name: retryOrder.customerName,
+              contact_number: retryOrder.contactNumber,
+              service_package: retryOrder.servicePackage as Order['servicePackage'],
+              weight: retryOrder.weight,
+              loads: retryOrder.load,
+              distance: retryOrder.distance,
+              delivery_option: retryOrder.deliveryOption,
+              status: retryOrder.status,
+              total: retryOrder.total,
+              is_paid: retryOrder.isPaid,
+            });
+            if (retryCreateError) {
+              console.error("Failed to save order to Supabase (retry)", retryCreateError);
+              toast({
+                variant: "destructive",
+                title: 'Save Error!',
+                description: `Could not save your order. Please try again.`
+              });
+              return;
+            }
+            toast({
+              title: 'Order Placed!',
+              description: `Your order #${retryId} has been successfully submitted.`
+            });
+            setIsCustomerInfoDialogOpen(false);
+            customerForm.reset();
+            form.reset();
+            startTransition(() => {
+              router.push('/order-status');
+            });
+            return;
+          }
+        }
         console.error("Failed to save order to Supabase", error);
         toast({
           variant: "destructive",

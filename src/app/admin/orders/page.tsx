@@ -104,6 +104,8 @@ export default function AdminOrdersPage() {
   };
 
   const handleAddOrder = async (newOrder: Omit<Order, 'id' | 'userId'>) => {
+    // IMPORTANT: Uses the same ID generation as customer orders to ensure sequential numbering
+    // If admin creates RKR001, next customer order will be RKR002, and vice versa
     const { latestId, error: latestError } = await fetchLatestOrderId();
     if (latestError) {
       toast({ variant: 'destructive', title: 'Order ID error', description: 'Could not generate new order ID.' });
@@ -128,6 +130,38 @@ export default function AdminOrdersPage() {
     });
 
     if (error) {
+      // Handle duplicate ID error (race condition)
+      if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
+        // Retry with a fresh ID fetch
+        const { latestId: retryLatestId, error: retryError } = await fetchLatestOrderId();
+        if (!retryError && retryLatestId) {
+          const retryId = generateNextOrderId(retryLatestId);
+          const { error: retryCreateError } = await createOrderWithHistory({
+            id: retryId,
+            customer_id: user?.id ?? 'admin-manual',
+            customer_name: newOrder.customerName,
+            contact_number: newOrder.contactNumber,
+            service_package: newOrder.servicePackage as any,
+            weight: newOrder.weight,
+            loads: newOrder.load,
+            distance: newOrder.distance,
+            delivery_option: newOrder.deliveryOption,
+            status: initialStatus,
+            total: newOrder.total,
+            is_paid: newOrder.isPaid,
+          });
+          if (retryCreateError) {
+            toast({ variant: 'destructive', title: 'Create failed', description: retryCreateError.message });
+            return;
+          }
+          toast({
+            title: 'Order Created',
+            description: `New order #${retryId} for ${newOrder.customerName} has been added.`,
+          });
+          fetchOrders();
+          return;
+        }
+      }
       toast({ variant: 'destructive', title: 'Create failed', description: error.message });
       return;
     }

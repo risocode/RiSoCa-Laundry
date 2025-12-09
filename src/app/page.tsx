@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Package, FileText, MapPin, Phone, HelpCircle, UserPlus, ArrowRight, ClipboardList, Bike, Download, WashingMachine } from 'lucide-react';
@@ -8,6 +10,7 @@ import { AppFooter } from '@/components/app-footer';
 import { HomePageWrapper } from '@/components/home-page-wrapper';
 import { PesoCoinIcon } from '@/components/icons/peso-coin-icon';
 import { useAuthSession } from '@/hooks/use-auth-session';
+import { isAdmin } from '@/lib/auth-helpers';
 
 const customerGridItems = [
   { href: '/order-status', label: 'Order Status', icon: Package },
@@ -22,8 +25,22 @@ const customerGridItems = [
 ];
 
 export default function Home() {
-  const { user } = useAuthSession();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuthSession();
   const gridItems = customerGridItems;
+
+  useEffect(() => {
+    async function checkAdminRedirect() {
+      if (authLoading || !user) return;
+      
+      const adminStatus = await isAdmin(user.id);
+      if (adminStatus) {
+        router.push('/admin');
+      }
+    }
+
+    checkAdminRedirect();
+  }, [user, authLoading, router]);
 
   const firstName = (user?.user_metadata?.first_name as string | undefined) || (user?.user_metadata?.firstName as string | undefined) || '';
   const displayName = firstName || (user?.user_metadata?.name as string | undefined) || user?.email || 'Customer';
