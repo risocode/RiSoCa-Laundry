@@ -211,6 +211,11 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     );
 }
 
+// Add a Label component for mobile view consistency
+const Label = ({ children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
+    <label className="text-xs font-medium text-muted-foreground" {...props}>{children}</label>
+);
+
 function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: OrderListProps['onUpdateOrder'] }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -385,8 +390,3 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
     </>
   );
 }
-
-// Add a Label component for mobile view consistency
-const Label = ({ children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) => (
-    <label className="text-xs font-medium text-muted-foreground" {...props}>{children}</label>
-);

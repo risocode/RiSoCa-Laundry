@@ -9,11 +9,12 @@ export default function TermsAndConditionsPage() {
       <AppHeader showLogo={true} />
       <main className="flex-1 relative">
         <Image
-          src="/terms_and_conditions.jpg"
+          src="https://picsum.photos/seed/terms/1200/800"
           alt="Terms and Conditions"
-          layout="fill"
-          objectFit="contain"
+          fill
+          style={{ objectFit: "contain" }}
           quality={100}
+          data-ai-hint="document agreement"
         />
       </main>
       <AppFooter />
