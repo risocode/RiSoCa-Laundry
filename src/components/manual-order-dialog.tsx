@@ -25,7 +25,7 @@ const manualOrderSchema = z.object({
   contactNumber: z.string().optional(),
   weight: z.preprocess(
     (val) => (String(val).trim() === '' ? undefined : Number(val)),
-    z.number({invalid_type_error: "Invalid number"}).min(0.1, "Weight must be greater than 0.").max(75, "Exceeds Maximum Load")
+    z.number({invalid_type_error: "Invalid number"}).min(0.1, "Weight must be greater than 0.")
   ),
   total: z.coerce.number().min(0, 'Price must be 0 or greater.'),
   isPaid: z.boolean().optional(),
@@ -58,7 +58,6 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
 
   const { loads, distribution } = useMemo(() => {
     let weight = watchedWeight || 0;
-    if (weight > 75) weight = 75;
     if (weight <= 0) {
       return { loads: 0, distribution: [] };
     }
@@ -84,6 +83,14 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
         form.setValue('total', undefined);
     }
   }, [loads, form])
+
+  const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = parseFloat(e.target.value);
+    if (value > 75) {
+      value = 75;
+    }
+    form.setValue('weight', value, { shouldValidate: true, shouldDirty: true });
+  }
 
   const onSubmit = async (data: ManualOrderFormValues) => {
     setIsSaving(true);
@@ -153,7 +160,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                   step="0.1"
                   placeholder=" "
                   {...field}
-                  onChange={(e) => field.onChange(e.target.value)}
+                  onChange={handleWeightChange}
                   value={field.value ?? ''}
                   disabled={isSaving}
                   className="form-input text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
