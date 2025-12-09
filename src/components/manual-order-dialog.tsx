@@ -19,6 +19,7 @@ import { Loader2, Layers } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { Separator } from './ui/separator';
 import { cn } from '@/lib/utils';
+import { generateOrderId } from '@/lib/constants';
 
 const manualOrderSchema = z.object({
   customerName: z.string().min(2, 'Name is required.'),
@@ -36,10 +37,11 @@ type ManualOrderFormValues = z.infer<typeof manualOrderSchema>;
 type ManualOrderDialogProps = {
   isOpen: boolean;
   onClose: () => void;
-  onAddOrder: (order: Omit<Order, 'id' | 'orderDate' | 'userId'>) => Promise<void>;
+  onAddOrder: (order: Omit<Order, 'userId'>) => Promise<void>;
+  existingOrders: Order[];
 };
 
-export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDialogProps) {
+export function ManualOrderDialog({ isOpen, onClose, onAddOrder, existingOrders }: ManualOrderDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
   const form = useForm<ManualOrderFormValues>({
     resolver: zodResolver(manualOrderSchema),
@@ -99,7 +101,10 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
   const onSubmit = async (data: ManualOrderFormValues) => {
     setIsSaving(true);
     const initialStatus = 'Order Placed';
-    const newOrder: Omit<Order, 'id' | 'orderDate' | 'userId'> = {
+    const newOrderId = generateOrderId(existingOrders);
+
+    const newOrder: Omit<Order, 'userId'> = {
+      id: newOrderId,
       customerName: data.customerName,
       contactNumber: data.contactNumber || 'N/A',
       load: loads,
@@ -109,6 +114,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
       isPaid: data.isPaid || false,
       servicePackage: 'package1',
       distance: 0,
+      orderDate: new Date(),
       statusHistory: [{ status: initialStatus, timestamp: new Date() }],
     };
     await onAddOrder(newOrder);
@@ -133,7 +139,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
               placeholder=" "
               {...form.register('customerName')}
               disabled={isSaving}
-              className="form-input"
+              className="form-input text-center"
             />
             <Label htmlFor="customerName" className="form-label">Customer Name</Label>
             {form.formState.errors.customerName && (
@@ -146,7 +152,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
               placeholder=" "
               {...form.register('contactNumber')}
               disabled={isSaving}
-              className="form-input"
+              className="form-input text-center"
             />
              <Label htmlFor="contactNumber" className="form-label">Contact Number (Optional)</Label>
             {form.formState.errors.contactNumber && (

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, Edit, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { RKR_RATES_KEY } from '@/lib/constants';
 
 type Rate = {
   id: string;
@@ -33,7 +34,7 @@ export function ServiceRatesEditor() {
   useEffect(() => {
     setLoading(true);
     try {
-        const storedRates = localStorage.getItem('rkr-rates');
+        const storedRates = localStorage.getItem(RKR_RATES_KEY);
         if (storedRates) {
             const parsedRates = JSON.parse(storedRates);
             setInitialRates(parsedRates);
@@ -52,7 +53,7 @@ export function ServiceRatesEditor() {
 
   useEffect(() => {
     if(!loading && saving) {
-        localStorage.setItem('rkr-rates', JSON.stringify(rates));
+        localStorage.setItem(RKR_RATES_KEY, JSON.stringify(rates));
     }
   }, [rates, loading, saving]);
 
@@ -68,7 +69,7 @@ export function ServiceRatesEditor() {
     // Simulate saving
     await new Promise(resolve => setTimeout(resolve, 1000));
     setInitialRates(rates); // Persist changes to "DB" state
-    localStorage.setItem('rkr-rates', JSON.stringify(rates));
+    localStorage.setItem(RKR_RATES_KEY, JSON.stringify(rates));
     toast({
       title: 'Success!',
       description: 'Service rates have been updated.',

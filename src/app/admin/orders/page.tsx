@@ -14,30 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ManualOrderDialog } from '@/components/manual-order-dialog';
-
-// Function to generate a sequential RKR order ID for admin
-const generateAdminOrderId = (orders: Order[]) => {
-  try {
-    if (orders.length === 0) {
-      return 'RKR000';
-    }
-
-    const latestOrderNumber = orders
-      .map(o => parseInt(o.id.replace('RKR', ''), 10))
-      .filter(n => !isNaN(n))
-      .sort((a, b) => b - a)[0];
-
-    const nextOrderNumber = isFinite(latestOrderNumber) ? latestOrderNumber + 1 : 0;
-    
-    return `RKR${String(nextOrderNumber).padStart(3, '0')}`;
-  } catch (error) {
-    console.error("Failed to generate order ID from existing orders", error);
-    // Fallback to random if parsing fails
-    const orderNumber = Math.floor(Math.random() * 1000);
-    return `RKR${String(orderNumber).padStart(3, '0')}`;
-  }
-};
-
+import { RKR_ORDERS_KEY } from '@/lib/constants';
 
 export default function AdminOrdersPage() {
   const { toast } = useToast();
@@ -47,7 +24,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     try {
-      const storedOrders = localStorage.getItem('rkr-orders');
+      const storedOrders = localStorage.getItem(RKR_ORDERS_KEY);
       if (storedOrders) {
         setAllOrders(JSON.parse(storedOrders).map((o: Order) => ({
           ...o,
@@ -65,7 +42,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     if(!loadingAdmin){
-      localStorage.setItem('rkr-orders', JSON.stringify(allOrders));
+      localStorage.setItem(RKR_ORDERS_KEY, JSON.stringify(allOrders));
     }
   }, [allOrders, loadingAdmin]);
 
@@ -78,9 +55,9 @@ export default function AdminOrdersPage() {
   }
 
   const handleAddOrder = async (newOrder: Omit<Order, 'id' | 'orderDate' | 'userId'>) => {
+    // We pass allOrders to generateOrderId to ensure it has the latest list
     const orderToAdd: Order = {
       ...newOrder,
-      id: generateAdminOrderId(allOrders),
       userId: 'admin-manual',
       orderDate: new Date(),
     };
@@ -127,6 +104,7 @@ export default function AdminOrdersPage() {
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onAddOrder={handleAddOrder}
+        existingOrders={allOrders}
       />
     </>
   );

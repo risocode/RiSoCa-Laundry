@@ -23,6 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { Order } from './order-list';
+import { RKR_ORDERS_KEY, generateOrderId } from '@/lib/constants';
 
 const packages = [
   { id: 'package1', label: 'Package 1', description: 'Wash, Dry, & Fold' },
@@ -54,33 +55,6 @@ type PendingOrder = {
     pricing: PricingResult;
     loads: number;
 };
-
-// Function to generate a sequential RKR order ID
-const generateOrderId = () => {
-  try {
-    const storedOrders = localStorage.getItem('rkr-orders');
-    const orders: Order[] = storedOrders ? JSON.parse(storedOrders) : [];
-    
-    if (orders.length === 0) {
-      return 'RKR000';
-    }
-
-    const latestOrderNumber = orders
-      .map(o => parseInt(o.id.replace('RKR', ''), 10))
-      .filter(n => !isNaN(n))
-      .sort((a, b) => b - a)[0];
-
-    const nextOrderNumber = isFinite(latestOrderNumber) ? latestOrderNumber + 1 : 0;
-    
-    return `RKR${String(nextOrderNumber).padStart(3, '0')}`;
-  } catch (error) {
-    console.error("Failed to generate order ID from localStorage", error);
-    // Fallback to random if parsing fails
-    const orderNumber = Math.floor(Math.random() * 1000);
-    return `RKR${String(orderNumber).padStart(3, '0')}`;
-  }
-};
-
 
 export function OrderForm() {
   const router = useRouter();
@@ -231,7 +205,15 @@ export function OrderForm() {
   const onCustomerInfoSubmit = (customerData: CustomerFormValues) => {
     if (!pendingOrder) return;
     
-    const newOrderId = generateOrderId();
+    let orders: Order[] = [];
+    try {
+        const storedOrders = localStorage.getItem(RKR_ORDERS_KEY) || '[]';
+        orders = JSON.parse(storedOrders);
+    } catch (error) {
+        console.error("Failed to parse orders from localStorage", error);
+    }
+    
+    const newOrderId = generateOrderId(orders);
     const initialStatus = 'Order Placed';
     
     const newOrder: Order = {
@@ -252,10 +234,8 @@ export function OrderForm() {
     };
 
     try {
-        const storedOrders = localStorage.getItem('rkr-orders') || '[]';
-        const orders = JSON.parse(storedOrders);
         orders.unshift(newOrder);
-        localStorage.setItem('rkr-orders', JSON.stringify(orders));
+        localStorage.setItem(RKR_ORDERS_KEY, JSON.stringify(orders));
     } catch (error) {
         console.error("Failed to save order to localStorage", error);
         toast({

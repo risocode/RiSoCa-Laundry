@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Inbox } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { RKR_EXPENSES_KEY } from '@/lib/constants';
 
 const expenseSchema = z.object({
   description: z.string().min(1, 'Description is required'),
@@ -43,7 +44,7 @@ export function ExpensesTracker() {
 
   useEffect(() => {
     try {
-        const storedExpenses = localStorage.getItem('rkr-expenses');
+        const storedExpenses = localStorage.getItem(RKR_EXPENSES_KEY);
         if (storedExpenses) {
             setExpenses(JSON.parse(storedExpenses).map((e: any) => ({...e, date: new Date(e.date)})));
         }
@@ -55,7 +56,7 @@ export function ExpensesTracker() {
 
   useEffect(() => {
     if(!loading) {
-        localStorage.setItem('rkr-expenses', JSON.stringify(expenses));
+        localStorage.setItem(RKR_EXPENSES_KEY, JSON.stringify(expenses));
     }
   }, [expenses, loading]);
 

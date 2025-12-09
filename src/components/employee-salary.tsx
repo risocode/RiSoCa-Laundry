@@ -26,6 +26,7 @@ import {
 import { Loader2, Inbox } from 'lucide-react';
 import type { Order } from '@/components/order-list';
 import { format, startOfDay } from 'date-fns';
+import { RKR_ORDERS_KEY } from '@/lib/constants';
 
 const SALARY_PER_LOAD = 30;
 
@@ -42,7 +43,7 @@ export function EmployeeSalary() {
 
   useEffect(() => {
     try {
-        const storedOrders = localStorage.getItem('rkr-orders');
+        const storedOrders = localStorage.getItem(RKR_ORDERS_KEY);
         if (storedOrders) {
             setOrders(JSON.parse(storedOrders).map((o: Order) => ({...o, orderDate: new Date(o.orderDate)})));
         }

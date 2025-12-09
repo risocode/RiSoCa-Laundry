@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
 import { OrderStatusTracker } from '@/components/order-status-tracker';
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search, Inbox, AlertTriangle, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { RKR_ORDERS_KEY } from '@/lib/constants';
 
 export default function OrderStatusPage() {
   const [orderId, setOrderId] = useState('');
@@ -38,7 +39,7 @@ export default function OrderStatusPage() {
     setTimeout(() => {
       let allOrders: Order[] = [];
       try {
-        const storedOrders = localStorage.getItem('rkr-orders');
+        const storedOrders = localStorage.getItem(RKR_ORDERS_KEY);
         if (storedOrders) {
           allOrders = JSON.parse(storedOrders).map((o: Order) => ({...o, orderDate: new Date(o.orderDate)}));
         }
@@ -50,10 +51,11 @@ export default function OrderStatusPage() {
         const orderIdMatch = o.id.toLowerCase() === orderId.trim().toLowerCase();
         if (!orderIdMatch) return false;
 
-        const nameParts = o.customerName.toLowerCase().split(' ');
-        const inputName = name.trim().toLowerCase();
+        // More flexible name matching: case-insensitive and partial match
+        const customerNameLower = o.customerName.toLowerCase();
+        const inputNameLower = name.trim().toLowerCase();
 
-        return nameParts.some(part => part === inputName);
+        return customerNameLower.includes(inputNameLower);
       });
 
       setSearchedOrder(foundOrder || null);
@@ -90,7 +92,7 @@ export default function OrderStatusPage() {
                        </div>
                     </div>
                      <div className="w-full grid gap-1.5">
-                      <Label htmlFor="name">First or Last Name</Label>
+                      <Label htmlFor="name">Any Part of Your Name</Label>
                        <div className="relative">
                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
