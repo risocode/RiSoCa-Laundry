@@ -2,15 +2,16 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Package, FileText, MapPin, Phone, HelpCircle, UserPlus, ArrowRight, ClipboardList, Bike, Download, WashingMachine, DollarSign } from 'lucide-react';
+import { Package, FileText, MapPin, Phone, HelpCircle, UserPlus, ArrowRight, ClipboardList, Bike, Download, WashingMachine } from 'lucide-react';
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
 import { HomePageWrapper } from '@/components/home-page-wrapper';
+import { PesoSign } from '@/components/icons/peso-sign';
 
 const customerGridItems = [
   { href: '/order-status', label: 'Order Status', icon: Package },
   { href: '/create-order', label: 'Create Order', icon: FileText },
-  { href: '/service-rates', label: 'Service Rates', icon: DollarSign },
+  { href: '/service-rates', label: 'Service Rates', icon: PesoSign },
   { href: '/track-rider', label: 'Track Rider', icon: Bike, comingSoon: true },
   { href: '/download-app', label: 'Download App', icon: Download, comingSoon: true },
   { href: '/terms-and-conditions', label: 'Terms & Conditions', icon: ClipboardList },
