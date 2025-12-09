@@ -14,7 +14,7 @@ const customerGridItems = [
   { href: '/create-order', label: 'Create Order', icon: FileText },
   { href: '/service-rates', label: 'Service Rates', icon: PesoCoinIcon },
   { href: '/track-rider', label: 'Track Rider', icon: Bike, comingSoon: true },
-  { href: '/download-app', label: 'Download App (APK – Coming Soon)', icon: Download, comingSoon: true },
+  { href: '/download-app', label: 'Download APK', icon: Download, comingSoon: true },
   { href: '/terms-and-conditions', label: 'Terms & Conditions', icon: ClipboardList },
   { href: '/faqs', label: 'FAQs', icon: HelpCircle },
   { href: '/branches', label: 'Branches', icon: MapPin },
@@ -32,16 +32,10 @@ export default function Home() {
   return (
       <HomePageWrapper gridItems={gridItems}>
         <div className="flex flex-col h-screen select-none">
-          <AppHeader showLogo={false} />
+          <AppHeader />
           <main className="flex-1 overflow-y-auto flex flex-col items-center container mx-auto px-4 text-center pt-2 md:pt-4">
             
             <div className="flex flex-col items-center mb-4 pt-8">
-                <div className="flex items-center gap-2 md:gap-3">
-                  <WashingMachine className="h-16 w-16 md:h-20 md:w-20 text-primary" />
-                  <span className="font-bold text-primary text-4xl md:text-5xl">RKR Laundry</span>
-                </div>
-                <p className="text-base md:text-lg text-muted-foreground mt-1">Fast. Clean. Convenient.</p>
-            </div>
 
             <div className="flex flex-row items-center justify-center gap-4 mb-4 h-16">
               {user ? (
