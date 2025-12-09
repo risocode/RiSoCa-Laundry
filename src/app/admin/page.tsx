@@ -22,7 +22,7 @@ export default function AdminDashboardPage() {
                 <p className="text-lg md:text-xl text-muted-foreground mt-1 max-w-sm">Select an option to manage the application.</p>
             </div>
 
-            <div className="grid">
+            <div className="grid grid-cols-3 gap-4 w-full max-w-md">
               {/* Grid items will be rendered by HomePageWrapper */}
             </div>
 
