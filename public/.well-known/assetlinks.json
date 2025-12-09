@@ -18,6 +18,13 @@
         "B1:9A:00:E5:41:F3:30:91:35:92:F6:0A:05:54:AF:48:25:26:C5:85:4D:F2:CC:D0:7F:5A:37:6B:1C:79:97:5A"
       ]
     }
+  },
+  {
+    "relation": ["delegate_permission/common.get_login_creds"],
+    "target": {
+      "namespace": "web",
+      "site": "https://rkrlaundry.com"
+    }
   }
 ]
 
