@@ -82,11 +82,20 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
   }, [loads, form])
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = parseFloat(e.target.value);
+    const rawValue = e.target.value;
+    let value = parseFloat(rawValue);
+
+    if (isNaN(value)) {
+        form.setValue('weight', undefined, { shouldValidate: true });
+        return;
+    }
+    
     if (value > 75) {
       value = 75;
+      form.setValue('weight', value, { shouldValidate: true });
+    } else {
+      form.setValue('weight', value, { shouldValidate: true });
     }
-    form.setValue('weight', value, { shouldValidate: true });
   }
 
   const onSubmit = async (data: ManualOrderFormValues) => {
@@ -157,10 +166,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                   step="0.1"
                   placeholder=" "
                   {...field}
-                  onChange={(e) => {
-                    handleWeightChange(e)
-                    field.onChange(e);
-                  }}
+                  onChange={handleWeightChange}
                   value={field.value || ''}
                   disabled={isSaving}
                   className="form-input text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -251,7 +257,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             <Button type="button" variant="outline" onClick={() => { form.reset(); onClose(); }} disabled={isSaving}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSaving || isPaid === undefined}>
+            <Button type="submit" disabled={isSaving || isPaid === undefined || !!form.formState.errors.weight}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Add Order
             </Button>
