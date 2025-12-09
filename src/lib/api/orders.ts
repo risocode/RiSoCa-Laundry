@@ -19,20 +19,29 @@ export type OrderInsert = {
 /**
  * Fetches the latest order ID from the database.
  * This ensures all orders (manual admin orders and customer orders) use the same sequential numbering.
+ * Uses a database function to bypass RLS restrictions.
  */
 export async function fetchLatestOrderId() {
-  const { data, error } = await supabase
-    .from('orders')
-    .select('id')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // Use RPC call to the database function which bypasses RLS
+  const { data, error } = await supabase.rpc('get_latest_order_id');
   
   if (error) {
-    return { latestId: null, error };
+    // Fallback to direct query if function doesn't exist (for backwards compatibility)
+    const { data: fallbackData, error: fallbackError } = await supabase
+      .from('orders')
+      .select('id')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (fallbackError) {
+      return { latestId: null, error: fallbackError };
+    }
+    
+    return { latestId: fallbackData?.id ?? null, error: null };
   }
   
-  return { latestId: data?.id ?? null, error: null };
+  return { latestId: data ?? null, error: null };
 }
 
 /**

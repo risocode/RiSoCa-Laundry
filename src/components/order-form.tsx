@@ -218,7 +218,13 @@ export function OrderForm() {
     // If customer creates RKR001, next admin order will be RKR002, and vice versa
     const { latestId, error: latestError } = await fetchLatestOrderId();
     if (latestError) {
-        toast({ variant: 'destructive', title: 'Order ID error', description: 'Could not generate order ID.' });
+        console.error('Error fetching latest order ID:', latestError);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Order ID error', 
+            description: `Could not generate order ID: ${latestError.message || 'Please try again or contact support.'}` 
+        });
+        setIsCustomerInfoDialogOpen(false);
         return;
     }
     const newOrderId = generateNextOrderId(latestId);
