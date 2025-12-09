@@ -10,14 +10,15 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
     const router = useRouter();
+    const pathname = usePathname();
 
     // Simplified for a non-auth state. We can add auth back later if needed.
     const user = false; // Mock user state
-    const isAdmin = false; // Mock admin state
+    const isAdminPage = pathname.startsWith('/admin');
 
     const handleSignOut = async () => {
       // Mock sign out
@@ -25,7 +26,7 @@ export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
     };
 
     const navLinks = [
-      isAdmin 
+      isAdminPage 
         ? { href: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard }
         : { href: '/admin/login', label: 'Administrator Login', icon: UserCog },
       { href: '/download-app', label: 'Download APK', icon: Download },
@@ -37,7 +38,7 @@ export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
     <header className="w-full border-b bg-background/95">
       <div className="container flex h-16 items-center justify-between px-4">
         {showLogo ? (
-          <Link href="/" className="flex items-center gap-2">
+          <Link href={isAdminPage ? "/admin" : "/"} className="flex items-center gap-2">
             <WashingMachine className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             <div className='flex flex-col'>
                 <span className="font-bold text-primary text-lg sm:text-xl leading-none">RKR Laundry</span>
