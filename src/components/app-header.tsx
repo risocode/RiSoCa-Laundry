@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Menu, UserCog, Download, Info, LogOut, WashingMachine, LayoutDashboard, Sparkles } from 'lucide-react';
+import { Menu, UserCog, Download, Info, LogOut, WashingMachine, LayoutDashboard } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +30,6 @@ export function AppHeader({ showLogo = false }: { showLogo?: boolean }) {
         : { href: '/admin/login', label: 'Administrator Login', icon: UserCog },
       { href: '/download-app', label: 'Download APK', icon: Download },
       { href: '/about', label: 'About', icon: Info },
-      { href: '/features', label: 'Features', icon: Sparkles },
     ];
 
 
