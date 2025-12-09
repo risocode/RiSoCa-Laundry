@@ -5,8 +5,8 @@ import { ClipboardList, DollarSign, Wallet, CreditCard } from 'lucide-react';
 import { HomePageWrapper } from '@/components/home-page-wrapper';
 
 const adminGridItems = [
-  { href: '/admin/orders', label: 'Manage Orders', icon: ClipboardList },
-  { href: '/admin/rates', label: 'Manage Service Rates', icon: DollarSign },
+  { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
+  { href: '/admin/rates', label: 'Service Rates', icon: DollarSign },
   { href: '/admin/salary', label: 'Employee Salary', icon: Wallet },
   { href: '/admin/expenses', label: 'Expenses', icon: CreditCard },
 ];
