@@ -52,16 +52,18 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
 
   const onSubmit = async (data: ManualOrderFormValues) => {
     setIsSaving(true);
+    const initialStatus = 'Order Placed';
     const newOrder: Omit<Order, 'id' | 'orderDate' | 'userId'> = {
       customerName: data.customerName,
       contactNumber: data.contactNumber || 'N/A',
       load: data.load,
       weight: data.weight,
-      status: 'Order Placed', // Always start with Order Placed
+      status: initialStatus,
       total: data.total,
       isPaid: data.isPaid,
       servicePackage: 'package1',
       distance: 0,
+      statusHistory: [{ status: initialStatus, timestamp: new Date() }],
     };
     await onAddOrder(newOrder);
     setIsSaving(false);

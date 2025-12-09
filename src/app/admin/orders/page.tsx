@@ -8,7 +8,7 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { OrderList } from '@/components/order-list';
-import type { Order } from '@/components/order-list';
+import type { Order, StatusHistory } from '@/components/order-list';
 import { Loader2, Inbox, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
@@ -49,7 +49,11 @@ export default function AdminOrdersPage() {
     try {
       const storedOrders = localStorage.getItem('rkr-orders');
       if (storedOrders) {
-        setAllOrders(JSON.parse(storedOrders).map((o: Order) => ({...o, orderDate: new Date(o.orderDate)})));
+        setAllOrders(JSON.parse(storedOrders).map((o: Order) => ({
+          ...o,
+          orderDate: new Date(o.orderDate),
+          statusHistory: o.statusHistory.map((sh: StatusHistory) => ({...sh, timestamp: new Date(sh.timestamp)}))
+        })));
       }
     } catch (error) {
       console.error("Failed to parse orders from localStorage", error);

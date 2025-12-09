@@ -232,6 +232,7 @@ export function OrderForm() {
     if (!pendingOrder) return;
     
     const newOrderId = generateOrderId();
+    const initialStatus = 'Order Placed';
     
     const newOrder: Order = {
         id: newOrderId,
@@ -240,13 +241,14 @@ export function OrderForm() {
         contactNumber: customerData.contactNumber,
         load: pendingOrder.loads,
         weight: pendingOrder.orderData.weight || 7.5,
-        status: 'Order Placed',
+        status: initialStatus,
         total: pendingOrder.pricing.computedPrice,
         orderDate: new Date(),
         isPaid: false,
         servicePackage: pendingOrder.orderData.servicePackage,
         distance: pendingOrder.orderData.distance,
-        deliveryOption: customerData.deliveryOption
+        deliveryOption: customerData.deliveryOption,
+        statusHistory: [{ status: initialStatus, timestamp: new Date() }],
     };
 
     try {

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Shirt, Truck, PackageCheck, CircleCheck, Wind, WashingMachine, Package, CheckCircle2, User, Weight as WeightIcon, Layers, Wallet } from 'lucide-react';
-import type { Order } from '@/components/order-list';
+import type { Order, StatusHistory } from '@/components/order-list';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 
@@ -19,14 +19,9 @@ const statuses = [
   { name: 'Success', icon: CheckCircle2 },
 ];
 
-type StatusLog = {
-  status: string;
-  timestamp: string;
-};
-
 export function OrderStatusTracker({ order }: { order: Order }) {
   const [currentStatusIndex, setCurrentStatusIndex] = useState(0);
-  const [statusLogs, setStatusLogs] = useState<StatusLog[]>([]);
+  const [statusLogs, setStatusLogs] = useState<StatusHistory[]>([]);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -35,13 +30,15 @@ export function OrderStatusTracker({ order }: { order: Order }) {
     if (orderStatusIndex !== -1) {
       setCurrentStatusIndex(orderStatusIndex);
       
-      const logs = statuses.slice(0, orderStatusIndex + 1).map(s => ({
-        status: s.name,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }));
+      const logs = (order.statusHistory || [{ status: 'Order Placed', timestamp: order.orderDate }])
+        .map(log => ({ ...log, timestamp: new Date(log.timestamp) }));
+
       setStatusLogs(logs);
 
-      setProgress(((orderStatusIndex + 1) / statuses.length) * 100);
+      // Ensure progress reflects the actual status, not just index
+      const uniqueStatusesInHistory = [...new Map(logs.map(item => [item['status'], item])).values()];
+      const currentStatusInAllStatuses = statuses.findIndex(s => s.name === order.status);
+      setProgress(((currentStatusInAllStatuses + 1) / statuses.length) * 100);
     }
   }, [order]);
 
@@ -119,7 +116,7 @@ export function OrderStatusTracker({ order }: { order: Order }) {
                     </div>
                     <div className="flex-1 pt-0">
                       <p className={`font-medium text-xs ${index === 0 ? 'text-primary' : 'text-muted-foreground'}`}>{log.status}</p>
-                      <p className="text-[10px] text-muted-foreground">{log.timestamp}</p>
+                      <p className="text-[10px] text-muted-foreground">{log.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                   </li>
                 ))}

@@ -21,7 +21,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Edit, Save, X, Loader2 } from 'lucide-react';
-import { Switch } from './ui/switch';
 import {
     Accordion,
     AccordionContent,
@@ -29,6 +28,11 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { cn } from '@/lib/utils';
+
+export type StatusHistory = {
+  status: string;
+  timestamp: Date;
+};
 
 export type Order = {
   id: string;
@@ -44,6 +48,7 @@ export type Order = {
   deliveryOption?: string;
   servicePackage: string;
   distance: number;
+  statusHistory: StatusHistory[];
 };
 
 type OrderListProps = {
@@ -92,12 +97,24 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     const [editableOrder, setEditableOrder] = useState(order);
 
     const handleFieldChange = (field: keyof Order, value: string | number | boolean) => {
-        const numericFields = ['weight', 'load', 'total'];
-        const isNumeric = numericFields.includes(field as string);
-        setEditableOrder(prev => ({
-            ...prev,
-            [field]: isNumeric ? (Number(value) || 0) : value
-        }));
+        let newOrderState = { ...editableOrder };
+
+        if (field === 'status' && typeof value === 'string' && value !== editableOrder.status) {
+            newOrderState = {
+                ...newOrderState,
+                status: value,
+                statusHistory: [...editableOrder.statusHistory, { status: value, timestamp: new Date() }]
+            };
+        } else {
+            const numericFields = ['weight', 'load', 'total'];
+            const isNumeric = numericFields.includes(field as string);
+            newOrderState = {
+                ...newOrderState,
+                [field]: isNumeric ? (Number(value) || 0) : value
+            };
+        }
+        
+        setEditableOrder(newOrderState);
     };
     
     const handleSave = async () => {
@@ -200,12 +217,24 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     const [editableOrder, setEditableOrder] = useState(order);
 
     const handleFieldChange = (field: keyof Order, value: string | number | boolean) => {
-        const numericFields = ['weight', 'load', 'total'];
-        const isNumeric = numericFields.includes(field as string);
-        setEditableOrder(prev => ({
-            ...prev,
-            [field]: isNumeric ? (Number(value) || 0) : value
-        }));
+        let newOrderState = { ...editableOrder };
+
+        if (field === 'status' && typeof value === 'string' && value !== editableOrder.status) {
+            newOrderState = {
+                ...newOrderState,
+                status: value,
+                statusHistory: [...editableOrder.statusHistory, { status: value, timestamp: new Date() }]
+            };
+        } else {
+            const numericFields = ['weight', 'load', 'total'];
+            const isNumeric = numericFields.includes(field as string);
+            newOrderState = {
+                ...newOrderState,
+                [field]: isNumeric ? (Number(value) || 0) : value
+            };
+        }
+        
+        setEditableOrder(newOrderState);
     };
     
     const handleSave = async () => {
