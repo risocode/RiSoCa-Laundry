@@ -53,7 +53,8 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
   const isPaid = form.watch('isPaid');
 
   const { loads, distribution } = useMemo(() => {
-    const weight = watchedWeight || 0;
+    let weight = watchedWeight || 0;
+    if (weight > 75) weight = 75;
     if (weight <= 0) {
       return { loads: 0, distribution: [] };
     }
@@ -79,6 +80,14 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
         form.setValue('total', undefined);
     }
   }, [loads, form])
+
+  const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = parseFloat(e.target.value);
+    if (value > 75) {
+      value = 75;
+    }
+    form.setValue('weight', value, { shouldValidate: true });
+  }
 
   const onSubmit = async (data: ManualOrderFormValues) => {
     setIsSaving(true);
@@ -138,16 +147,27 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             )}
           </div>
           <div className="form-group">
-            <Input
-              id="weight"
-              type="number"
-              step="0.1"
-              placeholder=" "
-              {...form.register('weight')}
-              disabled={isSaving}
-              className="form-input text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+             <Controller
+              name="weight"
+              control={form.control}
+              render={({ field }) => (
+                <Input
+                  id="weight"
+                  type="number"
+                  step="0.1"
+                  placeholder=" "
+                  {...field}
+                  onChange={(e) => {
+                    handleWeightChange(e)
+                    field.onChange(e);
+                  }}
+                  value={field.value || ''}
+                  disabled={isSaving}
+                  className="form-input text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              )}
             />
-            <Label htmlFor="weight" className="form-label">Total Weight (e.g., 7.5 kg)</Label>
+            <Label htmlFor="weight" className="form-label">Total Weight (kg)</Label>
             {form.formState.errors.weight && (
               <p className="text-xs text-destructive pt-1">{form.formState.errors.weight.message}</p>
             )}
@@ -188,7 +208,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                     />
                 )}
             />
-            <Label htmlFor="total" className="form-label">Price to Pay (e.g., ₱180 / Load)</Label>
+            <Label htmlFor="total" className="form-label">Price (₱180 / Load)</Label>
              {form.formState.errors.total && (
               <p className="text-xs text-destructive pt-1">{form.formState.errors.total.message}</p>
             )}
