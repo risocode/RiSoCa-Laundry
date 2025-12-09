@@ -74,11 +74,11 @@ export function EmployeeSalary() {
 
   return (
     <Card className="w-full">
-      <CardHeader>
+      <CardHeader className="p-4 sm:p-6">
         <CardTitle>Daily Salary Calculation</CardTitle>
         <CardDescription>Salary is calculated at ₱{SALARY_PER_LOAD} per completed load for each day.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-2 sm:p-6">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
             <Loader2 className="h-12 w-12 mb-2 animate-spin" />
@@ -88,8 +88,8 @@ export function EmployeeSalary() {
           <Accordion type="single" collapsible className="w-full">
             {dailySalaries.map(({ date, orders, totalLoads, totalSalary }) => (
               <AccordionItem key={date.toISOString()} value={date.toISOString()}>
-                <AccordionTrigger>
-                    <div className="flex justify-between w-full pr-4">
+                <AccordionTrigger className="no-underline hover:no-underline">
+                    <div className="flex justify-between w-full pr-4 text-left">
                         <span className="font-semibold">{format(date, 'PPP')}</span>
                         <div className="flex gap-4 text-sm text-right">
                            <span>Loads: <span className="font-bold">{totalLoads}</span></span>
