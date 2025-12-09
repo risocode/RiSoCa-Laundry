@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -39,6 +39,25 @@ type Expense = z.infer<typeof expenseSchema>;
 export function ExpensesTracker() {
   const { toast } = useToast();
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+        const storedExpenses = localStorage.getItem('rkr-expenses');
+        if (storedExpenses) {
+            setExpenses(JSON.parse(storedExpenses).map((e: any) => ({...e, date: new Date(e.date)})));
+        }
+    } catch(e) {
+        console.error("Failed to parse expenses from localStorage", e);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    if(!loading) {
+        localStorage.setItem('rkr-expenses', JSON.stringify(expenses));
+    }
+  }, [expenses, loading]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<{description: string, amount: string}>({
     defaultValues: {
@@ -53,7 +72,7 @@ export function ExpensesTracker() {
       amount: parseFloat(data.amount),
       date: new Date(),
     };
-    setExpenses(prev => [newExpense, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
+    setExpenses(prev => [newExpense, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     toast({
         title: "Expense Added",
         description: `${newExpense.description} has been logged.`
@@ -117,7 +136,7 @@ export function ExpensesTracker() {
                         <TableBody>
                         {expenses.map((expense, index) => (
                             <TableRow key={index}>
-                            <TableCell className="text-xs">{format(expense.date, 'PPP')}</TableCell>
+                            <TableCell className="text-xs">{format(new Date(expense.date), 'PPP')}</TableCell>
                             <TableCell>{expense.description}</TableCell>
                             <TableCell className="text-right">₱{expense.amount.toFixed(2)}</TableCell>
                             <TableCell className="text-center">

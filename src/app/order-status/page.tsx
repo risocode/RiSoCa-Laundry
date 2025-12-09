@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
 import { OrderStatusTracker } from '@/components/order-status-tracker';
@@ -12,16 +12,25 @@ import { Label } from '@/components/ui/label';
 import { Search, Inbox, AlertTriangle, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock data has been removed to prepare for backend integration.
-const mockOrders: Order[] = [];
-
 export default function OrderStatusPage() {
   const [orderId, setOrderId] = useState('');
   const [name, setName] = useState('');
   const [searchedOrder, setSearchedOrder] = useState<Order | null>(null);
   const [searchAttempted, setSearchAttempted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+      const storedOrders = localStorage.getItem('rkr-orders');
+      if (storedOrders) {
+        setAllOrders(JSON.parse(storedOrders).map((o: Order) => ({...o, orderDate: new Date(o.orderDate)})));
+      }
+    } catch (error) {
+      console.error("Failed to parse orders from localStorage", error);
+    }
+  }, []);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,7 +48,7 @@ export default function OrderStatusPage() {
 
     // Simulate API call to find the order
     setTimeout(() => {
-      const foundOrder = mockOrders.find(o => {
+      const foundOrder = allOrders.find(o => {
         const orderIdMatch = o.id.toLowerCase() === orderId.trim().toLowerCase();
         if (!orderIdMatch) return false;
 

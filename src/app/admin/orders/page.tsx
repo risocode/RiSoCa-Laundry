@@ -11,33 +11,46 @@ import { OrderList } from '@/components/order-list';
 import type { Order } from '@/components/order-list';
 import { Loader2, Inbox, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ManualOrderDialog } from '@/components/manual-order-dialog';
 
 export default function AdminOrdersPage() {
   const { toast } = useToast();
   const [allOrders, setAllOrders] = useState<Order[]>([]);
-  const [loadingAdmin, setLoadingAdmin] = useState(false);
+  const [loadingAdmin, setLoadingAdmin] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  useEffect(() => {
+    try {
+      const storedOrders = localStorage.getItem('rkr-orders');
+      if (storedOrders) {
+        setAllOrders(JSON.parse(storedOrders).map((o: Order) => ({...o, orderDate: new Date(o.orderDate)})));
+      }
+    } catch (error) {
+      console.error("Failed to parse orders from localStorage", error);
+    }
+    setLoadingAdmin(false);
+  }, []);
+
+  useEffect(() => {
+    if(!loadingAdmin){
+      localStorage.setItem('rkr-orders', JSON.stringify(allOrders));
+    }
+  }, [allOrders, loadingAdmin]);
 
   const handleUpdateOrder = async (updatedOrder: Order) => {
-    setLoadingAdmin(true);
-    // Simulate update
-    await new Promise(resolve => setTimeout(resolve, 500));
     setAllOrders(prevOrders => prevOrders.map(o => o.id === updatedOrder.id ? updatedOrder : o));
     toast({
         title: 'Order Updated',
-        description: `Order #${updatedOrder.id.substring(0, 7)} has been updated to ${updatedOrder.status}.`,
+        description: `Order #${updatedOrder.id} has been updated to ${updatedOrder.status}.`,
     });
-    setLoadingAdmin(false);
   }
 
   const handleAddOrder = async (newOrder: Omit<Order, 'id' | 'orderDate' | 'userId'>) => {
     const orderToAdd: Order = {
       ...newOrder,
-      id: `RKR${Math.floor(Math.random() * 900) + 100}`,
+      id: `RKR${String(Math.floor(Math.random() * 900) + 100).padStart(3, '0')}`,
       userId: 'admin-manual',
       orderDate: new Date(),
     };

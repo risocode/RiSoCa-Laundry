@@ -15,7 +15,7 @@ type Rate = {
   type: 'service' | 'delivery';
 };
 
-const initialRatesData: Rate[] = [
+const defaultRates: Rate[] = [
     { id: 'service-1', name: 'Wash, Dry, Fold (per 7.5kg load)', price: 180, type: 'service'},
     { id: 'delivery-1', name: 'First 1 km', price: 0, type: 'delivery'},
     { id: 'delivery-2', name: 'Each additional km', price: 20, type: 'delivery'},
@@ -26,18 +26,35 @@ export function ServiceRatesEditor() {
   
   const [initialRates, setInitialRates] = useState<Rate[]>([]);
   const [rates, setRates] = useState<Rate[]>([]);
-  const [loading, setLoading] = useState(true); // Start with loading true
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching data
-    setTimeout(() => {
-        setInitialRates(initialRatesData);
-        setRates(initialRatesData);
-        setLoading(false);
-    }, 500);
+    setLoading(true);
+    try {
+        const storedRates = localStorage.getItem('rkr-rates');
+        if (storedRates) {
+            const parsedRates = JSON.parse(storedRates);
+            setInitialRates(parsedRates);
+            setRates(parsedRates);
+        } else {
+            setInitialRates(defaultRates);
+            setRates(defaultRates);
+        }
+    } catch (e) {
+        console.error("Failed to parse rates from localStorage", e);
+        setInitialRates(defaultRates);
+        setRates(defaultRates);
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    if(!loading && saving) {
+        localStorage.setItem('rkr-rates', JSON.stringify(rates));
+    }
+  }, [rates, loading, saving]);
 
   const handlePriceChange = (id: string, newPrice: string) => {
     const numericPrice = parseFloat(newPrice) || 0;
@@ -50,7 +67,8 @@ export function ServiceRatesEditor() {
     setSaving(true);
     // Simulate saving
     await new Promise(resolve => setTimeout(resolve, 1000));
-    setInitialRates(rates); // Persist changes to "DB"
+    setInitialRates(rates); // Persist changes to "DB" state
+    localStorage.setItem('rkr-rates', JSON.stringify(rates));
     toast({
       title: 'Success!',
       description: 'Service rates have been updated.',

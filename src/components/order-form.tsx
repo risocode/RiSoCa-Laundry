@@ -22,6 +22,7 @@ import { Separator } from './ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import type { Order } from './order-list';
 
 const packages = [
   { id: 'package1', label: 'Package 1', description: 'Wash, Dry, & Fold' },
@@ -211,7 +212,36 @@ export function OrderForm() {
     
     const newOrderId = generateOrderId();
     
-    // Mock order creation
+    const newOrder: Order = {
+        id: newOrderId,
+        userId: 'customer',
+        customerName: customerData.customerName,
+        contactNumber: customerData.contactNumber,
+        load: pendingOrder.loads,
+        weight: pendingOrder.orderData.weight || 7.5,
+        status: 'Order Placed',
+        total: pendingOrder.pricing.computedPrice,
+        orderDate: new Date(),
+        servicePackage: pendingOrder.orderData.servicePackage,
+        distance: pendingOrder.orderData.distance,
+        deliveryOption: customerData.deliveryOption
+    };
+
+    try {
+        const storedOrders = localStorage.getItem('rkr-orders') || '[]';
+        const orders = JSON.parse(storedOrders);
+        orders.unshift(newOrder);
+        localStorage.setItem('rkr-orders', JSON.stringify(orders));
+    } catch (error) {
+        console.error("Failed to save order to localStorage", error);
+        toast({
+          variant: "destructive",
+          title: 'Save Error!',
+          description: `Could not save your order. Please try again.`
+        });
+        return;
+    }
+    
     toast({
       title: 'Order Placed!',
       description: `Your order #${newOrderId} has been successfully submitted.`

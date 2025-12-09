@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -38,12 +38,24 @@ type DailySalary = {
 
 export function EmployeeSalary() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+        const storedOrders = localStorage.getItem('rkr-orders');
+        if (storedOrders) {
+            setOrders(JSON.parse(storedOrders).map((o: Order) => ({...o, orderDate: new Date(o.orderDate)})));
+        }
+    } catch (error) {
+        console.error("Failed to parse orders from localStorage", error);
+    }
+    setLoading(false);
+  }, []);
 
   const completedOrdersByDate = orders
     .filter((order) => order.status === 'Success' || order.status === 'Delivered')
     .reduce((acc, order) => {
-        const dateStr = startOfDay(order.orderDate).toISOString();
+        const dateStr = startOfDay(new Date(order.orderDate)).toISOString();
         if (!acc[dateStr]) {
             acc[dateStr] = [];
         }
