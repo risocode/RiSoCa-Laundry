@@ -178,7 +178,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                         id="total"
                         type="number"
                         step="0.01"
-                        placeholder="e.g., 180 / Load"
+                        placeholder="e.g., ₱180 / Load"
                         {...field}
                         value={field.value || ''}
                         disabled={isSaving}
