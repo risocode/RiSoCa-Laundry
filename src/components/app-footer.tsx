@@ -14,6 +14,9 @@ export function AppFooter() {
           <Link href="/terms-and-conditions" className="text-muted-foreground hover:text-primary transition-colors underline">
             Terms & Conditions
           </Link>
+          <Link href="/delete-account" className="text-muted-foreground hover:text-primary transition-colors underline text-xs">
+            Delete Account
+          </Link>
           <div className="flex items-center space-x-2">
             <a href="https://facebook.com/rkrlaundry" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
               <Facebook className="h-4 w-4 sm:h-5 sm:w-5" />

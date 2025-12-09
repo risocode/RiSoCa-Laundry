@@ -203,7 +203,9 @@ export default function PrivacyPolicyPage() {
                     <li><strong>Portability:</strong> Request your data in a portable format</li>
                   </ul>
                   <p className="leading-relaxed mt-3">
-                    To exercise these rights, please contact us at <a href="mailto:support@rkrlaundry.com" className="text-primary hover:underline">support@rkrlaundry.com</a>
+                    To delete your account and all associated data, you can{' '}
+                    <a href="/delete-account" className="text-primary hover:underline font-semibold">request account deletion here</a>.
+                    For other requests, please contact us at <a href="mailto:support@rkrlaundry.com" className="text-primary hover:underline">support@rkrlaundry.com</a>
                   </p>
                 </div>
               </section>
