@@ -111,7 +111,7 @@ export function OrderStatusTracker({ order }: { order: Order }) {
           <div className="space-y-2">
             <h4 className="font-semibold text-sm text-foreground/80">Status Log</h4>
             <div className="max-h-60 overflow-y-auto pr-2 -mr-2">
-              <ul className="space-y-3 border-l-2 border-dashed border-border ml-2">
+              <ul className="space-y-3 border-l-2 border-dashed border-border ml-3">
                 {statusLogs.slice().reverse().map((log, index) => (
                   <li key={index} className="flex items-start gap-3 -ml-[10px] relative">
                     <div className={`flex-shrink-0 mt-1 rounded-full h-4 w-4 flex items-center justify-center ${index === 0 ? 'bg-primary' : 'bg-muted'}`}>
