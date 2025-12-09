@@ -30,7 +30,7 @@ export function OrderStatusTracker({ order }: { order: Order }) {
     if (orderStatusIndex !== -1) {
       setCurrentStatusIndex(orderStatusIndex);
       
-      const logs = (order.statusHistory || [{ status: 'Order Placed', timestamp: order.orderDate }])
+      const logs = (order.statusHistory || [{ status: order.status, timestamp: order.orderDate }])
         .map(log => ({ ...log, timestamp: new Date(log.timestamp) }));
 
       setStatusLogs(logs);

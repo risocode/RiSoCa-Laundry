@@ -52,7 +52,9 @@ export default function AdminOrdersPage() {
         setAllOrders(JSON.parse(storedOrders).map((o: Order) => ({
           ...o,
           orderDate: new Date(o.orderDate),
-          statusHistory: o.statusHistory.map((sh: StatusHistory) => ({...sh, timestamp: new Date(sh.timestamp)}))
+          statusHistory: o.statusHistory 
+            ? o.statusHistory.map((sh: StatusHistory) => ({...sh, timestamp: new Date(sh.timestamp)}))
+            : [{ status: o.status, timestamp: new Date(o.orderDate) }]
         })));
       }
     } catch (error) {

@@ -103,7 +103,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
             newOrderState = {
                 ...newOrderState,
                 status: value,
-                statusHistory: [...editableOrder.statusHistory, { status: value, timestamp: new Date() }]
+                statusHistory: [...(editableOrder.statusHistory || []), { status: value, timestamp: new Date() }]
             };
         } else {
             const numericFields = ['weight', 'load', 'total'];
@@ -223,7 +223,7 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
             newOrderState = {
                 ...newOrderState,
                 status: value,
-                statusHistory: [...editableOrder.statusHistory, { status: value, timestamp: new Date() }]
+                statusHistory: [...(editableOrder.statusHistory || []), { status: value, timestamp: new Date() }]
             };
         } else {
             const numericFields = ['weight', 'load', 'total'];
