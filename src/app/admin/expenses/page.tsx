@@ -11,7 +11,7 @@ export default function AdminExpensesPage() {
       </div>
       
       <div className="w-full max-w-4xl">
-        <ExpensesTracker />
+      <ExpensesTracker />
       </div>
     </div>
   );

@@ -29,8 +29,8 @@ export default function DownloadAppPage() {
                 <div className="relative w-32 h-32 md:w-48 md:h-48 flex items-center justify-center bg-muted rounded-lg">
                    <p className="text-muted-foreground text-sm">QR Code</p>
                 </div>
+                </div>
             </div>
-        </div>
         </div>
       </main>
       <AppFooter />

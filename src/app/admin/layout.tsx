@@ -85,7 +85,7 @@ export default function AdminLayout({
       <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">
         <div className="container mx-auto px-4 py-4 sm:py-8 min-h-full flex items-center justify-center">
           <div className="w-full max-w-7xl">
-            {children}
+        {children}
           </div>
         </div>
       </main>

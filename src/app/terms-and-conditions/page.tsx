@@ -11,16 +11,16 @@ export default function TermsAndConditionsPage() {
       <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">
         <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-full">
           <div className="relative w-full max-w-4xl min-h-[400px] md:min-h-[600px]">
-            <Image
+        <Image
               src="/terms_and_conditions.jpg"
-              alt="Terms and Conditions"
-              fill
-              style={{ objectFit: "contain" }}
-              quality={100}
+          alt="Terms and Conditions"
+          fill
+          style={{ objectFit: "contain" }}
+          quality={100}
               className="object-contain"
               priority
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
-            />
+        />
           </div>
         </div>
       </main>

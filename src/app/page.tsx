@@ -57,7 +57,7 @@ export default function Home() {
               <div className="flex items-center gap-2 md:gap-3 mb-2">
                 <WashingMachine className="h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 text-primary" />
                 <span className="font-bold text-primary text-3xl sm:text-4xl md:text-5xl">RKR Laundry</span>
-              </div>
+                </div>
               <p className="text-sm sm:text-base md:text-lg text-muted-foreground">Fast. Clean. Convenient.</p>
             </div>
 
@@ -71,26 +71,26 @@ export default function Home() {
                     <div className="text-xs sm:text-sm font-semibold text-primary text-center px-2">{displayName}</div>
                   </div>
                 ) : (
-                  <>
+              <>
                     <Link href="/login" passHref className="flex-shrink-0">
                       <Button size="lg" className="w-28 sm:w-32 h-10 sm:h-11 text-sm sm:text-base rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-shadow">
                         <ArrowRight className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        Log In
-                      </Button>
-                    </Link>
+                    Log In
+                  </Button>
+                </Link>
                     <Link href="/register" passHref className="flex-shrink-0">
                       <Button size="lg" className="w-28 sm:w-32 h-10 sm:h-11 text-sm sm:text-base rounded-full bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow-lg hover:shadow-xl transition-shadow">
                         <UserPlus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                        Register
-                      </Button>
-                    </Link>
-                  </>
+                    Register
+                  </Button>
+                </Link>
+              </>
                 )}
-              </div>
+            </div>
 
-              <div className="grid grid-cols-3 gap-2 md:gap-4 w-full max-w-md">
-                {/* Grid items will be rendered by HomePageWrapper */}
-              </div>
+            <div className="grid grid-cols-3 gap-2 md:gap-4 w-full max-w-md">
+              {/* Grid items will be rendered by HomePageWrapper */}
+            </div>
             </div>
             </div>
           </main>
