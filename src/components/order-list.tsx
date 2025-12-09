@@ -140,11 +140,14 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
             </TableCell>
              <TableCell>
                 {isEditing ? (
-                    <Switch
-                        checked={editableOrder.isPaid}
-                        onCheckedChange={(checked) => handleFieldChange('isPaid', checked)}
+                    <Button
+                        size="sm"
+                        className={cn("h-8 w-20", getPaymentStatusColor(editableOrder.isPaid), `hover:${getPaymentStatusColor(editableOrder.isPaid)}`)}
+                        onClick={() => handleFieldChange('isPaid', !editableOrder.isPaid)}
                         disabled={isSaving}
-                    />
+                    >
+                        {editableOrder.isPaid ? 'Paid' : 'Unpaid'}
+                    </Button>
                 ) : (
                    <Badge className={`${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white`}>
                        {order.isPaid ? 'Paid' : 'Unpaid'}
@@ -261,11 +264,14 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                 <div className="flex flex-col items-start space-y-1">
                                     <Label>Payment</Label>
                                     {isEditing ? (
-                                        <Switch
-                                            checked={editableOrder.isPaid}
-                                            onCheckedChange={(checked) => handleFieldChange('isPaid', checked)}
+                                        <Button
+                                            size="sm"
+                                            className={cn("h-8 w-20", getPaymentStatusColor(editableOrder.isPaid), `hover:${getPaymentStatusColor(editableOrder.isPaid)}`)}
+                                            onClick={() => handleFieldChange('isPaid', !editableOrder.isPaid)}
                                             disabled={isSaving}
-                                        />
+                                        >
+                                            {editableOrder.isPaid ? 'Paid' : 'Unpaid'}
+                                        </Button>
                                     ) : (
                                         <Badge className={`${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white`}>
                                             {order.isPaid ? 'Paid' : 'Unpaid'}
