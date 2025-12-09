@@ -87,21 +87,27 @@ body {
   .form-group {
     @apply relative;
   }
-  .form-group .form-input {
+  .form-input {
     @apply pt-4;
   }
 
-  .form-group .form-label {
+  .form-label {
     @apply absolute text-muted-foreground transition-all duration-200 ease-in-out pointer-events-none;
     left: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
   }
-
-  .form-group .form-input:focus + .form-label,
-  .form-group .form-input:not(:placeholder-shown) + .form-label {
+  
+  .form-input:focus + .form-label,
+  .form-input:not(:placeholder-shown) + .form-label {
     @apply text-xs;
-    top: 0.5rem;
-    transform: translateY(0);
+    transform: translateY(-1.2rem) scale(0.8);
+    background-color: hsl(var(--card));
+    padding: 0 0.2em;
+    color: hsl(var(--primary));
+  }
+
+  .form-input:focus {
+     @apply border-primary;
   }
 }
