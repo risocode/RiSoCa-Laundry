@@ -1,13 +1,17 @@
-
 {
   "name": "RKR Laundry",
   "short_name": "RKR Laundry",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#f3e8ff",
   "theme_color": "#6d28d9",
   "description": "Fast, clean, and convenient laundry service.",
+  "categories": ["lifestyle", "business"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/android-chrome-192x192.png",
@@ -20,6 +24,32 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create Order",
+      "short_name": "New Order",
+      "description": "Create a new laundry order",
+      "url": "/create-order",
+      "icons": [
+        {
+          "src": "/icons/android-chrome-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Track Order",
+      "short_name": "Track",
+      "description": "Track your laundry order status",
+      "url": "/order-status",
+      "icons": [
+        {
+          "src": "/icons/android-chrome-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

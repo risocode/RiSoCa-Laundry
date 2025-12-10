@@ -69,6 +69,14 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        {/* TWA (Trusted Web Activity) Meta Tags */}
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="RKR Laundry" />
+        <meta name="application-name" content="RKR Laundry" />
+        <meta name="msapplication-TileColor" content="#6d28d9" />
+        <meta name="msapplication-config" content="/icons/browserconfig.xml" />
         {/* Open Graph / Facebook / Messenger */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://rkrlaundry.com" />

@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  // Ensure .well-known paths are served correctly
+  // Ensure .well-known paths are served correctly for TWA
   async headers() {
     return [
       {
@@ -46,6 +46,23 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Type',
             value: 'application/json',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600',
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+        ],
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json',
           },
           {
             key: 'Cache-Control',
