@@ -150,18 +150,6 @@ export default function Home() {
   const displayName = shouldShowProfile ? profileData?.displayName ?? '' : '';
   const initial = shouldShowProfile ? profileData?.initial ?? '' : '';
 
-  /* -------------------- DEBUG (SAFE) -------------------- */
-  useEffect(() => {
-    console.log('🔍 Profile State:', {
-      mounted,
-      authLoading,
-      hasSession: !!session,
-      hasUser: !!user,
-      shouldShowProfile,
-      displayName,
-    });
-  }, [mounted, authLoading, session, user, shouldShowProfile, displayName]);
-
   return (
     <HomePageWrapper gridItems={customerGridItems}>
       <div className="flex flex-col h-screen overflow-hidden select-none">
@@ -187,13 +175,8 @@ export default function Home() {
                     data-testid="profile-button"
                     className="bg-transparent border-0 p-0 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
                   >
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="h-14 w-14 rounded-full bg-blue-600 text-white text-2xl font-bold flex items-center justify-center">
-                        {initial}
-                      </div>
-                      <span className="text-sm font-semibold text-primary">
-                        {displayName}
-                      </span>
+                    <div className="h-14 w-14 rounded-full bg-blue-600 text-white text-2xl font-bold flex items-center justify-center shadow-lg">
+                      {initial}
                     </div>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center">
