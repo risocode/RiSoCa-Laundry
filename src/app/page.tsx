@@ -161,57 +161,52 @@ export default function Home() {
   };
 
   // Get user data - use session user if available, fallback to user from hook
-  // This ensures we always have a user if one exists, even if session hasn't loaded yet
   const currentUser = session?.user || user;
   
-  // Check if user exists in any form - this is more reliable
-  const hasUser = !!(currentUser || user || session?.user);
+  // Strict condition: only render when ALL auth states are ready
+  const hasSession = !!session;
+  const hasUser = !!user;
+  const hasCurrentUser = !!currentUser;
   
-  // Use profile data if available, otherwise fallback to user metadata/email
-  // Calculate these values even if profileData is null, so we always have something to display
-  const displayName = profileData?.displayName || 
-    (currentUser?.user_metadata?.first_name as string | undefined) || 
-    (currentUser?.user_metadata?.firstName as string | undefined) || 
-    (currentUser?.user_metadata?.name as string | undefined) || 
-    currentUser?.email?.split('@')[0] || 
-    user?.email?.split('@')[0] ||
-    'Customer';
-  const initial = profileData?.initial || 
-    (displayName || currentUser?.email?.[0] || user?.email?.[0] || 'C').charAt(0).toUpperCase();
+  const shouldShowProfile = 
+    mounted &&
+    !authLoading &&
+    hasSession &&
+    hasUser &&
+    hasCurrentUser;
   
-  // Always log for debugging on live site
+  // Only calculate display name when we're actually going to render
+  // This prevents fallback values from being computed prematurely
+  const displayName = shouldShowProfile
+    ? (profileData?.displayName || 
+       (currentUser?.user_metadata?.first_name as string | undefined) || 
+       (currentUser?.user_metadata?.firstName as string | undefined) || 
+       (currentUser?.user_metadata?.name as string | undefined) || 
+       currentUser?.email?.split('@')[0] || 
+       'Customer')
+    : '';
+  
+  const initial = shouldShowProfile
+    ? (profileData?.initial || 
+       (displayName || currentUser?.email?.[0] || 'C').charAt(0).toUpperCase())
+    : '';
+  
+  // Debug logging in useEffect to avoid spam
   useEffect(() => {
-    if (mounted) {
-      const shouldShowProfile = (!authLoading && hasUser) || !!profileData;
-      const conditionCheck = {
+    if (mounted && process.env.NODE_ENV === 'development') {
+      console.log('🔍 Profile Debug:', {
         mounted,
         authLoading,
-        hasUser: !!user,
-        hasSession: !!session,
-        hasCurrentUser: !!currentUser,
+        hasSession,
+        hasUser,
+        hasCurrentUser,
         hasProfileData: !!profileData,
-        displayName,
-        initial,
-        userEmail: user?.email,
-        sessionUserEmail: session?.user?.email,
-        willShowProfile: shouldShowProfile,
-        condition1: !authLoading,
-        condition2: hasUser,
-        condition3: !!profileData,
-        finalCondition: `mounted(${mounted}) && ((!authLoading(${!authLoading}) && hasUser(${hasUser})) || profileData(${!!profileData}))`
-      };
-      console.log('🔍 Profile Debug:', conditionCheck);
-      
-      // Also log if condition should be true but profile might not show
-      if (shouldShowProfile && !profileData && !currentUser) {
-        console.warn('⚠️ Profile should show but user data missing!', {
-          user,
-          session,
-          currentUser
-        });
-      }
+        shouldShowProfile,
+        displayName: shouldShowProfile ? displayName : '(not calculated)',
+        initial: shouldShowProfile ? initial : '(not calculated)'
+      });
     }
-  }, [mounted, authLoading, user, session, currentUser, profileData, displayName, initial, hasUser]);
+  }, [mounted, authLoading, hasSession, hasUser, hasCurrentUser, profileData, shouldShowProfile, displayName, initial]);
 
   return (
       <HomePageWrapper gridItems={gridItems}>
@@ -230,16 +225,16 @@ export default function Home() {
 
             <div className="flex flex-col items-center mb-4 w-full">
               <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 md:gap-4 mb-4 min-h-[4rem]">
-                {/* Show profile if we have a user and not loading, OR if we have profileData */}
-                {mounted && !authLoading && (hasUser || !!profileData) && (
+                {/* Strict condition: only render when ALL auth states are ready */}
+                {shouldShowProfile ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg p-1">
                         <div className="flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-600 text-white text-xl sm:text-2xl font-bold shadow-lg">
-                          {initial || '?'}
+                          {initial}
                         </div>
                         <div className="text-xs sm:text-sm font-semibold text-primary text-center px-2">
-                          {displayName || 'User'}
+                          {displayName}
                         </div>
                       </button>
                     </DropdownMenuTrigger>
@@ -257,8 +252,8 @@ export default function Home() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                )}
-                {mounted && !authLoading && !hasUser && !profileData ? (
+                ) : mounted && !authLoading ? (
+                  // Show login/register buttons only when auth is fully loaded and user is not logged in
                   <>
                     <Link href="/login" passHref className="flex-shrink-0">
                       <Button size="lg" className="w-28 sm:w-32 h-10 sm:h-11 text-sm sm:text-base rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-shadow">
