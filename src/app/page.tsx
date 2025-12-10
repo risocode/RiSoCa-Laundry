@@ -74,7 +74,7 @@ export default function Home() {
       }
 
       // Prevent refetching if we already have data for this user
-      if (user.id === fetchedUserIdRef.current && profileData) {
+      if (user.id === fetchedUserIdRef.current) {
         return;
       }
 
@@ -108,7 +108,7 @@ export default function Home() {
         // Fetch from profiles table to get updated data
         const { data: profileDataFromDb, error } = await supabase
           .from('profiles')
-          .select('first_name, last_name, email')
+          .select('first_name, last_name')
           .eq('id', user.id)
           .single();
 
@@ -190,40 +190,29 @@ export default function Home() {
             <div className="flex flex-col items-center mb-4 w-full">
               <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 md:gap-4 mb-4 min-h-[4rem]">
                 {!authLoading && currentUser ? (
-                  // Show profile icon - use profileData if available, otherwise use currentUser fallback
-                  (profileData || currentUser) ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg p-1">
-                          <div className="flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-600 text-white text-xl sm:text-2xl font-bold shadow-lg">
-                            {initial}
-                          </div>
-                          <div className="text-xs sm:text-sm font-semibold text-primary text-center px-2">{displayName}</div>
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="center" className="w-48">
-                        <DropdownMenuItem asChild>
-                          <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
-                            <User className="h-4 w-4" />
-                            <span>Profile</span>
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
-                          <LogOut className="h-4 w-4" />
-                          <span>Logout</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  ) : (
-                    // Fallback while profile is loading
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-600 text-white text-xl sm:text-2xl font-bold shadow-lg">
-                        {(currentUser.email?.[0] || 'C').toUpperCase()}
-                      </div>
-                      <div className="text-xs sm:text-sm font-semibold text-primary text-center px-2">{currentUser.email?.split('@')[0] || 'Customer'}</div>
-                    </div>
-                  )
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg p-1">
+                        <div className="flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-600 text-white text-xl sm:text-2xl font-bold shadow-lg">
+                          {initial}
+                        </div>
+                        <div className="text-xs sm:text-sm font-semibold text-primary text-center px-2">{displayName}</div>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-48">
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                          <User className="h-4 w-4" />
+                          <span>Profile</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
+                        <LogOut className="h-4 w-4" />
+                        <span>Logout</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : !authLoading ? (
                   <>
                     <Link href="/login" passHref className="flex-shrink-0">
