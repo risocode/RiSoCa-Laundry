@@ -42,8 +42,12 @@ export default function Home() {
   const [profileData, setProfileData] = useState<{ firstName: string; displayName: string; initial: string } | null>(null);
   const fetchedUserIdRef = useRef<string | null>(null);
   const isFetchingRef = useRef(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Remove this - useAuthSession already handles session management
+  // Ensure we're on client side
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     async function checkAdminRedirect() {
@@ -160,6 +164,9 @@ export default function Home() {
   // This ensures we always have a user if one exists, even if session hasn't loaded yet
   const currentUser = session?.user || user;
   
+  // Check if user exists in any form - this is more reliable
+  const hasUser = !!(currentUser || user || session?.user);
+  
   // Use profile data if available, otherwise fallback to user metadata/email
   // Calculate these values even if profileData is null, so we always have something to display
   const displayName = profileData?.displayName || 
@@ -167,22 +174,29 @@ export default function Home() {
     (currentUser?.user_metadata?.firstName as string | undefined) || 
     (currentUser?.user_metadata?.name as string | undefined) || 
     currentUser?.email?.split('@')[0] || 
+    user?.email?.split('@')[0] ||
     'Customer';
   const initial = profileData?.initial || 
-    (displayName || currentUser?.email?.[0] || 'C').charAt(0).toUpperCase();
+    (displayName || currentUser?.email?.[0] || user?.email?.[0] || 'C').charAt(0).toUpperCase();
   
-  // Debug logging (remove in production)
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    console.log('Home page render:', {
-      authLoading,
-      hasUser: !!user,
-      hasSession: !!session,
-      hasCurrentUser: !!currentUser,
-      hasProfileData: !!profileData,
-      displayName,
-      initial
-    });
-  }
+  // Always log for debugging on live site
+  useEffect(() => {
+    if (mounted) {
+      console.log('🔍 Profile Debug:', {
+        mounted,
+        authLoading,
+        hasUser: !!user,
+        hasSession: !!session,
+        hasCurrentUser: !!currentUser,
+        hasProfileData: !!profileData,
+        displayName,
+        initial,
+        userEmail: user?.email,
+        sessionUserEmail: session?.user?.email,
+        willShowProfile: (!authLoading && hasUser) || !!profileData
+      });
+    }
+  }, [mounted, authLoading, user, session, currentUser, profileData, displayName, initial, hasUser]);
 
   return (
       <HomePageWrapper gridItems={gridItems}>
@@ -201,7 +215,9 @@ export default function Home() {
 
             <div className="flex flex-col items-center mb-4 w-full">
               <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 md:gap-4 mb-4 min-h-[4rem]">
-                {!authLoading && currentUser ? (
+                {/* Show profile if we have a user and not loading, OR if we have profileData */}
+                {/* Only render after mount to avoid hydration issues */}
+                {mounted && ((!authLoading && hasUser) || profileData) ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg p-1">
@@ -225,7 +241,7 @@ export default function Home() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                ) : !authLoading ? (
+                ) : mounted && !authLoading ? (
                   <>
                     <Link href="/login" passHref className="flex-shrink-0">
                       <Button size="lg" className="w-28 sm:w-32 h-10 sm:h-11 text-sm sm:text-base rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-shadow">
