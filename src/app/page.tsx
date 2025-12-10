@@ -223,6 +223,15 @@ export default function Home() {
       if (!shouldShowProfile && !authLoading && (hasUser || hasSession)) {
         console.warn('⚠️ Profile should show but condition failed:', conditionBreakdown);
       }
+      
+      // Log when profile should render
+      if (shouldShowProfile && currentUser) {
+        console.log('✅ Profile SHOULD be rendering now!', {
+          displayName,
+          initial,
+          currentUserId: currentUser.id
+        });
+      }
     }
   }, [mounted, authLoading, hasSession, hasUser, hasCurrentUser, profileData, shouldShowProfile, displayName, initial, user, session, currentUser]);
 
@@ -244,36 +253,40 @@ export default function Home() {
             <div className="flex flex-col items-center mb-4 w-full">
               <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 md:gap-4 mb-4 min-h-[4rem]">
                 {/* Strict condition: only render when ALL auth states are ready */}
-                {shouldShowProfile ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button 
-                        className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg p-1"
-                        data-testid="profile-button"
-                      >
-                        <div className="flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-600 text-white text-xl sm:text-2xl font-bold shadow-lg">
-                          {initial}
-                        </div>
-                        <div className="text-xs sm:text-sm font-semibold text-primary text-center px-2">
-                          {displayName}
-                        </div>
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-48">
-                      <DropdownMenuItem asChild>
-                        <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
-                          <User className="h-4 w-4" />
-                          <span>Profile</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
-                        <LogOut className="h-4 w-4" />
-                        <span>Logout</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : mounted && !authLoading && !hasUser ? (
+                {shouldShowProfile && currentUser ? (
+                  <div className="flex flex-col items-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button 
+                          className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg p-1"
+                          data-testid="profile-button"
+                          type="button"
+                          aria-label="User profile menu"
+                        >
+                          <div className="flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-blue-600 text-white text-xl sm:text-2xl font-bold shadow-lg">
+                            {initial}
+                          </div>
+                          <div className="text-xs sm:text-sm font-semibold text-primary text-center px-2">
+                            {displayName}
+                          </div>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="center" className="w-48">
+                        <DropdownMenuItem asChild>
+                          <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                            <User className="h-4 w-4" />
+                            <span>Profile</span>
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
+                          <LogOut className="h-4 w-4" />
+                          <span>Logout</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ) : mounted && !authLoading && !currentUser ? (
                   // Show login/register buttons only when auth is fully loaded and user is not logged in
                   <>
                     <Link href="/login" passHref className="flex-shrink-0">
