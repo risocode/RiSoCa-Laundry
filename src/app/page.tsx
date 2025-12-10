@@ -183,7 +183,10 @@ export default function Home() {
             <div className="flex justify-center gap-4 min-h-[96px]">
               {shouldShowProfile ? (
                 <DropdownMenu>
-                  <DropdownMenuTrigger data-testid="profile-button">
+                  <DropdownMenuTrigger 
+                    data-testid="profile-button"
+                    className="bg-transparent border-0 p-0 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
+                  >
                     <div className="flex flex-col items-center gap-2">
                       <div className="h-14 w-14 rounded-full bg-blue-600 text-white text-2xl font-bold flex items-center justify-center">
                         {initial}
@@ -226,6 +229,11 @@ export default function Home() {
                   </Link>
                 </>
               ) : null}
+            </div>
+
+            {/* Grid Menu */}
+            <div className="grid grid-cols-3 gap-2 md:gap-4 w-full max-w-md">
+              {/* Grid items will be rendered by HomePageWrapper */}
             </div>
 
           </div>
