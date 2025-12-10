@@ -170,32 +170,37 @@ export default function Home() {
             {/* Profile / Auth Buttons */}
             <div className="flex justify-center gap-4 min-h-[96px]">
               {shouldShowProfile ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger 
-                    data-testid="profile-button"
-                    className="bg-transparent border-0 p-0 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
-                  >
-                    <div className="h-14 w-14 rounded-full bg-blue-600 text-white text-2xl font-bold flex items-center justify-center shadow-lg">
-                      {initial}
-                    </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center">
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile" className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Profile
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="text-destructive flex items-center gap-2"
+                <div className="flex flex-col items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger 
+                      data-testid="profile-button"
+                      className="bg-transparent border-0 p-0 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
                     >
-                      <LogOut className="h-4 w-4" />
-                      Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <div className="h-14 w-14 rounded-full bg-blue-600 text-white text-2xl font-bold flex items-center justify-center shadow-lg">
+                        {initial}
+                      </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center">
+                      <DropdownMenuItem asChild>
+                        <Link href="/profile" className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleLogout}
+                        className="text-destructive flex items-center gap-2"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <span className="text-sm font-semibold text-primary">
+                    {displayName}
+                  </span>
+                </div>
               ) : mounted && !authLoading ? (
                 <>
                   <Link href="/login">
