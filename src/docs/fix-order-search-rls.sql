@@ -74,3 +74,6 @@ $$;
 GRANT EXECUTE ON FUNCTION search_order_by_id_and_name(TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION search_order_by_id_and_name(TEXT, TEXT) TO anon;
 
+-- Test the function (optional - remove this after testing)
+-- SELECT * FROM search_order_by_id_and_name('RKR001', 'Karaya');
+

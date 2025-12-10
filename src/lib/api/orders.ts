@@ -123,25 +123,46 @@ export async function fetchOrderWithHistory(orderId: string) {
  * search for orders created by admins.
  */
 export async function fetchOrderForCustomer(orderId: string, name: string) {
+  const trimmedOrderId = orderId.trim();
+  const trimmedName = name.trim();
+
   // Use RPC call to bypass RLS - allows searching admin-created orders
   const { data, error } = await supabase.rpc('search_order_by_id_and_name', {
-    p_order_id: orderId.trim(),
-    p_customer_name: name.trim(),
+    p_order_id: trimmedOrderId,
+    p_customer_name: trimmedName,
   });
 
   if (error) {
+    // Log the error for debugging
+    console.error('RPC search_order_by_id_and_name failed:', error);
+    console.error('This usually means the SQL function has not been created in Supabase.');
+    console.error('Please run the SQL script from src/docs/fix-order-search-rls.sql in Supabase SQL Editor.');
+    
     // Fallback to direct query if RPC function doesn't exist (for backwards compatibility)
-    const { data: fallbackData, error: fallbackError } = await fetchOrderWithHistory(orderId);
-    if (fallbackError || !fallbackData) return { data: null, error: fallbackError };
+    // NOTE: This will fail for non-logged-in users due to RLS restrictions
+    const { data: fallbackData, error: fallbackError } = await fetchOrderWithHistory(trimmedOrderId);
+    if (fallbackError || !fallbackData) {
+      console.error('Fallback query also failed:', fallbackError);
+      return { data: null, error: fallbackError };
+    }
 
     const customerNameLower = fallbackData.customer_name.toLowerCase();
-    const inputNameLower = name.trim().toLowerCase();
+    const inputNameLower = trimmedName.toLowerCase();
     const matches = customerNameLower.includes(inputNameLower);
+    
+    if (!matches) {
+      console.warn('Name mismatch:', { 
+        stored: fallbackData.customer_name, 
+        searched: trimmedName 
+      });
+    }
+    
     return { data: matches ? fallbackData : null, error: null };
   }
 
   // RPC returns array, get first result
   if (!data || data.length === 0) {
+    console.warn('No order found with:', { orderId: trimmedOrderId, name: trimmedName });
     return { data: null, error: null };
   }
 
