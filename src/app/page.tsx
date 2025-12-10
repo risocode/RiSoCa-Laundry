@@ -232,8 +232,10 @@ export default function Home() {
             </div>
 
             {/* Grid Menu */}
-            <div className="grid grid-cols-3 gap-2 md:gap-4 w-full max-w-md">
-              {/* Grid items will be rendered by HomePageWrapper */}
+            <div className="flex justify-center w-full mt-6">
+              <div className="grid grid-cols-3 gap-2 md:gap-4 w-full max-w-md">
+                {/* Grid items will be rendered by HomePageWrapper */}
+              </div>
             </div>
 
           </div>
