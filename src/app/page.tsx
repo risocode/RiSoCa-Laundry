@@ -42,7 +42,7 @@ const customerGridItems = [
   { href: '/create-order', label: 'Create Order', icon: FileText },
   { href: '/service-rates', label: 'Service Rates', icon: PesoCoinIcon },
   { href: '/track-rider', label: 'Track Rider', icon: Bike, comingSoon: true },
-  { href: '/download-app', label: 'Download APK', icon: Download, comingSoon: true },
+  { href: '/download-app', label: 'Download App', icon: Download },
   { href: '/terms-and-conditions', label: 'Terms & Conditions', icon: ClipboardList },
   { href: '/faqs', label: 'FAQs', icon: HelpCircle },
   { href: '/branches', label: 'Branches', icon: MapPin },
