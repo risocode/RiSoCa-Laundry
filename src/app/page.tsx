@@ -87,6 +87,24 @@ export default function Home() {
     setMounted(true);
   }, []);
 
+  /* -------------------- Email Confirmation Handler -------------------- */
+  useEffect(() => {
+    if (!mounted) return;
+    
+    // Check if this is an email confirmation (type=signup in hash)
+    if (typeof window !== 'undefined' && window.location.hash.includes('type=signup')) {
+      // Wait a moment for session to be established
+      setTimeout(() => {
+        toast({
+          title: 'Email Confirmed!',
+          description: 'Your email has been successfully verified. You are now logged in.',
+        });
+        // Clean up the hash from URL
+        window.history.replaceState(null, '', window.location.pathname);
+      }, 500);
+    }
+  }, [mounted, toast]);
+
   /* -------------------- Check User Roles -------------------- */
   useEffect(() => {
     async function checkRoles() {

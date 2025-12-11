@@ -1,7 +1,18 @@
 import { supabase } from './supabase-client';
 
 export async function signUpWithEmail(email: string, password: string, data?: Record<string, any>) {
-  return supabase.auth.signUp({ email, password, options: { data } });
+  const redirectTo = typeof window !== 'undefined' 
+    ? `${window.location.origin}`
+    : `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rkrlaundry.com'}`;
+  
+  return supabase.auth.signUp({ 
+    email, 
+    password, 
+    options: { 
+      data,
+      emailRedirectTo: redirectTo,
+    } 
+  });
 }
 
 export async function signInWithEmail(email: string, password: string) {
@@ -23,7 +34,7 @@ export function onAuthStateChange(callback: Parameters<typeof supabase.auth.onAu
 export async function resetPasswordForEmail(email: string) {
   const redirectTo = typeof window !== 'undefined' 
     ? `${window.location.origin}/reset-password`
-    : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password`;
+    : `${process.env.NEXT_PUBLIC_SITE_URL || 'https://rkrlaundry.com'}/reset-password`;
   
   return supabase.auth.resetPasswordForEmail(email, {
     redirectTo,
