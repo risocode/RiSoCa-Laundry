@@ -154,4 +154,139 @@ body {
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Salary Calendar Styles */
+  .salary-calendar-container {
+    padding: 1rem;
+  }
+
+  .calendar {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .calendar__opts {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    justify-content: center;
+  }
+
+  .calendar__select {
+    padding: 0.5rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 4px;
+    background: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .calendar__select:focus {
+    outline: none;
+    border-color: hsl(var(--primary));
+    ring: 2px;
+    ring-color: hsl(var(--ring));
+  }
+
+  .calendar__body {
+    margin-bottom: 1rem;
+  }
+
+  .calendar__days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .calendar__days > div {
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: hsl(var(--muted-foreground));
+    padding: 0.5rem;
+  }
+
+  .calendar__dates {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+  }
+
+  .calendar__date {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+    position: relative;
+  }
+
+  .calendar__date:hover:not(.calendar__date--grey) {
+    background: hsl(var(--accent) / 0.1);
+  }
+
+  .calendar__date--grey {
+    color: hsl(var(--muted-foreground) / 0.5);
+    cursor: default;
+  }
+
+  .calendar__date--selected {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    font-weight: 600;
+  }
+
+  .calendar__date--range-start {
+    border-top-left-radius: 50%;
+    border-bottom-left-radius: 50%;
+  }
+
+  .calendar__date--range-end {
+    border-top-right-radius: 50%;
+    border-bottom-right-radius: 50%;
+  }
+
+  .calendar__date--selected:not(.calendar__date--range-start):not(.calendar__date--range-end) {
+    border-radius: 0;
+  }
+
+  .calendar__buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  .calendar__button {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+  }
+
+  .calendar__button--grey {
+    background: hsl(var(--muted));
+    color: hsl(var(--muted-foreground));
+  }
+
+  .calendar__button--grey:hover {
+    background: hsl(var(--muted) / 0.8);
+  }
+
+  .calendar__button--primary {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .calendar__button--primary:hover {
+    background: hsl(var(--primary) / 0.9);
+  }
 }

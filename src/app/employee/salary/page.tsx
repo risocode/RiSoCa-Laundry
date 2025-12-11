@@ -18,12 +18,12 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { Loader2, Inbox, CalendarIcon } from 'lucide-react';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { supabase } from '@/lib/supabase-client';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { SalaryCalendar } from '@/components/salary-calendar';
 
 type SalaryRecord = {
   id: string;
@@ -42,7 +42,7 @@ export default function EmployeeSalaryPage() {
   const [salaries, setSalaries] = useState<SalaryRecord[]>([]);
   const [allSalaries, setAllSalaries] = useState<SalaryRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   useEffect(() => {
@@ -67,18 +67,7 @@ export default function EmployeeSalaryPage() {
         setSalaries([]);
       } else {
         setAllSalaries(data || []);
-        // If date is selected, filter by it
-        if (selectedDate) {
-          const filtered = (data || []).filter(salary => {
-            const periodStart = new Date(salary.period_start);
-            const periodEnd = new Date(salary.period_end);
-            const selected = new Date(selectedDate);
-            return selected >= periodStart && selected <= periodEnd;
-          });
-          setSalaries(filtered);
-        } else {
-          setSalaries(data || []);
-        }
+        setSalaries(data || []);
       }
     } catch (error) {
       console.error('Error fetching salaries', error);
@@ -89,22 +78,49 @@ export default function EmployeeSalaryPage() {
     }
   };
 
+  const filterEmployeeSalaries = (from: string, to: string) => {
+    if (!from) {
+      setSalaries(allSalaries);
+      return;
+    }
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    const filtered = allSalaries.filter(salary => {
+      const periodStart = new Date(salary.period_start);
+      const periodEnd = new Date(salary.period_end);
+      
+      // Check if salary period overlaps with selected date range
+      return (
+        (periodStart <= toDate && periodEnd >= fromDate) ||
+        (periodStart >= fromDate && periodStart <= toDate) ||
+        (periodEnd >= fromDate && periodEnd <= toDate)
+      );
+    });
+    
+    setSalaries(filtered);
+  };
+
   useEffect(() => {
-    if (!selectedDate) {
+    if (!dateRange.start) {
       setSalaries(allSalaries);
     } else {
-      const filtered = allSalaries.filter(salary => {
-        const periodStart = new Date(salary.period_start);
-        const periodEnd = new Date(salary.period_end);
-        const selected = new Date(selectedDate);
-        return selected >= periodStart && selected <= periodEnd;
-      });
-      setSalaries(filtered);
+      const from = dateRange.start.toISOString().split("T")[0];
+      const to = dateRange.end 
+        ? dateRange.end.toISOString().split("T")[0] 
+        : dateRange.start.toISOString().split("T")[0];
+      filterEmployeeSalaries(from, to);
     }
-  }, [selectedDate, allSalaries]);
+  }, [dateRange, allSalaries]);
+
+  const handleCalendarApply = (start: Date | null, end: Date | null) => {
+    setDateRange({ start, end });
+    setCalendarOpen(false);
+  };
 
   const handleClearFilter = () => {
-    setSelectedDate(undefined);
+    setDateRange({ start: null, end: null });
     setCalendarOpen(false);
   };
 
@@ -123,7 +139,7 @@ export default function EmployeeSalaryPage() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto overflow-x-hidden scrollable pt-4 pb-4">
-        {/* Calendar Date Filter */}
+        {/* Calendar Date Range Filter */}
         <div className="mb-6 p-4 border rounded-lg bg-muted/50">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="flex items-center gap-4">
@@ -133,34 +149,36 @@ export default function EmployeeSalaryPage() {
                     variant="outline"
                     className={cn(
                       "w-[280px] justify-start text-left font-normal",
-                      !selectedDate && "text-muted-foreground"
+                      !dateRange.start && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date to filter"}
+                    {dateRange.start 
+                      ? dateRange.end && dateRange.end.getTime() !== dateRange.start.getTime()
+                        ? `${format(dateRange.start, "MMM dd, yyyy")} - ${format(dateRange.end, "MMM dd, yyyy")}`
+                        : format(dateRange.start, "PPP")
+                      : "Pick a date range to filter"
+                    }
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={(date) => {
-                      setSelectedDate(date);
-                      setCalendarOpen(false);
-                    }}
-                    initialFocus
-                  />
+                  <SalaryCalendar onApply={handleCalendarApply} onClose={() => setCalendarOpen(false)} />
                 </PopoverContent>
               </Popover>
-              {selectedDate && (
+              {dateRange.start && (
                 <Button onClick={handleClearFilter} variant="outline" size="sm">
                   Clear Filter
                 </Button>
               )}
             </div>
-            {selectedDate && (
+            {dateRange.start && (
               <div className="text-sm text-muted-foreground">
-                Showing salaries for: <span className="font-semibold text-foreground">{format(selectedDate, "PPP")}</span>
+                Showing salaries for: <span className="font-semibold text-foreground">
+                  {dateRange.end && dateRange.end.getTime() !== dateRange.start.getTime()
+                    ? `${format(dateRange.start, "MMM dd, yyyy")} - ${format(dateRange.end, "MMM dd, yyyy")}`
+                    : format(dateRange.start, "PPP")
+                  }
+                </span>
               </div>
             )}
           </div>
@@ -195,7 +213,7 @@ export default function EmployeeSalaryPage() {
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Salary History</h3>
             <span className="text-sm text-muted-foreground">
-              {selectedDate 
+              {dateRange.start 
                 ? `${salaries.length} record${salaries.length !== 1 ? 's' : ''} found`
                 : `Total: ${allSalaries.length} record${allSalaries.length !== 1 ? 's' : ''}`
               }
@@ -257,11 +275,11 @@ export default function EmployeeSalaryPage() {
             <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground border rounded-lg bg-card p-8">
               <Inbox className="h-12 w-12 mb-2" />
               <h3 className="text-lg font-semibold mb-1">No Salary Records</h3>
-              <p className="text-sm">
-                {selectedDate
-                  ? 'No salary records found for the selected date.'
-                  : 'You don\'t have any salary records yet.'}
-              </p>
+            <p className="text-sm">
+              {dateRange.start
+                ? 'No salary records found for the selected date range.'
+                : 'You don\'t have any salary records yet.'}
+            </p>
             </div>
           )}
         </div>
