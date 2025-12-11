@@ -40,12 +40,28 @@ type DailySalary = {
     totalSalary: number;
 };
 
+type Employee = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+};
+
+type DailyPaymentStatus = {
+  [employeeId: string]: {
+    is_paid: boolean;
+    amount: number;
+  };
+};
+
 export function EmployeeSalary() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingDateOrderId, setEditingDateOrderId] = useState<string | null>(null);
   const [editingDateValue, setEditingDateValue] = useState<string>('');
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [dailyPayments, setDailyPayments] = useState<Record<string, DailyPaymentStatus>>({});
+  const [updatingPayment, setUpdatingPayment] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchOrders = async () => {
@@ -81,7 +97,54 @@ export function EmployeeSalary() {
 
   useEffect(() => {
     fetchOrders();
+    fetchEmployees();
   }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .eq('role', 'employee');
+
+      if (error) {
+        console.error("Failed to load employees", error);
+        return;
+      }
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error fetching employees', error);
+    }
+  };
+
+  const fetchDailyPayments = async (dateStr: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('daily_salary_payments')
+        .select('*')
+        .eq('date', dateStr);
+
+      if (error) {
+        console.error("Failed to load daily payments", error);
+        return;
+      }
+
+      const payments: DailyPaymentStatus = {};
+      (data || []).forEach((payment: any) => {
+        payments[payment.employee_id] = {
+          is_paid: payment.is_paid,
+          amount: payment.amount,
+        };
+      });
+
+      setDailyPayments(prev => ({
+        ...prev,
+        [dateStr]: payments,
+      }));
+    } catch (error) {
+      console.error('Error fetching daily payments', error);
+    }
+  };
 
   const handleDateEditStart = (order: Order) => {
     setEditingDateOrderId(order.id);
@@ -160,14 +223,62 @@ export function EmployeeSalary() {
   const dailySalaries: DailySalary[] = Object.entries(completedOrdersByDate)
     .map(([dateStr, orders]) => {
         const totalLoads = orders.reduce((sum, o) => sum + o.load, 0);
+        const totalSalary = totalLoads * SALARY_PER_LOAD;
+        const dateKey = format(new Date(dateStr), 'yyyy-MM-dd');
+        
+        // Fetch payments for this date if not already loaded
+        if (!dailyPayments[dateKey]) {
+          fetchDailyPayments(dateKey);
+        }
+        
         return {
             date: new Date(dateStr),
             orders: orders,
             totalLoads: totalLoads,
-            totalSalary: totalLoads * SALARY_PER_LOAD,
+            totalSalary: totalSalary,
         };
     })
     .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  const handleTogglePayment = async (employeeId: string, date: Date, currentStatus: boolean, amount: number) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const paymentKey = `${employeeId}-${dateStr}`;
+    setUpdatingPayment(paymentKey);
+
+    try {
+      const newStatus = !currentStatus;
+      const { error } = await supabase
+        .from('daily_salary_payments')
+        .upsert({
+          employee_id: employeeId,
+          date: dateStr,
+          amount: amount,
+          is_paid: newStatus,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'employee_id,date',
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: newStatus ? 'Marked as Paid' : 'Marked as Unpaid',
+        description: `Employee salary for ${format(date, 'MMM dd, yyyy')} has been updated.`,
+      });
+
+      // Refresh payments for this date
+      await fetchDailyPayments(dateStr);
+    } catch (error: any) {
+      console.error('Failed to update payment status:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: error.message || 'Failed to update payment status.',
+      });
+    } finally {
+      setUpdatingPayment(null);
+    }
+  };
 
   return (
     <Card className="w-full">
@@ -187,7 +298,23 @@ export function EmployeeSalary() {
               <AccordionItem key={date.toISOString()} value={date.toISOString()}>
                 <AccordionTrigger className="no-underline hover:no-underline">
                     <div className="flex justify-between w-full pr-4 text-left">
-                        <span className="font-semibold">{format(date, 'PPP')}</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-semibold">{format(date, 'PPP')}</span>
+                          {employees.length > 0 && (
+                            <div className="flex gap-2 text-xs text-muted-foreground">
+                              {employees.map((emp) => {
+                                const dateKey = format(date, 'yyyy-MM-dd');
+                                const payment = dailyPayments[dateKey]?.[emp.id];
+                                const isPaid = payment?.is_paid ?? false;
+                                return (
+                                  <span key={emp.id} className={isPaid ? 'text-green-600' : 'text-orange-600'}>
+                                    {emp.first_name || 'Employee'}: {isPaid ? 'Paid' : 'Unpaid'}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                         <div className="flex gap-4 text-sm text-right">
                            <span>Loads: <span className="font-bold">{totalLoads}</span></span>
                            <span className="text-primary">Salary: <span className="font-bold">₱{totalSalary.toFixed(2)}</span></span>
@@ -195,6 +322,48 @@ export function EmployeeSalary() {
                     </div>
                 </AccordionTrigger>
                 <AccordionContent>
+                   {/* Employee Payment Status Section */}
+                   {employees.length > 0 && (
+                     <div className="mb-4 p-4 border rounded-lg bg-muted/50">
+                       <h4 className="text-sm font-semibold mb-3">Employee Payment Status</h4>
+                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                         {employees.map((emp) => {
+                           const dateKey = format(date, 'yyyy-MM-dd');
+                           const payment = dailyPayments[dateKey]?.[emp.id];
+                           const isPaid = payment?.is_paid ?? false;
+                           const employeeSalary = employees.length > 0 ? totalSalary / employees.length : 0;
+                           const paymentKey = `${emp.id}-${dateKey}`;
+                           
+                           return (
+                             <div key={emp.id} className="flex items-center justify-between p-3 border rounded-md bg-background">
+                               <div className="flex flex-col">
+                                 <span className="text-sm font-medium">
+                                   {emp.first_name || ''} {emp.last_name || ''}
+                                 </span>
+                                 <span className="text-xs text-muted-foreground">
+                                   ₱{employeeSalary.toFixed(2)}
+                                 </span>
+                               </div>
+                               <Button
+                                 size="sm"
+                                 variant={isPaid ? "default" : "outline"}
+                                 onClick={() => handleTogglePayment(emp.id, date, isPaid, employeeSalary)}
+                                 disabled={updatingPayment === paymentKey}
+                                 className={isPaid ? "bg-green-600 hover:bg-green-700" : ""}
+                               >
+                                 {updatingPayment === paymentKey ? (
+                                   <Loader2 className="h-4 w-4 animate-spin" />
+                                 ) : (
+                                   isPaid ? 'Paid' : 'Unpaid'
+                                 )}
+                               </Button>
+                             </div>
+                           );
+                         })}
+                       </div>
+                     </div>
+                   )}
+                   
                    <Table>
                         <TableHeader>
                         <TableRow>

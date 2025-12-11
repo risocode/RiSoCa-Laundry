@@ -9,6 +9,16 @@ export type SalaryInsert = {
   is_paid?: boolean;
 };
 
+export type DailySalaryPayment = {
+  id?: string;
+  employee_id: string;
+  date: string; // ISO date (YYYY-MM-DD)
+  amount: number;
+  is_paid: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export async function fetchSalaries() {
   return supabase
     .from('salaries')
@@ -36,6 +46,49 @@ export async function markSalaryPaid(id: string, paid: boolean) {
     .from('salaries')
     .update({ is_paid: paid })
     .eq('id', id)
+    .select()
+    .single();
+}
+
+// Daily Salary Payment functions
+export async function fetchDailySalaryPayment(employeeId: string, date: string) {
+  return supabase
+    .from('daily_salary_payments')
+    .select('*')
+    .eq('employee_id', employeeId)
+    .eq('date', date)
+    .maybeSingle();
+}
+
+export async function fetchDailySalaryPaymentsByDate(date: string) {
+  return supabase
+    .from('daily_salary_payments')
+    .select('*')
+    .eq('date', date);
+}
+
+export async function upsertDailySalaryPayment(payment: DailySalaryPayment) {
+  return supabase
+    .from('daily_salary_payments')
+    .upsert({
+      employee_id: payment.employee_id,
+      date: payment.date,
+      amount: payment.amount,
+      is_paid: payment.is_paid,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'employee_id,date',
+    })
+    .select()
+    .single();
+}
+
+export async function markDailySalaryPaid(employeeId: string, date: string, isPaid: boolean) {
+  return supabase
+    .from('daily_salary_payments')
+    .update({ is_paid: isPaid, updated_at: new Date().toISOString() })
+    .eq('employee_id', employeeId)
+    .eq('date', date)
     .select()
     .single();
 }

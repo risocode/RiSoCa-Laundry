@@ -32,6 +32,7 @@ import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { SalaryCalendar } from '@/components/salary-calendar';
 import type { Order } from '@/components/order-list';
+import { Badge } from '@/components/ui/badge';
 
 const SALARY_PER_LOAD = 30;
 
@@ -40,6 +41,7 @@ type DailySalary = {
   orders: Order[];
   totalLoads: number;
   totalSalary: number;
+  isPaid?: boolean;
 };
 
 export default function EmployeeSalaryPage() {
@@ -48,10 +50,36 @@ export default function EmployeeSalaryPage() {
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [dailyPayments, setDailyPayments] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const fetchDailyPaymentStatus = async (dateStr: string) => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('daily_salary_payments')
+        .select('is_paid')
+        .eq('employee_id', user.id)
+        .eq('date', dateStr)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Failed to load payment status", error);
+        return;
+      }
+
+      setDailyPayments(prev => ({
+        ...prev,
+        [dateStr]: data?.is_paid ?? false,
+      }));
+    } catch (error) {
+      console.error('Error fetching payment status', error);
+    }
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -109,11 +137,19 @@ export default function EmployeeSalaryPage() {
   let dailySalaries: DailySalary[] = Object.entries(completedOrdersByDate)
     .map(([dateStr, orders]) => {
       const totalLoads = orders.reduce((sum, o) => sum + o.load, 0);
+      const dateKey = format(new Date(dateStr), 'yyyy-MM-dd');
+      
+      // Fetch payment status for this date if not already loaded
+      if (!(dateKey in dailyPayments)) {
+        fetchDailyPaymentStatus(dateKey);
+      }
+      
       return {
         date: new Date(dateStr),
         orders: orders,
         totalLoads: totalLoads,
         totalSalary: totalLoads * SALARY_PER_LOAD,
+        isPaid: dailyPayments[dateKey] ?? false,
       };
     })
     .sort((a, b) => b.date.getTime() - a.date.getTime());
@@ -239,11 +275,19 @@ export default function EmployeeSalaryPage() {
             </div>
           ) : dailySalaries.length > 0 ? (
             <Accordion type="single" collapsible className="w-full">
-              {dailySalaries.map(({ date, orders, totalLoads, totalSalary }) => (
+              {dailySalaries.map(({ date, orders, totalLoads, totalSalary, isPaid }) => (
                 <AccordionItem key={date.toISOString()} value={date.toISOString()}>
                   <AccordionTrigger className="no-underline hover:no-underline">
                     <div className="flex justify-between w-full pr-4 text-left">
-                      <span className="font-semibold">{format(date, 'PPP')}</span>
+                      <div className="flex flex-col gap-1">
+                        <span className="font-semibold">{format(date, 'PPP')}</span>
+                        <Badge 
+                          variant={isPaid ? "default" : "secondary"}
+                          className={isPaid ? "bg-green-600 hover:bg-green-700 w-fit" : "bg-orange-600 hover:bg-orange-700 w-fit"}
+                        >
+                          {isPaid ? 'Paid' : 'Unpaid'}
+                        </Badge>
+                      </div>
                       <div className="flex gap-4 text-sm text-right">
                         <span>Loads: <span className="font-bold">{totalLoads}</span></span>
                         <span className="text-primary">Salary: <span className="font-bold">₱{totalSalary.toFixed(2)}</span></span>
