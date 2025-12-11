@@ -50,10 +50,10 @@ export function EmployeeSalary() {
 
   const fetchOrders = async () => {
     setLoading(true);
+    // Fetch all orders, we'll filter by status and is_paid in the component
     const { data, error } = await supabase
       .from('orders')
-      .select('*')
-      .in('status', ['Success', 'Delivered']);
+      .select('*');
     if (error) {
       console.error("Failed to load orders", error);
       setLoading(false);
@@ -143,7 +143,11 @@ export function EmployeeSalary() {
   };
 
   const completedOrdersByDate = orders
-    .filter((order) => order.status === 'Success' || order.status === 'Delivered')
+    .filter((order) => 
+      order.status === 'Success' || 
+      order.status === 'Delivered' || 
+      order.isPaid === true
+    )
     .reduce((acc, order) => {
         const dateStr = startOfDay(new Date(order.orderDate)).toISOString();
         if (!acc[dateStr]) {
