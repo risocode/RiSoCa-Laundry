@@ -32,10 +32,11 @@ import { AppFooter } from '@/components/app-footer';
 import { HomePageWrapper } from '@/components/home-page-wrapper';
 import { PesoCoinIcon } from '@/components/icons/peso-coin-icon';
 import { useAuthSession } from '@/hooks/use-auth-session';
-import { isAdmin } from '@/lib/auth-helpers';
+import { isAdmin, isEmployee } from '@/lib/auth-helpers';
 import { signOut } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
+import { DollarSign, Wallet, CreditCard, MapPin, LayoutDashboard } from 'lucide-react';
 
 const customerGridItems = [
   { href: '/order-status', label: 'Order Status', icon: Package },
@@ -49,6 +50,19 @@ const customerGridItems = [
   { href: '/contact-us', label: 'Contact Us', icon: Phone },
 ];
 
+const adminGridItems = [
+  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
+  { href: '/admin/rates', label: 'Service Rates', icon: DollarSign },
+  { href: '/admin/salary', label: 'Employee Salary', icon: Wallet },
+  { href: '/admin/expenses', label: 'Expenses', icon: CreditCard },
+  { href: '/admin/branches', label: 'Branches', icon: MapPin },
+];
+
+const employeeGridItems = [
+  { href: '/employee', label: 'Orders', icon: ClipboardList },
+];
+
 export default function Home() {
   const router = useRouter();
   const { user, loading: authLoading, session } = useAuthSession();
@@ -59,6 +73,8 @@ export default function Home() {
     displayName: string;
     initial: string;
   } | null>(null);
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
+  const [userIsEmployee, setUserIsEmployee] = useState(false);
 
   const fetchedUserIdRef = useRef<string | null>(null);
   const isFetchingRef = useRef(false);
@@ -68,14 +84,24 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  /* -------------------- Admin Redirect -------------------- */
+  /* -------------------- Check User Roles -------------------- */
   useEffect(() => {
-    if (authLoading || !user) return;
+    async function checkRoles() {
+      if (authLoading || !user) {
+        setUserIsAdmin(false);
+        setUserIsEmployee(false);
+        return;
+      }
 
-    isAdmin(user.id).then((isAdminUser) => {
-      if (isAdminUser) router.push('/admin');
-    });
-  }, [authLoading, user, router]);
+      const [adminStatus, employeeStatus] = await Promise.all([
+        isAdmin(user.id),
+        isEmployee(user.id),
+      ]);
+      setUserIsAdmin(adminStatus);
+      setUserIsEmployee(employeeStatus);
+    }
+    checkRoles();
+  }, [authLoading, user]);
 
   /* -------------------- Fetch Profile -------------------- */
   useEffect(() => {
@@ -150,8 +176,15 @@ export default function Home() {
   const displayName = shouldShowProfile ? profileData?.displayName ?? '' : '';
   const initial = shouldShowProfile ? profileData?.initial ?? '' : '';
 
+  // Combine grid items based on user role
+  const gridItems = [
+    ...(userIsAdmin ? adminGridItems : []),
+    ...(userIsEmployee ? employeeGridItems : []),
+    ...(userIsAdmin || userIsEmployee ? [] : customerGridItems), // Only show customer items if not admin/employee
+  ];
+
   return (
-    <HomePageWrapper gridItems={customerGridItems}>
+    <HomePageWrapper gridItems={gridItems}>
       <div className="flex flex-col h-screen overflow-hidden select-none">
         <AppHeader />
 

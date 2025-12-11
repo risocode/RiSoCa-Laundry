@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { Gift, WashingMachine } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { RoleMenuWrapper } from '@/components/role-menu-wrapper';
 
 export function AppHeader() {
     const pathname = usePathname();
@@ -44,7 +43,6 @@ export function AppHeader() {
           </div>
         )}
       </header>
-      <RoleMenuWrapper />
     </>
   );
 }
