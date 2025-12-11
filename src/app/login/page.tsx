@@ -32,6 +32,11 @@ const MAX_ATTEMPTS = 3
 const LOCKOUT_DURATION = 60 * 1000 // 1 minute in milliseconds
 const STORAGE_KEY = 'rkr_login_attempts'
 
+// Password Reset Rate Limiting
+const MAX_RESET_ATTEMPTS = 3
+const RESET_LOCKOUT_DURATION = 30 * 60 * 1000 // 30 minutes in milliseconds
+const RESET_STORAGE_KEY = 'rkr_password_reset_attempts'
+
 interface LoginAttempts {
   count: number
   lockoutUntil: number | null
@@ -139,6 +144,100 @@ function resetLoginAttempts(email: string) {
   }
 }
 
+// Password Reset Attempt Functions
+function getAllResetAttempts(): AllLoginAttempts {
+  if (typeof window === 'undefined') {
+    return {}
+  }
+  
+  const stored = localStorage.getItem(RESET_STORAGE_KEY)
+  if (!stored) {
+    return {}
+  }
+  
+  try {
+    const parsed = JSON.parse(stored) as AllLoginAttempts
+    const now = Date.now()
+    const cleaned: AllLoginAttempts = {}
+    
+    // Clean up expired lockouts and normalize emails
+    Object.keys(parsed).forEach((email) => {
+      const normalizedEmail = normalizeEmail(email)
+      const attempts = parsed[email]
+      
+      // If lockout has expired, don't include it
+      if (attempts.lockoutUntil && now >= attempts.lockoutUntil) {
+        return // Skip expired entries
+      }
+      
+      cleaned[normalizedEmail] = attempts
+    })
+    
+    // Save cleaned data back if anything was removed
+    if (Object.keys(cleaned).length !== Object.keys(parsed).length) {
+      localStorage.setItem(RESET_STORAGE_KEY, JSON.stringify(cleaned))
+    }
+    
+    return cleaned
+  } catch {
+    return {}
+  }
+}
+
+function getResetAttempts(email: string): LoginAttempts {
+  const normalizedEmail = normalizeEmail(email)
+  const allAttempts = getAllResetAttempts()
+  return allAttempts[normalizedEmail] || { count: 0, lockoutUntil: null }
+}
+
+function saveResetAttempts(email: string, attempts: LoginAttempts) {
+  if (typeof window === 'undefined') return
+  
+  const normalizedEmail = normalizeEmail(email)
+  const allAttempts = getAllResetAttempts()
+  allAttempts[normalizedEmail] = attempts
+  localStorage.setItem(RESET_STORAGE_KEY, JSON.stringify(allAttempts))
+}
+
+function incrementResetAttempt(email: string): LoginAttempts {
+  const attempts = getResetAttempts(email)
+  const newCount = attempts.count + 1
+  
+  let lockoutUntil: number | null = null
+  
+  if (newCount >= MAX_RESET_ATTEMPTS) {
+    // If already locked out, extend the lockout
+    if (attempts.lockoutUntil && Date.now() < attempts.lockoutUntil) {
+      lockoutUntil = attempts.lockoutUntil + RESET_LOCKOUT_DURATION
+    } else {
+      // New lockout
+      lockoutUntil = Date.now() + RESET_LOCKOUT_DURATION
+    }
+  }
+  
+  const newAttempts: LoginAttempts = {
+    count: newCount,
+    lockoutUntil
+  }
+  
+  saveResetAttempts(email, newAttempts)
+  return newAttempts
+}
+
+function resetResetAttempts(email: string) {
+  if (typeof window === 'undefined') return
+  
+  const normalizedEmail = normalizeEmail(email)
+  const allAttempts = getAllResetAttempts()
+  delete allAttempts[normalizedEmail]
+  
+  if (Object.keys(allAttempts).length === 0) {
+    localStorage.removeItem(RESET_STORAGE_KEY)
+  } else {
+    localStorage.setItem(RESET_STORAGE_KEY, JSON.stringify(allAttempts))
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
@@ -193,6 +292,49 @@ export default function LoginPage() {
 
     return () => clearInterval(interval)
   }, [lockoutTime, email])
+
+  // Password Reset Lockout Timer
+  useEffect(() => {
+    if (!resetLockoutTime) {
+      setResetRemainingSeconds(0)
+      return
+    }
+
+    const updateTimer = () => {
+      const now = Date.now()
+      const remaining = Math.ceil((resetLockoutTime - now) / 1000)
+      
+      if (remaining <= 0) {
+        setResetLockoutTime(null)
+        setResetRemainingSeconds(0)
+        if (forgotPasswordEmail) {
+          resetResetAttempts(forgotPasswordEmail)
+        }
+        return
+      }
+      
+      setResetRemainingSeconds(remaining)
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
+
+    return () => clearInterval(interval)
+  }, [resetLockoutTime, forgotPasswordEmail])
+
+  // Check reset lockout when email changes
+  useEffect(() => {
+    if (forgotPasswordEmail) {
+      const attempts = getResetAttempts(forgotPasswordEmail)
+      if (attempts.lockoutUntil) {
+        setResetLockoutTime(attempts.lockoutUntil)
+      } else {
+        setResetLockoutTime(null)
+      }
+    } else {
+      setResetLockoutTime(null)
+    }
+  }, [forgotPasswordEmail])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -270,23 +412,69 @@ export default function LoginPage() {
       return
     }
 
+    // Check if locked out for password reset
+    const attempts = getResetAttempts(forgotPasswordEmail)
+    if (attempts.lockoutUntil && Date.now() < attempts.lockoutUntil) {
+      const remaining = Math.ceil((attempts.lockoutUntil - Date.now()) / 1000)
+      const minutes = Math.floor(remaining / 60)
+      const seconds = remaining % 60
+      toast({
+        variant: "destructive",
+        title: 'Too Many Reset Requests',
+        description: `Please wait ${minutes} minute${minutes !== 1 ? 's' : ''} and ${seconds} second${seconds !== 1 ? 's' : ''} before requesting another password reset.`,
+      })
+      setResetLockoutTime(attempts.lockoutUntil)
+      return
+    }
+
     setSendingReset(true)
     const { error } = await resetPasswordForEmail(forgotPasswordEmail)
     
     if (error) {
-      toast({
-        variant: "destructive",
-        title: 'Error',
-        description: error.message || 'Failed to send password reset email.',
-      })
+      const newAttempts = incrementResetAttempt(forgotPasswordEmail)
+      
+      if (newAttempts.lockoutUntil) {
+        const remaining = Math.ceil((newAttempts.lockoutUntil - Date.now()) / 1000)
+        const minutes = Math.floor(remaining / 60)
+        const seconds = remaining % 60
+        setResetLockoutTime(newAttempts.lockoutUntil)
+        toast({
+          variant: "destructive",
+          title: 'Too Many Reset Requests',
+          description: `You have exceeded ${MAX_RESET_ATTEMPTS} password reset requests. Please wait ${minutes} minute${minutes !== 1 ? 's' : ''} and ${seconds} second${seconds !== 1 ? 's' : ''} before trying again.`,
+        })
+      } else {
+        const remainingAttempts = MAX_RESET_ATTEMPTS - newAttempts.count
+        toast({
+          variant: "destructive",
+          title: 'Error',
+          description: error.message || `Failed to send password reset email. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`,
+        })
+      }
       setSendingReset(false)
       return
     }
 
-    toast({
-      title: 'Password Reset Email Sent',
-      description: 'Please check your email for password reset instructions.',
-    })
+    // Successful reset email sent - increment attempt
+    const newAttempts = incrementResetAttempt(forgotPasswordEmail)
+    
+    // If this was the 3rd attempt, show lockout message
+    if (newAttempts.lockoutUntil) {
+      const remaining = Math.ceil((newAttempts.lockoutUntil - Date.now()) / 1000)
+      const minutes = Math.floor(remaining / 60)
+      const seconds = remaining % 60
+      setResetLockoutTime(newAttempts.lockoutUntil)
+      toast({
+        title: 'Password Reset Email Sent',
+        description: `Email sent! You've reached the limit of ${MAX_RESET_ATTEMPTS} requests. Please wait ${minutes} minute${minutes !== 1 ? 's' : ''} before requesting another.`,
+      })
+    } else {
+      const remainingAttempts = MAX_RESET_ATTEMPTS - newAttempts.count
+      toast({
+        title: 'Password Reset Email Sent',
+        description: `Please check your email for password reset instructions. ${remainingAttempts} request${remainingAttempts !== 1 ? 's' : ''} remaining.`,
+      })
+    }
     
     setForgotPasswordOpen(false)
     setForgotPasswordEmail('')
@@ -367,10 +555,15 @@ export default function LoginPage() {
                       </div>
                       <Button
                         type="submit"
-                        disabled={sendingReset}
+                        disabled={sendingReset || (resetLockoutTime !== null && Date.now() < resetLockoutTime)}
                         className="w-full"
                       >
-                        {sendingReset ? (
+                        {resetLockoutTime && Date.now() < resetLockoutTime ? (
+                          <>
+                            <Clock className="mr-2 h-4 w-4" />
+                            Wait {Math.floor(resetRemainingSeconds / 60)}m {resetRemainingSeconds % 60}s
+                          </>
+                        ) : sendingReset ? (
                           <>
                             <Mail className="mr-2 h-4 w-4 animate-pulse" />
                             Sending...
@@ -382,6 +575,11 @@ export default function LoginPage() {
                           </>
                         )}
                       </Button>
+                      {resetLockoutTime && Date.now() < resetLockoutTime && (
+                        <p className="text-xs text-center text-destructive mt-2">
+                          Too many reset requests. Please wait {Math.floor(resetRemainingSeconds / 60)} minute{Math.floor(resetRemainingSeconds / 60) !== 1 ? 's' : ''} and {resetRemainingSeconds % 60} second{(resetRemainingSeconds % 60) !== 1 ? 's' : ''} before trying again.
+                        </p>
+                      )}
                     </form>
                   </DialogContent>
                 </Dialog>
