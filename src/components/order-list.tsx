@@ -426,9 +426,9 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Order ID</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Contact</TableHead>
+              <TableHead>ORDER #</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Contact number</TableHead>
               <TableHead>Weight (kg)</TableHead>
               <TableHead>Load</TableHead>
               <TableHead>Total (₱)</TableHead>

@@ -12,13 +12,18 @@ import type { Order, StatusHistory } from '@/components/order-list';
 import { Loader2, Inbox } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { updateOrderStatus, updateOrderFields } from '@/lib/api/orders';
+import { Button } from '@/components/ui/button';
+import { ManualOrderDialog } from '@/components/manual-order-dialog';
+import { createOrderWithHistory, fetchLatestOrderId, generateNextOrderId, updateOrderStatus, updateOrderFields } from '@/lib/api/orders';
 import { supabase } from '@/lib/supabase-client';
+import { useAuthSession } from '@/hooks/use-auth-session';
 
 export default function EmployeeOrdersPage() {
   const { toast } = useToast();
+  const { user } = useAuthSession();
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const mapOrder = (o: any): Order => ({
     id: o.id,
@@ -100,14 +105,87 @@ export default function EmployeeOrdersPage() {
     fetchOrders();
   };
 
+  const handleAddOrder = async (newOrder: Omit<Order, 'id' | 'userId'>) => {
+    // IMPORTANT: Uses the same ID generation as customer orders to ensure sequential numbering
+    const { latestId, error: latestError } = await fetchLatestOrderId();
+    if (latestError) {
+      toast({ variant: 'destructive', title: 'Order ID error', description: 'Could not generate new order ID.' });
+      return;
+    }
+    const newId = generateNextOrderId(latestId);
+    const initialStatus = newOrder.status || 'Order Placed';
+
+    const { error } = await createOrderWithHistory({
+      id: newId,
+      customer_id: user?.id ?? 'employee-manual',
+      customer_name: newOrder.customerName,
+      contact_number: newOrder.contactNumber,
+      service_package: newOrder.servicePackage as any,
+      weight: newOrder.weight,
+      loads: newOrder.load,
+      distance: newOrder.distance,
+      delivery_option: newOrder.deliveryOption,
+      status: initialStatus,
+      total: newOrder.total,
+      is_paid: newOrder.isPaid,
+    });
+
+    if (error) {
+      // Handle duplicate ID error (race condition)
+      if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
+        // Retry with a fresh ID fetch
+        const { latestId: retryLatestId, error: retryError } = await fetchLatestOrderId();
+        if (!retryError && retryLatestId) {
+          const retryId = generateNextOrderId(retryLatestId);
+          const { error: retryCreateError } = await createOrderWithHistory({
+            id: retryId,
+            customer_id: user?.id ?? 'employee-manual',
+            customer_name: newOrder.customerName,
+            contact_number: newOrder.contactNumber,
+            service_package: newOrder.servicePackage as any,
+            weight: newOrder.weight,
+            loads: newOrder.load,
+            distance: newOrder.distance,
+            delivery_option: newOrder.deliveryOption,
+            status: initialStatus,
+            total: newOrder.total,
+            is_paid: newOrder.isPaid,
+          });
+          if (retryCreateError) {
+            toast({ variant: 'destructive', title: 'Create failed', description: retryCreateError.message });
+            return;
+          }
+          toast({
+            title: 'Order Created',
+            description: `New order #${retryId} for ${newOrder.customerName} has been added.`,
+          });
+          fetchOrders();
+          return;
+        }
+      }
+      toast({ variant: 'destructive', title: 'Create failed', description: error.message });
+      return;
+    }
+
+    toast({
+        title: 'Order Created',
+        description: `New order for ${newOrder.customerName} has been added.`,
+    });
+    fetchOrders();
+  };
+
   return (
-    <Card className="w-full flex flex-col max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-14rem)]">
-      <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b rounded-t-lg">
-        <div>
-          <CardTitle>Orders</CardTitle>
-          <CardDescription>View and manage all customer orders.</CardDescription>
-        </div>
-      </CardHeader>
+    <>
+      <Card className="w-full flex flex-col max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-14rem)]">
+        <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b rounded-t-lg">
+          <div>
+            <CardTitle>Orders</CardTitle>
+            <CardDescription>View and manage all customer orders.</CardDescription>
+          </div>
+          <Button onClick={() => setIsDialogOpen(true)}>
+            New Order
+          </Button>
+        </CardHeader>
       <CardContent className="flex-1 overflow-y-auto overflow-x-hidden scrollable pt-4 pb-4">
         {loadingOrders ? (
           <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
@@ -127,6 +205,12 @@ export default function EmployeeOrdersPage() {
         )}
       </CardContent>
     </Card>
+    <ManualOrderDialog
+      isOpen={isDialogOpen}
+      onClose={() => setIsDialogOpen(false)}
+      onAddOrder={handleAddOrder}
+    />
+    </>
   );
 }
 
