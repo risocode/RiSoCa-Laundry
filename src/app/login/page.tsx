@@ -13,12 +13,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { LogIn, Clock } from 'lucide-react'
+import { LogIn, Clock, Mail } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
-import { signInWithEmail } from '@/lib/auth'
+import { signInWithEmail, resetPasswordForEmail } from '@/lib/auth'
 
 const MAX_ATTEMPTS = 3
 const LOCKOUT_DURATION = 60 * 1000 // 1 minute in milliseconds
@@ -29,39 +37,71 @@ interface LoginAttempts {
   lockoutUntil: number | null
 }
 
-function getLoginAttempts(): LoginAttempts {
+interface AllLoginAttempts {
+  [email: string]: LoginAttempts
+}
+
+// Helper to normalize email (lowercase, trim)
+function normalizeEmail(email: string): string {
+  return email.toLowerCase().trim()
+}
+
+function getAllLoginAttempts(): AllLoginAttempts {
   if (typeof window === 'undefined') {
-    return { count: 0, lockoutUntil: null }
+    return {}
   }
   
   const stored = localStorage.getItem(STORAGE_KEY)
   if (!stored) {
-    return { count: 0, lockoutUntil: null }
+    return {}
   }
   
   try {
-    const parsed = JSON.parse(stored)
+    const parsed = JSON.parse(stored) as AllLoginAttempts
     const now = Date.now()
+    const cleaned: AllLoginAttempts = {}
     
-    // If lockout has expired, reset attempts
-    if (parsed.lockoutUntil && now >= parsed.lockoutUntil) {
-      localStorage.removeItem(STORAGE_KEY)
-      return { count: 0, lockoutUntil: null }
+    // Clean up expired lockouts and normalize emails
+    Object.keys(parsed).forEach((email) => {
+      const normalizedEmail = normalizeEmail(email)
+      const attempts = parsed[email]
+      
+      // If lockout has expired, don't include it
+      if (attempts.lockoutUntil && now >= attempts.lockoutUntil) {
+        return // Skip expired entries
+      }
+      
+      cleaned[normalizedEmail] = attempts
+    })
+    
+    // Save cleaned data back if anything was removed
+    if (Object.keys(cleaned).length !== Object.keys(parsed).length) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned))
     }
     
-    return parsed
+    return cleaned
   } catch {
-    return { count: 0, lockoutUntil: null }
+    return {}
   }
 }
 
-function saveLoginAttempts(attempts: LoginAttempts) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(attempts))
+function getLoginAttempts(email: string): LoginAttempts {
+  const normalizedEmail = normalizeEmail(email)
+  const allAttempts = getAllLoginAttempts()
+  return allAttempts[normalizedEmail] || { count: 0, lockoutUntil: null }
 }
 
-function incrementFailedAttempt(): LoginAttempts {
-  const attempts = getLoginAttempts()
+function saveLoginAttempts(email: string, attempts: LoginAttempts) {
+  if (typeof window === 'undefined') return
+  
+  const normalizedEmail = normalizeEmail(email)
+  const allAttempts = getAllLoginAttempts()
+  allAttempts[normalizedEmail] = attempts
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(allAttempts))
+}
+
+function incrementFailedAttempt(email: string): LoginAttempts {
+  const attempts = getLoginAttempts(email)
   const newCount = attempts.count + 1
   
   let lockoutUntil: number | null = null
@@ -81,13 +121,22 @@ function incrementFailedAttempt(): LoginAttempts {
     lockoutUntil
   }
   
-  saveLoginAttempts(newAttempts)
+  saveLoginAttempts(email, newAttempts)
   return newAttempts
 }
 
-function resetLoginAttempts() {
+function resetLoginAttempts(email: string) {
   if (typeof window === 'undefined') return
-  localStorage.removeItem(STORAGE_KEY)
+  
+  const normalizedEmail = normalizeEmail(email)
+  const allAttempts = getAllLoginAttempts()
+  delete allAttempts[normalizedEmail]
+  
+  if (Object.keys(allAttempts).length === 0) {
+    localStorage.removeItem(STORAGE_KEY)
+  } else {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(allAttempts))
+  }
 }
 
 export default function LoginPage() {
@@ -99,16 +148,29 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [lockoutTime, setLockoutTime] = useState<number | null>(null)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false)
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('')
+  const [sendingReset, setSendingReset] = useState(false)
 
   useEffect(() => {
-    const attempts = getLoginAttempts()
-    if (attempts.lockoutUntil) {
-      setLockoutTime(attempts.lockoutUntil)
+    // Check lockout status when email changes
+    if (email) {
+      const attempts = getLoginAttempts(email)
+      if (attempts.lockoutUntil) {
+        setLockoutTime(attempts.lockoutUntil)
+      } else {
+        setLockoutTime(null)
+      }
+    } else {
+      setLockoutTime(null)
     }
-  }, [])
+  }, [email])
 
   useEffect(() => {
-    if (!lockoutTime) return
+    if (!lockoutTime) {
+      setRemainingSeconds(0)
+      return
+    }
 
     const updateTimer = () => {
       const now = Date.now()
@@ -117,7 +179,9 @@ export default function LoginPage() {
       if (remaining <= 0) {
         setLockoutTime(null)
         setRemainingSeconds(0)
-        resetLoginAttempts()
+        if (email) {
+          resetLoginAttempts(email)
+        }
         return
       }
       
@@ -128,13 +192,17 @@ export default function LoginPage() {
     const interval = setInterval(updateTimer, 1000)
 
     return () => clearInterval(interval)
-  }, [lockoutTime])
+  }, [lockoutTime, email])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     
-    // Check if locked out
-    const attempts = getLoginAttempts()
+    if (!email) {
+      return
+    }
+    
+    // Check if locked out for this specific email
+    const attempts = getLoginAttempts(email)
     if (attempts.lockoutUntil && Date.now() < attempts.lockoutUntil) {
       const remaining = Math.ceil((attempts.lockoutUntil - Date.now()) / 1000)
       toast({
@@ -150,7 +218,7 @@ export default function LoginPage() {
 
     const { error } = await signInWithEmail(email, password)
     if (error) {
-      const newAttempts = incrementFailedAttempt()
+      const newAttempts = incrementFailedAttempt(email)
       
       if (newAttempts.lockoutUntil) {
         const remaining = Math.ceil((newAttempts.lockoutUntil - Date.now()) / 1000)
@@ -158,22 +226,22 @@ export default function LoginPage() {
         toast({
           variant: "destructive",
           title: 'Too Many Failed Attempts',
-          description: `You have exceeded ${MAX_ATTEMPTS} login attempts. Please wait ${remaining} second${remaining !== 1 ? 's' : ''} before trying again.`,
+          description: `You have exceeded ${MAX_ATTEMPTS} login attempts for this email. Please wait ${remaining} second${remaining !== 1 ? 's' : ''} before trying again.`,
         })
       } else {
         const remainingAttempts = MAX_ATTEMPTS - newAttempts.count
         toast({
           variant: "destructive",
           title: 'Login Failed',
-          description: `Invalid credentials. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`,
+          description: `Invalid credentials. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining for this email.`,
         })
       }
       setLoading(false)
       return
     }
 
-    // Successful login - reset attempts
-    resetLoginAttempts()
+    // Successful login - reset attempts for this email only
+    resetLoginAttempts(email)
     setLockoutTime(null)
     
     toast({
@@ -188,6 +256,41 @@ export default function LoginPage() {
     }, 100);
     
     setLoading(false)
+  }
+
+  async function handleForgotPassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    
+    if (!forgotPasswordEmail) {
+      toast({
+        variant: "destructive",
+        title: 'Email Required',
+        description: 'Please enter your email address.',
+      })
+      return
+    }
+
+    setSendingReset(true)
+    const { error } = await resetPasswordForEmail(forgotPasswordEmail)
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: 'Error',
+        description: error.message || 'Failed to send password reset email.',
+      })
+      setSendingReset(false)
+      return
+    }
+
+    toast({
+      title: 'Password Reset Email Sent',
+      description: 'Please check your email for password reset instructions.',
+    })
+    
+    setForgotPasswordOpen(false)
+    setForgotPasswordEmail('')
+    setSendingReset(false)
   }
 
   return (
@@ -231,6 +334,59 @@ export default function LoginPage() {
                 />
               </div>
 
+              <div className="flex items-center justify-end">
+                <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+                  <DialogTrigger asChild>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-primary underline"
+                      disabled={loading}
+                    >
+                      Forgot password?
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Reset Password</DialogTitle>
+                      <DialogDescription>
+                        Enter your email address and we'll send you a link to reset your password.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleForgotPassword} className="grid gap-4 py-4">
+                      <div className="grid gap-1.5">
+                        <Label htmlFor="reset-email">Email</Label>
+                        <Input
+                          id="reset-email"
+                          type="email"
+                          placeholder="m@example.com"
+                          required
+                          value={forgotPasswordEmail}
+                          onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                          disabled={sendingReset}
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        disabled={sendingReset}
+                        className="w-full"
+                      >
+                        {sendingReset ? (
+                          <>
+                            <Mail className="mr-2 h-4 w-4 animate-pulse" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Send Reset Link
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
               <Button
                 type="submit"
                 disabled={loading || (lockoutTime !== null && Date.now() < lockoutTime)}
@@ -251,7 +407,7 @@ export default function LoginPage() {
               
               {lockoutTime && Date.now() < lockoutTime && (
                 <p className="text-xs text-center text-destructive mt-2">
-                  Too many failed attempts. Please wait {remainingSeconds} second{remainingSeconds !== 1 ? 's' : ''} before trying again.
+                  Too many failed attempts for this email. Please wait {remainingSeconds} second{remainingSeconds !== 1 ? 's' : ''} before trying again.
                 </p>
               )}
             </form>

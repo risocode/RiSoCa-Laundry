@@ -20,3 +20,13 @@ export function onAuthStateChange(callback: Parameters<typeof supabase.auth.onAu
   return supabase.auth.onAuthStateChange(callback);
 }
 
+export async function resetPasswordForEmail(email: string) {
+  const redirectTo = typeof window !== 'undefined' 
+    ? `${window.location.origin}/reset-password`
+    : `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password`;
+  
+  return supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
+  });
+}
+
