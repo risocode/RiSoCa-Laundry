@@ -16,13 +16,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Loader2, Inbox, Calendar } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Loader2, Inbox, CalendarIcon } from 'lucide-react';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { supabase } from '@/lib/supabase-client';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 type SalaryRecord = {
   id: string;
@@ -39,9 +40,10 @@ type SalaryRecord = {
 export default function EmployeeSalaryPage() {
   const { user } = useAuthSession();
   const [salaries, setSalaries] = useState<SalaryRecord[]>([]);
+  const [allSalaries, setAllSalaries] = useState<SalaryRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -53,47 +55,57 @@ export default function EmployeeSalaryPage() {
     
     setLoading(true);
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('salaries')
         .select('*')
         .eq('staff_id', user.id)
         .order('period_end', { ascending: false });
 
-      // Apply date filters if provided
-      if (startDate) {
-        query = query.gte('period_end', startDate);
-      }
-      if (endDate) {
-        query = query.lte('period_start', endDate);
-      }
-
-      const { data, error } = await query;
-
       if (error) {
         console.error('Failed to load salaries', error);
+        setAllSalaries([]);
         setSalaries([]);
       } else {
-        setSalaries(data || []);
+        setAllSalaries(data || []);
+        // If date is selected, filter by it
+        if (selectedDate) {
+          const filtered = (data || []).filter(salary => {
+            const periodStart = new Date(salary.period_start);
+            const periodEnd = new Date(salary.period_end);
+            const selected = new Date(selectedDate);
+            return selected >= periodStart && selected <= periodEnd;
+          });
+          setSalaries(filtered);
+        } else {
+          setSalaries(data || []);
+        }
       }
     } catch (error) {
       console.error('Error fetching salaries', error);
+      setAllSalaries([]);
       setSalaries([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFilter = () => {
-    fetchSalaries();
-  };
+  useEffect(() => {
+    if (!selectedDate) {
+      setSalaries(allSalaries);
+    } else {
+      const filtered = allSalaries.filter(salary => {
+        const periodStart = new Date(salary.period_start);
+        const periodEnd = new Date(salary.period_end);
+        const selected = new Date(selectedDate);
+        return selected >= periodStart && selected <= periodEnd;
+      });
+      setSalaries(filtered);
+    }
+  }, [selectedDate, allSalaries]);
 
   const handleClearFilter = () => {
-    setStartDate('');
-    setEndDate('');
-    // Fetch without filters after clearing
-    setTimeout(() => {
-      fetchSalaries();
-    }, 0);
+    setSelectedDate(undefined);
+    setCalendarOpen(false);
   };
 
   const totalAmount = salaries.reduce((sum, salary) => sum + salary.amount, 0);
@@ -111,45 +123,46 @@ export default function EmployeeSalaryPage() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto overflow-x-hidden scrollable pt-4 pb-4">
-        {/* Date Filter */}
+        {/* Calendar Date Filter */}
         <div className="mb-6 p-4 border rounded-lg bg-muted/50">
-          <div className="flex flex-col sm:flex-row gap-4 items-end">
-            <div className="flex-1 grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start-date" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Start Date
-                </Label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="end-date" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  End Date
-                </Label>
-                <Input
-                  id="end-date"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full"
-                />
-              </div>
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[280px] justify-start text-left font-normal",
+                      !selectedDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedDate ? format(selectedDate, "PPP") : "Pick a date to filter"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      setSelectedDate(date);
+                      setCalendarOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {selectedDate && (
+                <Button onClick={handleClearFilter} variant="outline" size="sm">
+                  Clear Filter
+                </Button>
+              )}
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleFilter} variant="default">
-                Filter
-              </Button>
-              <Button onClick={handleClearFilter} variant="outline">
-                Clear
-              </Button>
-            </div>
+            {selectedDate && (
+              <div className="text-sm text-muted-foreground">
+                Showing salaries for: <span className="font-semibold text-foreground">{format(selectedDate, "PPP")}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -177,69 +190,81 @@ export default function EmployeeSalaryPage() {
           </div>
         )}
 
-        {/* Salary Table */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
-            <Loader2 className="h-12 w-12 mb-2 animate-spin" />
-            <p>Loading salary records...</p>
+        {/* Salary History Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Salary History</h3>
+            <span className="text-sm text-muted-foreground">
+              {selectedDate 
+                ? `${salaries.length} record${salaries.length !== 1 ? 's' : ''} found`
+                : `Total: ${allSalaries.length} record${allSalaries.length !== 1 ? 's' : ''}`
+              }
+            </span>
           </div>
-        ) : salaries.length > 0 ? (
-          <div className="border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Period</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-right">Date Recorded</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {salaries.map((salary) => (
-                  <TableRow key={salary.id}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">
-                          {format(new Date(salary.period_start), 'MMM dd, yyyy')}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          to {format(new Date(salary.period_end), 'MMM dd, yyyy')}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      ₱{salary.amount.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          salary.is_paid
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-orange-100 text-orange-800'
-                        }`}
-                      >
-                        {salary.is_paid ? 'Paid' : 'Pending'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right text-sm text-muted-foreground">
-                      {format(new Date(salary.created_at), 'MMM dd, yyyy')}
-                    </TableCell>
+
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
+              <Loader2 className="h-12 w-12 mb-2 animate-spin" />
+              <p>Loading salary records...</p>
+            </div>
+          ) : salaries.length > 0 ? (
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Period</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-right">Date Recorded</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground border rounded-lg bg-card p-8">
-            <Inbox className="h-12 w-12 mb-2" />
-            <h3 className="text-lg font-semibold mb-1">No Salary Records</h3>
-            <p className="text-sm">
-              {startDate || endDate
-                ? 'No salary records found for the selected date range.'
-                : 'You don\'t have any salary records yet.'}
-            </p>
-          </div>
-        )}
+                </TableHeader>
+                <TableBody>
+                  {salaries.map((salary) => (
+                    <TableRow key={salary.id}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {format(new Date(salary.period_start), 'MMM dd, yyyy')}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            to {format(new Date(salary.period_end), 'MMM dd, yyyy')}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        ₱{salary.amount.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            salary.is_paid
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-orange-100 text-orange-800'
+                          }`}
+                        >
+                          {salary.is_paid ? 'Paid' : 'Pending'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-muted-foreground">
+                        {format(new Date(salary.created_at), 'MMM dd, yyyy')}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground border rounded-lg bg-card p-8">
+              <Inbox className="h-12 w-12 mb-2" />
+              <h3 className="text-lg font-semibold mb-1">No Salary Records</h3>
+              <p className="text-sm">
+                {selectedDate
+                  ? 'No salary records found for the selected date.'
+                  : 'You don\'t have any salary records yet.'}
+              </p>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
