@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { isEmployee } from '@/lib/auth-helpers';
 
 const employeeMenuItems = [
   { href: '/employee', label: 'Orders', icon: ClipboardList },
+  { href: '/employee/salary', label: 'Salary', icon: Wallet },
 ];
 
 export function EmployeeMenu() {

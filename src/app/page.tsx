@@ -62,6 +62,7 @@ const adminGridItems = [
 
 const employeeGridItems = [
   { href: '/employee', label: 'Orders', icon: ClipboardList },
+  { href: '/employee/salary', label: 'Salary', icon: Wallet },
 ];
 
 export default function Home() {
