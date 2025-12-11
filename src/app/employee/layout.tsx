@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
 import { useAuthSession } from '@/hooks/use-auth-session';
-import { isAdmin } from '@/lib/auth-helpers';
+import { isEmployee } from '@/lib/auth-helpers';
 import { Loader2 } from 'lucide-react';
 import { NotFound404 } from '@/components/not-found-404';
 
-export default function AdminLayout({
+export default function EmployeeLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -17,10 +17,10 @@ export default function AdminLayout({
   const router = useRouter();
   const { user, loading: authLoading } = useAuthSession();
   const [checkingRole, setCheckingRole] = useState(true);
-  const [isUserAdmin, setIsUserAdmin] = useState(false);
+  const [isUserEmployee, setIsUserEmployee] = useState(false);
 
   useEffect(() => {
-    async function checkAdminAccess() {
+    async function checkEmployeeAccess() {
       if (authLoading) return;
       
       if (!user) {
@@ -28,17 +28,17 @@ export default function AdminLayout({
         return;
       }
 
-      const adminStatus = await isAdmin(user.id);
-      setIsUserAdmin(adminStatus);
+      const employeeStatus = await isEmployee(user.id);
+      setIsUserEmployee(employeeStatus);
       setCheckingRole(false);
 
-      if (!adminStatus) {
-        // Not an admin, redirect to home
+      if (!employeeStatus) {
+        // Not an employee, redirect to home
         router.push('/');
       }
     }
 
-    checkAdminAccess();
+    checkEmployeeAccess();
   }, [user, authLoading, router]);
 
   if (authLoading || checkingRole) {
@@ -50,7 +50,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!isUserAdmin) {
+  if (!isUserEmployee) {
     return (
       <div className="flex flex-col h-screen">
         <AppHeader />
@@ -78,3 +78,4 @@ export default function AdminLayout({
     </div>
   );
 }
+

@@ -16,3 +16,8 @@ export async function isAdmin(userId: string): Promise<boolean> {
   return role === 'admin';
 }
 
+export async function isEmployee(userId: string): Promise<boolean> {
+  const role = await getUserRole(userId);
+  return role === 'employee';
+}
+
