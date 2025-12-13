@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -66,9 +66,8 @@ const employeeGridItems = [
   { href: '/employee/salary', label: 'Salary', icon: Wallet },
 ];
 
-export default function Home() {
+function HomeContent({ viewAsCustomer }: { viewAsCustomer: boolean }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, loading: authLoading, session } = useAuthSession();
   const { toast } = useToast();
 
@@ -198,9 +197,6 @@ export default function Home() {
   const displayName = shouldShowProfile ? profileData?.displayName ?? '' : '';
   const initial = shouldShowProfile ? profileData?.initial ?? '' : '';
 
-  // Check if admin wants to view as customer
-  const viewAsCustomer = searchParams?.get('view') === 'customer';
-
   // Combine grid items based on user role
   const gridItems = viewAsCustomer
     ? customerGridItems // Show customer items if view=customer parameter is present
@@ -292,5 +288,23 @@ export default function Home() {
         <AppFooter />
       </div>
     </HomePageWrapper>
+  );
+}
+
+function HomeWithSearchParams() {
+  const searchParams = useSearchParams();
+  const viewAsCustomer = searchParams?.get('view') === 'customer';
+  return <HomeContent viewAsCustomer={viewAsCustomer} />;
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col h-screen items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    }>
+      <HomeWithSearchParams />
+    </Suspense>
   );
 }
