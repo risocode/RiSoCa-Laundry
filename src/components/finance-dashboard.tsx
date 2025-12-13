@@ -8,13 +8,11 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { Loader2, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, DollarSign, Calendar, Package, Scale, Users, ClipboardList } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import { fetchExpenses } from '@/lib/api/expenses';
-import { format, startOfMonth, endOfMonth, subMonths, eachMonthOfInterval } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, differenceInDays } from 'date-fns';
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -60,6 +58,8 @@ export function FinanceDashboard() {
   const [orders, setOrders] = useState<OrderData[]>([]);
   const [expenses, setExpenses] = useState<ExpenseData[]>([]);
   const [salaryPayments, setSalaryPayments] = useState<SalaryPaymentData[]>([]);
+  const [totalUsers, setTotalUsers] = useState<number>(0);
+  const [businessStartDate, setBusinessStartDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<'all' | 'month' | '3months' | '6months' | 'year'>('all');
 
@@ -73,12 +73,17 @@ export function FinanceDashboard() {
       // Fetch all orders (for revenue, loads, and weight)
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select('id, total, is_paid, created_at, loads, weight');
+        .select('id, total, is_paid, created_at, loads, weight')
+        .order('created_at', { ascending: true });
 
       if (ordersError) {
         console.error('Failed to load orders', ordersError);
       } else {
         setOrders(ordersData || []);
+        // Set business start date to the earliest order date
+        if (ordersData && ordersData.length > 0) {
+          setBusinessStartDate(new Date(ordersData[0].created_at));
+        }
       }
 
       // Fetch expenses
@@ -105,6 +110,17 @@ export function FinanceDashboard() {
         console.error('Failed to load salary payments', salaryError);
       } else {
         setSalaryPayments(salaryData || []);
+      }
+
+      // Fetch total users count
+      const { count, error: usersError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      if (usersError) {
+        console.error('Failed to load users count', usersError);
+      } else {
+        setTotalUsers(count || 0);
       }
     } catch (error) {
       console.error('Error fetching data', error);
@@ -161,9 +177,15 @@ export function FinanceDashboard() {
   
   const netIncome = totalRevenue - totalExpenses;
 
-  // Calculate total loads and weight from all orders
-  const totalLoads = filteredData.orders.reduce((sum, o) => sum + (o.loads || 0), 0);
-  const totalWeight = filteredData.orders.reduce((sum, o) => sum + (o.weight || 0), 0);
+  // Calculate total loads, weight, and orders from all orders (not filtered by date range)
+  const totalLoads = orders.reduce((sum, o) => sum + (o.loads || 0), 0);
+  const totalWeight = orders.reduce((sum, o) => sum + (o.weight || 0), 0);
+  const totalOrders = orders.length;
+
+  // Calculate total days of operation
+  const totalDaysOfOperation = businessStartDate 
+    ? differenceInDays(new Date(), businessStartDate) + 1 
+    : 0;
 
   // Prepare monthly data for charts
   const monthlyData = useMemo(() => {
@@ -276,7 +298,7 @@ export function FinanceDashboard() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -320,13 +342,65 @@ export function FinanceDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Loads & Weight</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Days of Operation</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{totalDaysOfOperation}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {businessStartDate ? `Since ${format(businessStartDate, 'MMM d, yyyy')}` : 'No data'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Loads</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">{totalLoads}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {totalWeight.toFixed(2)} kg total weight
+              All-time total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Weight</CardTitle>
+            <Scale className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{totalWeight.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              kg total weight
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{totalUsers}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Registered customers
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{totalOrders}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              All-time orders
             </p>
           </CardContent>
         </Card>
@@ -334,34 +408,6 @@ export function FinanceDashboard() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Revenue vs Expenses Line Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue vs Expenses</CardTitle>
-            <CardDescription>Monthly comparison over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {monthlyData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value: number) => `₱${value.toFixed(2)}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} name="Revenue" />
-                  <Line type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2} name="Expenses" />
-                  <Line type="monotone" dataKey="net" stroke="#3b82f6" strokeWidth={2} name="Net Income" />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                No data available for the selected period
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Expense Categories Pie Chart */}
         <Card>
           <CardHeader>
@@ -398,33 +444,33 @@ export function FinanceDashboard() {
         </Card>
       </div>
 
-      {/* Monthly Bar Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Financial Overview</CardTitle>
-          <CardDescription>Revenue and expenses by month</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {monthlyData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value: number) => `₱${value.toFixed(2)}`} />
-                <Legend />
-                <Bar dataKey="revenue" fill="#22c55e" name="Revenue" />
-                <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
-                <Bar dataKey="net" fill="#3b82f6" name="Net Income" />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex items-center justify-center h-[400px] text-muted-foreground">
-              No data available for the selected period
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Monthly Bar Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Financial Overview</CardTitle>
+            <CardDescription>Revenue and expenses by month</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {monthlyData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => `₱${value.toFixed(2)}`} />
+                  <Legend />
+                  <Bar dataKey="revenue" fill="#22c55e" name="Revenue" />
+                  <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
+                  <Bar dataKey="net" fill="#3b82f6" name="Net Income" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                No data available for the selected period
+              </div>
+            )}
+          </CardContent>
+        </Card>
     </div>
   );
 }
