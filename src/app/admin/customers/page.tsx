@@ -16,16 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { Loader2, Inbox, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
 import { format, startOfDay } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 type Order = {
   id: string;
@@ -60,6 +55,7 @@ export default function AdminCustomersPage() {
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -170,6 +166,10 @@ export default function AdminCustomersPage() {
     );
   }, [orders]);
 
+  const toggleExpand = (customerName: string) => {
+    setExpandedCustomer(expandedCustomer === customerName ? null : customerName);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -208,95 +208,101 @@ export default function AdminCustomersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <Accordion type="single" collapsible className="w-full">
-                  {customers.map((customer) => (
-                    <AccordionItem
-                      key={customer.name}
-                      value={customer.name}
-                      className="border-none"
-                    >
-                      <>
-                        <TableRow className="hover:bg-muted/50">
-                          <TableCell className="text-left px-4 py-3 align-top min-w-[180px]">
-                            <div className="flex flex-col">
-                              <span className="font-medium break-words">{customer.name}</span>
-                              <span className="text-xs text-muted-foreground mt-0.5 break-words">
-                                {customer.contactNumber || 'N/A'}
-                              </span>
+                {customers.map((customer) => {
+                  const isExpanded = expandedCustomer === customer.name;
+                  const hasMultipleTransactions = customer.transactions.length > 1;
+                  
+                  return (
+                    <>
+                      <TableRow 
+                        key={customer.name}
+                        className="hover:bg-muted/50"
+                      >
+                        <TableCell className="text-left px-4 py-3 align-top min-w-[180px]">
+                          <div className="flex flex-col">
+                            <span className="font-medium break-words">{customer.name}</span>
+                            <span className="text-xs text-muted-foreground mt-0.5 break-words">
+                              {customer.contactNumber || 'N/A'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center px-4 py-3 align-middle w-[80px]">
+                          {customer.visits}
+                        </TableCell>
+                        <TableCell className="text-center px-4 py-3 align-middle w-[100px]">
+                          {customer.totalLoads}
+                        </TableCell>
+                        <TableCell className="text-right px-4 py-3 align-middle min-w-[130px] whitespace-nowrap">
+                          {customer.totalWeight.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-right px-4 py-3 align-middle min-w-[150px] whitespace-nowrap font-semibold">
+                          ₱{customer.totalAmountPaid.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="px-4 py-3 align-middle w-[60px]">
+                          {hasMultipleTransactions && (
+                            <button
+                              onClick={() => toggleExpand(customer.name)}
+                              className="h-8 w-8 flex items-center justify-center hover:bg-muted rounded transition-colors"
+                            >
+                              <ChevronDown 
+                                className={cn(
+                                  "h-4 w-4 transition-transform duration-200",
+                                  isExpanded && "rotate-180"
+                                )} 
+                              />
+                            </button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                      {isExpanded && hasMultipleTransactions && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="p-0 bg-muted/30">
+                            <div className="p-4 sm:p-6">
+                              <h4 className="text-sm font-semibold mb-4">
+                                Transaction History ({customer.transactions.length} orders)
+                              </h4>
+                              <div className="overflow-x-auto">
+                                <div className="min-w-[600px]">
+                                  {/* Header Row */}
+                                  <div className="grid grid-cols-5 gap-3 sm:gap-4 text-xs font-medium text-muted-foreground pb-2 border-b mb-2">
+                                    <div className="text-left min-w-[110px]">Date</div>
+                                    <div className="text-center min-w-[60px]">Loads</div>
+                                    <div className="text-right min-w-[90px] whitespace-nowrap">Weight (kg)</div>
+                                    <div className="text-right min-w-[100px] whitespace-nowrap">Amount Paid</div>
+                                    <div className="text-center min-w-[100px]">Order ID</div>
+                                  </div>
+                                  {/* Transaction Rows */}
+                                  {customer.transactions.map((transaction, idx) => (
+                                    <div
+                                      key={`${transaction.orderId}-${idx}`}
+                                      className="grid grid-cols-5 gap-3 sm:gap-4 text-sm py-2 border-b last:border-0"
+                                    >
+                                      <div className="text-left min-w-[110px]">
+                                        {format(transaction.date, 'MMM dd, yyyy')}
+                                      </div>
+                                      <div className="text-center min-w-[60px]">
+                                        {transaction.loads}
+                                      </div>
+                                      <div className="text-right min-w-[90px] whitespace-nowrap">
+                                        {transaction.weight.toFixed(2)}
+                                      </div>
+                                      <div className="text-right min-w-[100px] whitespace-nowrap font-medium">
+                                        ₱{transaction.amountPaid.toFixed(2)}
+                                      </div>
+                                      <div className="text-center min-w-[100px] text-xs text-muted-foreground break-all">
+                                        {transaction.orderId}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-center px-4 py-3 align-middle w-[80px]">
-                            {customer.visits}
-                          </TableCell>
-                          <TableCell className="text-center px-4 py-3 align-middle w-[100px]">
-                            {customer.totalLoads}
-                          </TableCell>
-                          <TableCell className="text-right px-4 py-3 align-middle min-w-[130px] whitespace-nowrap">
-                            {customer.totalWeight.toFixed(2)}
-                          </TableCell>
-                          <TableCell className="text-right px-4 py-3 align-middle min-w-[150px] whitespace-nowrap font-semibold">
-                            ₱{customer.totalAmountPaid.toFixed(2)}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 align-middle w-[60px]">
-                            {customer.transactions.length > 1 && (
-                              <AccordionTrigger className="h-8 w-8 p-0 hover:no-underline mx-auto">
-                                <ChevronDown className="h-4 w-4" />
-                              </AccordionTrigger>
-                            )}
-                          </TableCell>
                         </TableRow>
-                        {customer.transactions.length > 1 && (
-                          <AccordionContent asChild>
-                            <TableRow>
-                              <TableCell colSpan={6} className="p-0 bg-muted/30">
-                                <div className="p-4 sm:p-6">
-                                  <h4 className="text-sm font-semibold mb-4">
-                                    Transaction History ({customer.transactions.length} orders)
-                                  </h4>
-                                  <div className="overflow-x-auto">
-                                    <div className="min-w-[600px]">
-                                      {/* Header Row */}
-                                      <div className="grid grid-cols-5 gap-3 sm:gap-4 text-xs font-medium text-muted-foreground pb-2 border-b mb-2">
-                                        <div className="text-left min-w-[110px]">Date</div>
-                                        <div className="text-center min-w-[60px]">Loads</div>
-                                        <div className="text-right min-w-[90px] whitespace-nowrap">Weight (kg)</div>
-                                        <div className="text-right min-w-[100px] whitespace-nowrap">Amount Paid</div>
-                                        <div className="text-center min-w-[100px]">Order ID</div>
-                                      </div>
-                                      {/* Transaction Rows */}
-                                      {customer.transactions.map((transaction, idx) => (
-                                        <div
-                                          key={`${transaction.orderId}-${idx}`}
-                                          className="grid grid-cols-5 gap-3 sm:gap-4 text-sm py-2 border-b last:border-0"
-                                        >
-                                          <div className="text-left min-w-[110px]">
-                                            {format(transaction.date, 'MMM dd, yyyy')}
-                                          </div>
-                                          <div className="text-center min-w-[60px]">
-                                            {transaction.loads}
-                                          </div>
-                                          <div className="text-right min-w-[90px] whitespace-nowrap">
-                                            {transaction.weight.toFixed(2)}
-                                          </div>
-                                          <div className="text-right min-w-[100px] whitespace-nowrap font-medium">
-                                            ₱{transaction.amountPaid.toFixed(2)}
-                                          </div>
-                                          <div className="text-center min-w-[100px] text-xs text-muted-foreground break-all">
-                                            {transaction.orderId}
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          </AccordionContent>
-                        )}
-                      </>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
+                      )}
+                    </>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
