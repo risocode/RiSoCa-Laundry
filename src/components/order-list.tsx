@@ -110,6 +110,15 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     const [editableOrder, setEditableOrder] = useState(order);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
+    // SAFETY CHECK: If balance is undefined but order is not paid, set balance to total
+    // This handles cases where the mapping function fails or old code is running
+    const safeOrder = {
+        ...order,
+        balance: order.balance !== undefined 
+            ? order.balance 
+            : (order.isPaid ? 0 : order.total)
+    };
+
     // Fix: Watch for balance and isPaid changes, not just order.id
     useEffect(() => {
         console.log(`[OrderList - Desktop] OrderRow ${order.id} prop changed:`, {
@@ -120,8 +129,9 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
             total: order.total,
             previous_balance: editableOrder.balance,
             previous_isPaid: editableOrder.isPaid,
+            safe_balance: safeOrder.balance,
         });
-        setEditableOrder(order);
+        setEditableOrder(safeOrder);
     }, [order.id, order.balance, order.isPaid, order.total]);
 
     const handleFieldChange = (field: keyof Order, value: string | number | boolean) => {
@@ -160,18 +170,18 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     const handlePayment = async (amountPaid: number, balance: number) => {
         console.log('[OrderList - Desktop] ===== PAYMENT PROCESSED =====');
         console.log('[OrderList - Desktop] Payment processed:', {
-            orderId: order.id,
+            orderId: workingOrder.id,
             amountPaid,
             balance,
             isPaid: balance === 0,
             currentOrder: {
-                ...order,
-                balance: order.balance,
-                isPaid: order.isPaid,
+                ...workingOrder,
+                balance: workingOrder.balance,
+                isPaid: workingOrder.isPaid,
             }
         });
         const updatedOrder = {
-            ...order,
+            ...workingOrder,
             isPaid: balance === 0,
             balance: balance > 0 ? balance : 0, // Ensure balance is never negative
         };
@@ -180,19 +190,23 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
         console.log('[OrderList - Desktop] ===== PAYMENT PROCESSED END =====');
     };
 
+    // Use safeOrder for all calculations to ensure balance is never undefined
+    const workingOrder = safeOrder;
+    
     // Determine payment status
-    const isFullyPaid = order.isPaid === true;
-    const isPartiallyPaid = order.isPaid === false && 
-        order.balance !== undefined && 
-        order.balance > 0 && 
-        order.balance < order.total;
+    const isFullyPaid = workingOrder.isPaid === true;
+    const isPartiallyPaid = workingOrder.isPaid === false && 
+        workingOrder.balance !== undefined && 
+        workingOrder.balance > 0 && 
+        workingOrder.balance < workingOrder.total;
     const isUnpaid = !isFullyPaid && !isPartiallyPaid;
     
     // Log payment status calculation
-    console.log(`[OrderList - Desktop] OrderRow ${order.id} payment status calculation:`, {
-        isPaid: order.isPaid,
-        balance: order.balance,
-        total: order.total,
+    console.log(`[OrderList - Desktop] OrderRow ${workingOrder.id} payment status calculation:`, {
+        isPaid: workingOrder.isPaid,
+        balance: workingOrder.balance,
+        balance_type: typeof workingOrder.balance,
+        total: workingOrder.total,
         isFullyPaid,
         isPartiallyPaid,
         isUnpaid,
@@ -200,18 +214,18 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     
     // Calculate display values for total/balance
     // For unpaid orders, if balance is undefined or 0, use order total. For paid orders, use 0.
-    const displayBalance = order.isPaid 
+    const displayBalance = workingOrder.isPaid 
         ? 0 
-        : (order.balance !== undefined && order.balance > 0) 
-            ? order.balance 
-            : order.total;
+        : (workingOrder.balance !== undefined && workingOrder.balance > 0) 
+            ? workingOrder.balance 
+            : workingOrder.total;
     
-    console.log(`[OrderList - Desktop] OrderRow ${order.id} displayBalance:`, displayBalance);
+    console.log(`[OrderList - Desktop] OrderRow ${workingOrder.id} displayBalance:`, displayBalance);
 
     return (
         <>
         <TableRow>
-            <TableCell className="font-medium">{order.id}</TableCell>
+            <TableCell className="font-medium">{workingOrder.id}</TableCell>
             <TableCell>
                 {isEditing ? (
                     <Input 
@@ -222,7 +236,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         disabled={isSaving}
                     />
                 ) : (
-                    order.customerName
+                    workingOrder.customerName
                 )}
             </TableCell>
             <TableCell>
@@ -235,21 +249,21 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         disabled={isSaving}
                     />
                 ) : (
-                    order.contactNumber
+                    workingOrder.contactNumber
                 )}
             </TableCell>
             <TableCell>
                 {isEditing ? (
                     <Input type="number" value={editableOrder.weight} onChange={e => handleFieldChange('weight', e.target.value)} className="h-8 w-24" disabled={isSaving}/>
                 ) : (
-                    order.weight
+                    workingOrder.weight
                 )}
             </TableCell>
             <TableCell>
                 {isEditing ? (
                     <Input type="number" value={editableOrder.load} onChange={e => handleFieldChange('load', e.target.value)} className="h-8 w-20" disabled={isSaving}/>
                 ) : (
-                    order.load
+                    workingOrder.load
                 )}
             </TableCell>
             <TableCell>
@@ -259,13 +273,13 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     <div className="flex items-center gap-2">
                         {isPartiallyPaid ? (
                             <>
-                                <span className="line-through text-muted-foreground">₱{order.total.toFixed(2)}</span>
-                                <span className="text-red-600 font-semibold">₱{order.balance!.toFixed(2)}</span>
+                                <span className="line-through text-muted-foreground">₱{workingOrder.total.toFixed(2)}</span>
+                                <span className="text-red-600 font-semibold">₱{workingOrder.balance!.toFixed(2)}</span>
                             </>
                         ) : isFullyPaid ? (
-                            <span className="text-green-600 font-semibold">₱{order.total.toFixed(2)}</span>
+                            <span className="text-green-600 font-semibold">₱{workingOrder.total.toFixed(2)}</span>
                         ) : (
-                            <span className="text-red-600 font-semibold">₱{order.total.toFixed(2)}</span>
+                            <span className="text-red-600 font-semibold">₱{workingOrder.total.toFixed(2)}</span>
                         )}
                     </div>
                 )}
@@ -282,7 +296,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     </Button>
                 ) : (
                     (() => {
-                        const badgeInfo = getPaymentBadgeInfo(order.isPaid, isPartiallyPaid);
+                        const badgeInfo = getPaymentBadgeInfo(workingOrder.isPaid, isPartiallyPaid);
                         return badgeInfo.clickable ? (
                             <Badge 
                                 className={cn(
@@ -333,8 +347,8 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         </Select>
                     </div>
                 ) : (
-                   <Badge className={`${getStatusColor(order.status)} hover:${getStatusColor(order.status)} text-white`}>
-                       {order.status}
+                   <Badge className={`${getStatusColor(workingOrder.status)} hover:${getStatusColor(workingOrder.status)} text-white`}>
+                       {workingOrder.status}
                     </Badge>
                 )}
             </TableCell>
@@ -374,6 +388,15 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     const [editableOrder, setEditableOrder] = useState(order);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
+    // SAFETY CHECK: If balance is undefined but order is not paid, set balance to total
+    // This handles cases where the mapping function fails or old code is running
+    const safeOrder = {
+        ...order,
+        balance: order.balance !== undefined 
+            ? order.balance 
+            : (order.isPaid ? 0 : order.total)
+    };
+
     // Fix: Watch for balance and isPaid changes, not just order.id
     useEffect(() => {
         console.log(`[OrderList - Mobile] OrderCard ${order.id} prop changed:`, {
@@ -384,8 +407,9 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
             total: order.total,
             previous_balance: editableOrder.balance,
             previous_isPaid: editableOrder.isPaid,
+            safe_balance: safeOrder.balance,
         });
-        setEditableOrder(order);
+        setEditableOrder(safeOrder);
     }, [order.id, order.balance, order.isPaid, order.total]);
 
     const handleFieldChange = (field: keyof Order, value: string | number | boolean) => {
@@ -424,18 +448,18 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     const handlePayment = async (amountPaid: number, balance: number) => {
         console.log('[OrderList - Mobile] ===== PAYMENT PROCESSED =====');
         console.log('[OrderList - Mobile] Payment processed:', {
-            orderId: order.id,
+            orderId: safeOrder.id,
             amountPaid,
             balance,
             isPaid: balance === 0,
             currentOrder: {
-                ...order,
-                balance: order.balance,
-                isPaid: order.isPaid,
+                ...safeOrder,
+                balance: safeOrder.balance,
+                isPaid: safeOrder.isPaid,
             }
         });
         const updatedOrder = {
-            ...order,
+            ...safeOrder,
             isPaid: balance === 0,
             balance: balance > 0 ? balance : 0, // Ensure balance is never negative
         };
@@ -444,19 +468,23 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
         console.log('[OrderList - Mobile] ===== PAYMENT PROCESSED END =====');
     };
 
+    // Use safeOrder for all calculations to ensure balance is never undefined
+    const workingOrder = safeOrder;
+
     // Determine payment status
-    const isFullyPaid = order.isPaid === true;
-    const isPartiallyPaid = order.isPaid === false && 
-        order.balance !== undefined && 
-        order.balance > 0 && 
-        order.balance < order.total;
+    const isFullyPaid = workingOrder.isPaid === true;
+    const isPartiallyPaid = workingOrder.isPaid === false && 
+        workingOrder.balance !== undefined && 
+        workingOrder.balance > 0 && 
+        workingOrder.balance < workingOrder.total;
     const isUnpaid = !isFullyPaid && !isPartiallyPaid;
     
     // Log payment status calculation
-    console.log(`[OrderList - Mobile] OrderCard ${order.id} payment status calculation:`, {
-        isPaid: order.isPaid,
-        balance: order.balance,
-        total: order.total,
+    console.log(`[OrderList - Mobile] OrderCard ${workingOrder.id} payment status calculation:`, {
+        isPaid: workingOrder.isPaid,
+        balance: workingOrder.balance,
+        balance_type: typeof workingOrder.balance,
+        total: workingOrder.total,
         isFullyPaid,
         isPartiallyPaid,
         isUnpaid,
@@ -464,40 +492,40 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     
     // Calculate display values for total/balance
     // For unpaid orders, if balance is undefined or 0, use order total. For paid orders, use 0.
-    const displayBalance = order.isPaid 
+    const displayBalance = workingOrder.isPaid 
         ? 0 
-        : (order.balance !== undefined && order.balance > 0) 
-            ? order.balance 
-            : order.total;
+        : (workingOrder.balance !== undefined && workingOrder.balance > 0) 
+            ? workingOrder.balance 
+            : workingOrder.total;
     
-    console.log(`[OrderList - Mobile] OrderCard ${order.id} displayBalance:`, displayBalance);
+    console.log(`[OrderList - Mobile] OrderCard ${workingOrder.id} displayBalance:`, displayBalance);
 
     return (
         <>
         <Card>
             <Accordion type="single" collapsible>
-                <AccordionItem value={order.id} className="border-b-0">
+                <AccordionItem value={workingOrder.id} className="border-b-0">
                     <AccordionTrigger className="p-4 hover:no-underline">
                          <div className="flex flex-col items-start text-left w-full gap-1">
                             <div className='flex items-center justify-between w-full'>
-                                <span className="font-bold text-lg">{order.id}</span>
+                                <span className="font-bold text-lg">{workingOrder.id}</span>
                                 <Badge className={cn(
-                                    getStatusColor(order.status),
-                                    "hover:" + getStatusColor(order.status),
+                                    getStatusColor(workingOrder.status),
+                                    "hover:" + getStatusColor(workingOrder.status),
                                     "text-white text-xs"
                                 )}>
-                                    {order.status}
+                                    {workingOrder.status}
                                 </Badge>
                             </div>
                             <div className="flex flex-wrap items-center justify-between w-full gap-x-3 text-foreground/90">
-                                <span className="text-base font-medium">{order.customerName}</span>
+                                <span className="text-base font-medium">{workingOrder.customerName}</span>
                                 {(() => {
-                                    const badgeInfo = getPaymentBadgeInfo(order.isPaid, isPartiallyPaid);
+                                    const badgeInfo = getPaymentBadgeInfo(workingOrder.isPaid, isPartiallyPaid);
                                     const amountText = isPartiallyPaid 
-                                        ? `₱${order.balance!.toFixed(2)}` 
+                                        ? `₱${workingOrder.balance!.toFixed(2)}` 
                                         : isFullyPaid 
-                                            ? `₱${order.total.toFixed(2)}` 
-                                            : `₱${order.total.toFixed(2)}`;
+                                            ? `₱${workingOrder.total.toFixed(2)}` 
+                                            : `₱${workingOrder.total.toFixed(2)}`;
                                     
                                     return badgeInfo.clickable ? (
                                         <Badge 
@@ -675,9 +703,9 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
             isOpen={isPaymentDialogOpen}
             onClose={() => setIsPaymentDialogOpen(false)}
             onConfirm={handlePayment}
-            orderTotal={order.total}
+            orderTotal={workingOrder.total}
             currentBalance={displayBalance}
-            orderId={order.id}
+            orderId={workingOrder.id}
         />
         </>
     );
