@@ -33,6 +33,7 @@ import { cn } from '@/lib/utils';
 import { SalaryCalendar } from '@/components/salary-calendar';
 import type { Order } from '@/components/order-list';
 import { Badge } from '@/components/ui/badge';
+import { isAdmin, isEmployee } from '@/lib/auth-helpers';
 
 const SALARY_PER_LOAD = 30;
 
@@ -51,19 +52,102 @@ export default function EmployeeSalaryPage() {
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dailyPayments, setDailyPayments] = useState<Record<string, boolean>>({});
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
+  const [userIsEmployee, setUserIsEmployee] = useState(false);
+  const [employees, setEmployees] = useState<Array<{ id: string; first_name: string | null }>>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
+    checkUserRole();
+    fetchEmployees();
   }, []);
 
-  const fetchDailyPaymentStatus = async (dateStr: string) => {
+  const checkUserRole = async () => {
     if (!user) return;
+    const [adminStatus, employeeStatus] = await Promise.all([
+      isAdmin(user.id),
+      isEmployee(user.id),
+    ]);
+    setUserIsAdmin(adminStatus);
+    setUserIsEmployee(employeeStatus);
     
+    // If admin, select first employee by default
+    if (adminStatus && !employeeStatus) {
+      // Will be set after employees are fetched
+    } else if (employeeStatus) {
+      setSelectedEmployeeId(user.id);
+    }
+  };
+
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name')
+        .eq('role', 'employee');
+
+      if (error) {
+        console.error("Failed to load employees", error);
+        return;
+      }
+      
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error fetching employees', error);
+    }
+  };
+
+  // Update selected employee when employees are loaded and user is admin
+  useEffect(() => {
+    if (userIsAdmin && !userIsEmployee && employees.length > 0 && !selectedEmployeeId) {
+      setSelectedEmployeeId(employees[0].id);
+    } else if (userIsEmployee && user && !selectedEmployeeId) {
+      setSelectedEmployeeId(user.id);
+    }
+  }, [userIsAdmin, userIsEmployee, employees, selectedEmployeeId, user]);
+
+  const fetchDailyPaymentStatus = async (dateStr: string) => {
+    if (!user && !selectedEmployeeId) return;
+    
+    // Determine which employee ID to use
+    const employeeId = userIsAdmin && !userIsEmployee && selectedEmployeeId 
+      ? selectedEmployeeId 
+      : user?.id;
+    
+    if (!employeeId) return;
+    
+    await fetchDailyPaymentStatusForEmployee(dateStr, employeeId);
+  };
+
+  // Refetch payment status when selected employee changes
+  useEffect(() => {
+    if (selectedEmployeeId && orders.length > 0) {
+      // Clear existing payments and refetch for all dates
+      setDailyPayments({});
+      const uniqueDates = new Set<string>();
+      orders.forEach((order) => {
+        const dateKey = format(startOfDay(new Date(order.orderDate)), 'yyyy-MM-dd');
+        uniqueDates.add(dateKey);
+      });
+      // Fetch payments using the selected employee ID
+      uniqueDates.forEach(dateStr => {
+        const employeeId = userIsAdmin && !userIsEmployee && selectedEmployeeId 
+          ? selectedEmployeeId 
+          : user?.id;
+        if (employeeId) {
+          fetchDailyPaymentStatusForEmployee(dateStr, employeeId);
+        }
+      });
+    }
+  }, [selectedEmployeeId, orders, userIsAdmin, userIsEmployee, user]);
+
+  const fetchDailyPaymentStatusForEmployee = async (dateStr: string, employeeId: string) => {
     try {
       const { data, error } = await supabase
         .from('daily_salary_payments')
         .select('is_paid')
-        .eq('employee_id', user.id)
+        .eq('employee_id', employeeId)
         .eq('date', dateStr)
         .maybeSingle();
 
@@ -137,8 +221,13 @@ export default function EmployeeSalaryPage() {
       const dateKey = format(new Date(dateStr), 'yyyy-MM-dd');
       
       // Fetch payment status for this date if not already loaded
-      if (!(dateKey in dailyPayments)) {
-        fetchDailyPaymentStatus(dateKey);
+      if (!(dateKey in dailyPayments) && selectedEmployeeId) {
+        const employeeId = userIsAdmin && !userIsEmployee && selectedEmployeeId 
+          ? selectedEmployeeId 
+          : user?.id;
+        if (employeeId) {
+          fetchDailyPaymentStatusForEmployee(dateKey, employeeId);
+        }
       }
       
       return {
@@ -179,9 +268,25 @@ export default function EmployeeSalaryPage() {
     <Card className="w-full flex flex-col max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-14rem)]">
       <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b rounded-t-lg">
         <div>
-          <CardTitle>My Salary</CardTitle>
+          <CardTitle>{userIsAdmin && !userIsEmployee ? 'Employee Salary' : 'My Salary'}</CardTitle>
           <CardDescription>Salary is calculated at ₱{SALARY_PER_LOAD} per load for each day. All loads are paid immediately.</CardDescription>
         </div>
+        {userIsAdmin && !userIsEmployee && employees.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-muted-foreground">View as:</label>
+            <select
+              value={selectedEmployeeId || ''}
+              onChange={(e) => setSelectedEmployeeId(e.target.value)}
+              className="px-3 py-1.5 text-sm border rounded-md bg-background"
+            >
+              {employees.map((emp) => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.first_name || 'Employee'}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto overflow-x-hidden scrollable pt-4 pb-4">
         {/* Calendar Date Range Filter */}
