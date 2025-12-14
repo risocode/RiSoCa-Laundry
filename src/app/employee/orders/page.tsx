@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ManualOrderDialog } from '@/components/manual-order-dialog';
-import { createOrderWithHistory, fetchLatestOrderId, generateNextOrderId, updateOrderStatus, updateOrderFields } from '@/lib/api/orders';
+import { createOrderWithHistory, fetchLatestOrderId, generateNextOrderId, updateOrderFields, updateOrderStatus } from '@/lib/api/orders';
 import { supabase } from '@/lib/supabase-client';
 import { useAuthSession } from '@/hooks/use-auth-session';
 
@@ -22,7 +22,7 @@ export default function EmployeeOrdersPage() {
   const { toast } = useToast();
   const { user } = useAuthSession();
   const [allOrders, setAllOrders] = useState<Order[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingAdmin, setLoadingAdmin] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const mapOrder = (o: any): Order => ({
@@ -48,7 +48,7 @@ export default function EmployeeOrdersPage() {
   });
 
   const fetchOrders = async () => {
-    setLoadingOrders(true);
+    setLoadingAdmin(true);
     const { data, error } = await supabase
       .from('orders')
       .select('*, order_status_history(*)')
@@ -57,12 +57,12 @@ export default function EmployeeOrdersPage() {
     if (error) {
       console.error('Failed to load orders', error);
       toast({ variant: 'destructive', title: 'Load error', description: 'Could not load orders.' });
-      setLoadingOrders(false);
+      setLoadingAdmin(false);
       return;
     }
 
     setAllOrders((data ?? []).map(mapOrder));
-    setLoadingOrders(false);
+    setLoadingAdmin(false);
   };
 
   useEffect(() => {
@@ -119,7 +119,7 @@ export default function EmployeeOrdersPage() {
 
     const { error } = await createOrderWithHistory({
       id: newId,
-      customer_id: user?.id ?? 'employee-manual',
+      customer_id: user?.id ?? 'admin-manual',
       customer_name: newOrder.customerName,
       contact_number: newOrder.contactNumber,
       service_package: newOrder.servicePackage as any,
@@ -141,7 +141,7 @@ export default function EmployeeOrdersPage() {
           const retryId = generateNextOrderId(retryLatestId);
           const { error: retryCreateError } = await createOrderWithHistory({
             id: retryId,
-            customer_id: user?.id ?? 'employee-manual',
+            customer_id: user?.id ?? 'admin-manual',
             customer_name: newOrder.customerName,
             contact_number: newOrder.contactNumber,
             service_package: newOrder.servicePackage as any,
@@ -182,30 +182,30 @@ export default function EmployeeOrdersPage() {
         <CardHeader className="flex flex-row items-center justify-between sticky top-0 bg-background z-10 border-b rounded-t-lg">
           <div>
             <CardTitle>Orders</CardTitle>
-            <CardDescription>View and manage all customer orders.</CardDescription>
+            <CardDescription>View and update all customer orders.</CardDescription>
           </div>
           <Button onClick={() => setIsDialogOpen(true)}>
             New Order
           </Button>
         </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto overflow-x-hidden scrollable pt-4 pb-4">
-        {loadingOrders ? (
-          <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
-            <Loader2 className="h-12 w-12 mb-2 animate-spin" />
-            <p>Loading all orders...</p>
-          </div>
-        ) : allOrders && allOrders.length > 0 ? (
-          <OrderList 
-            orders={allOrders} 
-            onUpdateOrder={handleUpdateOrder}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
-            <Inbox className="h-12 w-12 mb-2" />
-            <p>No orders have been placed yet.</p>
-          </div>
-        )}
-      </CardContent>
+        <CardContent className="flex-1 overflow-y-auto overflow-x-hidden scrollable pt-4 pb-4">
+          {loadingAdmin ? (
+            <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
+              <Loader2 className="h-12 w-12 mb-2 animate-spin" />
+              <p>Loading all orders...</p>
+            </div>
+          ) : allOrders && allOrders.length > 0 ? (
+            <OrderList 
+              orders={allOrders} 
+              onUpdateOrder={handleUpdateOrder}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
+              <Inbox className="h-12 w-12 mb-2" />
+              <p>No orders have been placed yet across the platform.</p>
+            </div>
+          )}
+        </CardContent>
     </Card>
     <ManualOrderDialog
       isOpen={isDialogOpen}
