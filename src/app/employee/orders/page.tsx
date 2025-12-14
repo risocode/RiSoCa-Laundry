@@ -85,9 +85,19 @@ export default function EmployeeOrdersPage() {
       return;
     }
 
-    console.log('[Admin Orders] Fetched orders:', data?.length, 'orders');
-    console.log('[Admin Orders] Sample order:', data?.[0]);
-    setAllOrders((data ?? []).map(mapOrder));
+    console.log('[Employee Orders] Fetched orders:', data?.length, 'orders');
+    const mappedOrders = (data ?? []).map(mapOrder);
+    const rkr014 = mappedOrders.find(o => o.id === 'RKR014');
+    if (rkr014) {
+      console.log('[Employee Orders] RKR014 order details:', {
+        id: rkr014.id,
+        balance: rkr014.balance,
+        isPaid: rkr014.isPaid,
+        total: rkr014.total,
+        isPartiallyPaid: rkr014.isPaid === false && rkr014.balance !== undefined && rkr014.balance > 0 && rkr014.balance < rkr014.total
+      });
+    }
+    setAllOrders(mappedOrders);
     setLoadingAdmin(false);
   };
 
@@ -101,10 +111,18 @@ export default function EmployeeOrdersPage() {
         { event: '*', schema: 'public', table: 'orders' },
         (payload) => {
           console.log('[Employee Orders] Order changed:', payload);
-          fetchOrders();
+          console.log('[Employee Orders] Event type:', payload.eventType);
+          console.log('[Employee Orders] New data:', payload.new);
+          console.log('[Employee Orders] Old data:', payload.old);
+          // Refresh orders after a short delay to ensure database is updated
+          setTimeout(() => {
+            fetchOrders();
+          }, 100);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[Employee Orders] Subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);

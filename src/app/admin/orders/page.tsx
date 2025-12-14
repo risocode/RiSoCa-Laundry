@@ -96,15 +96,22 @@ export default function AdminOrdersPage() {
     
     // Set up real-time subscription to refresh when orders change
     const channel = supabase
-      .channel('orders-changes')
+      .channel('admin-orders-changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'orders' },
         (payload) => {
           console.log('[Admin Orders] Order changed:', payload);
-          fetchOrders();
+          console.log('[Admin Orders] Event type:', payload.eventType);
+          console.log('[Admin Orders] New data:', payload.new);
+          // Refresh orders after a short delay to ensure database is updated
+          setTimeout(() => {
+            fetchOrders();
+          }, 100);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[Admin Orders] Subscription status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
