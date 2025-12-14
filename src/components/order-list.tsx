@@ -148,11 +148,19 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     };
 
     const handlePayment = async (amountPaid: number, balance: number) => {
+        console.log('[OrderList - Desktop] Payment processed:', {
+            orderId: order.id,
+            amountPaid,
+            balance,
+            isPaid: balance === 0,
+            currentOrder: order
+        });
         const updatedOrder = {
             ...order,
             isPaid: balance === 0,
-            balance: balance,
+            balance: balance > 0 ? balance : 0, // Ensure balance is never negative
         };
+        console.log('[OrderList - Desktop] Updated order:', updatedOrder);
         await onUpdateOrder(updatedOrder);
     };
 
@@ -376,11 +384,19 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     };
 
     const handlePayment = async (amountPaid: number, balance: number) => {
+        console.log('[OrderList - Desktop] Payment processed:', {
+            orderId: order.id,
+            amountPaid,
+            balance,
+            isPaid: balance === 0,
+            currentOrder: order
+        });
         const updatedOrder = {
             ...order,
             isPaid: balance === 0,
-            balance: balance,
+            balance: balance > 0 ? balance : 0, // Ensure balance is never negative
         };
+        console.log('[OrderList - Desktop] Updated order:', updatedOrder);
         await onUpdateOrder(updatedOrder);
     };
 

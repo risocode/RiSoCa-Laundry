@@ -77,7 +77,7 @@ export function PaymentDialog({
         <div className="space-y-4 py-4">
           {/* Amount Due */}
           <div className="space-y-2">
-            <Label htmlFor="amountDue">Amount Due</Label>
+            <Label>Amount Due</Label>
             <div className="flex items-center justify-between p-3 bg-muted rounded-md">
               <span className="text-sm font-medium">₱{amountDue.toFixed(2)}</span>
             </div>
