@@ -34,8 +34,9 @@ export function PaymentDialog({
   const [amountPaid, setAmountPaid] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Calculate amount due (use current balance if exists, otherwise use total)
-  const amountDue = currentBalance !== undefined ? currentBalance : orderTotal;
+  // Calculate amount due (use current balance if it exists and is > 0, otherwise use total)
+  // For unpaid orders, if balance is 0 or undefined, use the order total
+  const amountDue = (currentBalance !== undefined && currentBalance > 0) ? currentBalance : orderTotal;
   
   // Calculate change or balance
   const numericAmountPaid = parseFloat(amountPaid) || 0;

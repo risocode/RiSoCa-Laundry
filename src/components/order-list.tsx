@@ -148,7 +148,12 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
 
     // Calculate display values for total/balance
     const hasBalance = (order.balance !== undefined && order.balance > 0) || (!order.isPaid && (!order.balance || order.balance === order.total));
-    const displayBalance = order.balance !== undefined ? order.balance : (order.isPaid ? 0 : order.total);
+    // For unpaid orders, if balance is undefined or 0, use order total. For paid orders, use 0.
+    const displayBalance = order.isPaid 
+        ? 0 
+        : (order.balance !== undefined && order.balance > 0) 
+            ? order.balance 
+            : order.total;
 
     return (
         <>
@@ -359,7 +364,12 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
 
     // Calculate display values for total/balance
     const hasBalance = (order.balance !== undefined && order.balance > 0) || (!order.isPaid && (!order.balance || order.balance === order.total));
-    const displayBalance = order.balance !== undefined ? order.balance : (order.isPaid ? 0 : order.total);
+    // For unpaid orders, if balance is undefined or 0, use order total. For paid orders, use 0.
+    const displayBalance = order.isPaid 
+        ? 0 
+        : (order.balance !== undefined && order.balance > 0) 
+            ? order.balance 
+            : order.total;
 
     return (
         <>
