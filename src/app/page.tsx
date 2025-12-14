@@ -32,6 +32,7 @@ import {
   Home,
   Eye,
   EyeOff,
+  Users,
 } from 'lucide-react';
 
 import { AppHeader } from '@/components/app-header';
@@ -58,10 +59,11 @@ const customerGridItems = [
 
 const adminGridItems = [
   { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
-  { href: '/admin/expenses', label: 'Expenses', icon: CreditCard },
-  { href: '/admin/salary', label: 'Employee Salary', icon: Wallet },
-  { href: '/admin/finance', label: 'Finance', icon: TrendingUp },
+  { href: '/admin/customers', label: 'Customers', icon: Users },
   { href: '/admin/rates', label: 'Service Rates', icon: DollarSign },
+  { href: '/admin/salary', label: 'Employee Salary', icon: Wallet },
+  { href: '/admin/expenses', label: 'Expenses', icon: CreditCard },
+  { href: '/admin/finance', label: 'Finance', icon: TrendingUp },
 ];
 
 const employeeGridItems = [
