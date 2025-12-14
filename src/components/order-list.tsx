@@ -221,15 +221,34 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         {editableOrder.isPaid ? 'Paid' : 'Unpaid'}
                     </Button>
                 ) : (
-                    <Badge 
-                        className={cn(
-                            `${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white`,
-                            !order.isPaid && "cursor-pointer hover:opacity-80 transition-opacity"
-                        )}
-                        onClick={!order.isPaid ? () => setIsPaymentDialogOpen(true) : undefined}
-                    >
-                        {order.isPaid ? 'Paid' : 'Unpaid'}
-                    </Badge>
+                    !order.isPaid ? (
+                        <Badge 
+                            className={cn(
+                                `${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white cursor-pointer hover:opacity-80 transition-opacity`
+                            )}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsPaymentDialogOpen(true);
+                            }}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setIsPaymentDialogOpen(true);
+                                }
+                            }}
+                        >
+                            {order.isPaid ? 'Paid' : 'Unpaid'}
+                        </Badge>
+                    ) : (
+                        <Badge 
+                            className={`${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white`}
+                        >
+                            {order.isPaid ? 'Paid' : 'Unpaid'}
+                        </Badge>
+                    )
                 )}
             </TableCell>
             <TableCell>
@@ -433,15 +452,34 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                             {editableOrder.isPaid ? 'Paid' : 'Unpaid'}
                                         </Button>
                                     ) : (
-                                        <Badge 
-                                            className={cn(
-                                                `${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white`,
-                                                !order.isPaid && "cursor-pointer hover:opacity-80 transition-opacity"
-                                            )}
-                                            onClick={!order.isPaid ? () => setIsPaymentDialogOpen(true) : undefined}
-                                        >
-                                            {order.isPaid ? 'Paid' : 'Unpaid'}
-                                        </Badge>
+                                        !order.isPaid ? (
+                                            <Badge 
+                                                className={cn(
+                                                    `${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white cursor-pointer hover:opacity-80 transition-opacity`
+                                                )}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setIsPaymentDialogOpen(true);
+                                                }}
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setIsPaymentDialogOpen(true);
+                                                    }
+                                                }}
+                                            >
+                                                {order.isPaid ? 'Paid' : 'Unpaid'}
+                                            </Badge>
+                                        ) : (
+                                            <Badge 
+                                                className={`${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white`}
+                                            >
+                                                {order.isPaid ? 'Paid' : 'Unpaid'}
+                                            </Badge>
+                                        )
                                     )}
                                 </div>
                             </div>
