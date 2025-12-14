@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Edit, Save, X, Loader2, DollarSign } from 'lucide-react';
+import { Edit, Save, X, Loader2 } from 'lucide-react';
 import { PaymentDialog } from '@/components/payment-dialog';
 import {
     Accordion,
@@ -221,22 +221,15 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         {editableOrder.isPaid ? 'Paid' : 'Unpaid'}
                     </Button>
                 ) : (
-                    <div className="flex items-center gap-2">
-                        <Badge className={`${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white`}>
-                            {order.isPaid ? 'Paid' : 'Unpaid'}
-                        </Badge>
-                        {!order.isPaid && (
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setIsPaymentDialogOpen(true)}
-                                className="h-8"
-                            >
-                                <DollarSign className="h-3 w-3 mr-1" />
-                                Pay
-                            </Button>
+                    <Badge 
+                        className={cn(
+                            `${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white`,
+                            !order.isPaid && "cursor-pointer hover:opacity-80 transition-opacity"
                         )}
-                    </div>
+                        onClick={!order.isPaid ? () => setIsPaymentDialogOpen(true) : undefined}
+                    >
+                        {order.isPaid ? 'Paid' : 'Unpaid'}
+                    </Badge>
                 )}
             </TableCell>
             <TableCell>
@@ -440,22 +433,15 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                             {editableOrder.isPaid ? 'Paid' : 'Unpaid'}
                                         </Button>
                                     ) : (
-                                        <div className="flex flex-col gap-2">
-                                            <Badge className={`${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white`}>
-                                                {order.isPaid ? 'Paid' : 'Unpaid'}
-                                            </Badge>
-                                            {!order.isPaid && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => setIsPaymentDialogOpen(true)}
-                                                    className="h-8 w-full"
-                                                >
-                                                    <DollarSign className="h-3 w-3 mr-1" />
-                                                    Pay
-                                                </Button>
+                                        <Badge 
+                                            className={cn(
+                                                `${getPaymentStatusColor(order.isPaid)} hover:${getPaymentStatusColor(order.isPaid)} text-white`,
+                                                !order.isPaid && "cursor-pointer hover:opacity-80 transition-opacity"
                                             )}
-                                        </div>
+                                            onClick={!order.isPaid ? () => setIsPaymentDialogOpen(true) : undefined}
+                                        >
+                                            {order.isPaid ? 'Paid' : 'Unpaid'}
+                                        </Badge>
                                     )}
                                 </div>
                             </div>
