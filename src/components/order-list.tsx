@@ -146,8 +146,15 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
         await onUpdateOrder(updatedOrder);
     };
 
+    // Determine payment status
+    const isFullyPaid = order.isPaid === true;
+    const isPartiallyPaid = order.isPaid === false && 
+        order.balance !== undefined && 
+        order.balance > 0 && 
+        order.balance < order.total;
+    const isUnpaid = !isFullyPaid && !isPartiallyPaid;
+    
     // Calculate display values for total/balance
-    const hasBalance = (order.balance !== undefined && order.balance > 0) || (!order.isPaid && (!order.balance || order.balance === order.total));
     // For unpaid orders, if balance is undefined or 0, use order total. For paid orders, use 0.
     const displayBalance = order.isPaid 
         ? 0 
@@ -204,13 +211,15 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     <Input type="number" value={editableOrder.total.toString()} onChange={e => handleFieldChange('total', e.target.value)} className="h-8 w-28" disabled={isSaving}/>
                 ) : (
                     <div className="flex items-center gap-2">
-                        {hasBalance && displayBalance > 0 ? (
+                        {isPartiallyPaid ? (
                             <>
                                 <span className="line-through text-muted-foreground">₱{order.total.toFixed(2)}</span>
-                                <span className="text-red-600 font-semibold">₱{displayBalance.toFixed(2)}</span>
+                                <span className="text-red-600 font-semibold">₱{order.balance!.toFixed(2)}</span>
                             </>
+                        ) : isFullyPaid ? (
+                            <span className="text-green-600 font-semibold">₱{order.total.toFixed(2)}</span>
                         ) : (
-                            <span>₱{order.total.toFixed(2)}</span>
+                            <span className="text-red-600 font-semibold">₱{order.total.toFixed(2)}</span>
                         )}
                     </div>
                 )}
@@ -362,8 +371,15 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
         await onUpdateOrder(updatedOrder);
     };
 
+    // Determine payment status
+    const isFullyPaid = order.isPaid === true;
+    const isPartiallyPaid = order.isPaid === false && 
+        order.balance !== undefined && 
+        order.balance > 0 && 
+        order.balance < order.total;
+    const isUnpaid = !isFullyPaid && !isPartiallyPaid;
+    
     // Calculate display values for total/balance
-    const hasBalance = (order.balance !== undefined && order.balance > 0) || (!order.isPaid && (!order.balance || order.balance === order.total));
     // For unpaid orders, if balance is undefined or 0, use order total. For paid orders, use 0.
     const displayBalance = order.isPaid 
         ? 0 
@@ -439,13 +455,15 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                         <Input id={`total-mob-${order.id}`} type="number" value={editableOrder.total.toString()} onChange={e => handleFieldChange('total', e.target.value)} className="h-8" disabled={isSaving} />
                                     ) : (
                                         <div className="flex flex-col gap-1">
-                                            {hasBalance && displayBalance > 0 ? (
+                                            {isPartiallyPaid ? (
                                                 <>
                                                     <span className="line-through text-muted-foreground text-sm">₱{order.total.toFixed(2)}</span>
-                                                    <span className="text-red-600 font-semibold">₱{displayBalance.toFixed(2)}</span>
+                                                    <span className="text-red-600 font-semibold">₱{order.balance!.toFixed(2)}</span>
                                                 </>
+                                            ) : isFullyPaid ? (
+                                                <span className="text-green-600 font-semibold text-base">₱{order.total.toFixed(2)}</span>
                                             ) : (
-                                                <span className="text-base">₱{order.total.toFixed(2)}</span>
+                                                <span className="text-red-600 font-semibold text-base">₱{order.total.toFixed(2)}</span>
                                             )}
                                         </div>
                                     )}
