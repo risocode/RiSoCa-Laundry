@@ -106,66 +106,54 @@ export default function EmployeeSalaryPage() {
     }
   };
 
-  const fetchDailyPaymentStatus = async (dateStr: string) => {
-    if (!employeeId) return;
-    
-    await fetchDailyPaymentStatusForEmployee(dateStr, employeeId);
-  };
-
   // Refetch payment status when employee ID is set and orders are loaded
   useEffect(() => {
     if (employeeId && orders.length > 0) {
-      // Clear existing payments and refetch for all dates
-      setDailyPayments({});
+      // Get unique dates from orders
       const uniqueDates = new Set<string>();
       orders.forEach((order) => {
         const dateKey = format(startOfDay(new Date(order.orderDate)), 'yyyy-MM-dd');
         uniqueDates.add(dateKey);
       });
-      // Fetch all payments in parallel and wait for completion
-      const paymentPromises = Array.from(uniqueDates).map(dateStr => 
-        fetchDailyPaymentStatusForEmployee(dateStr, employeeId)
-      );
-      Promise.all(paymentPromises).catch(error => {
+      
+      // Fetch all payments in parallel and wait for completion BEFORE updating state
+      const fetchAllPayments = async () => {
+        console.log(`[Employee Salary] Fetching payments for employeeId: ${employeeId}, dates:`, Array.from(uniqueDates));
+        
+        const paymentPromises = Array.from(uniqueDates).map(async (dateStr) => {
+          const { data, error } = await supabase
+            .from('daily_salary_payments')
+            .select('is_paid, employee_id, date')
+            .eq('employee_id', employeeId)
+            .eq('date', dateStr)
+            .maybeSingle();
+          
+          if (error) {
+            console.error(`[Employee Salary] Failed to load payment for ${dateStr}:`, error);
+            return { dateStr, isPaid: false };
+          }
+          
+          console.log(`[Employee Salary] Payment for ${dateStr}:`, data);
+          return { dateStr, isPaid: data?.is_paid ?? false };
+        });
+        
+        const results = await Promise.all(paymentPromises);
+        
+        // Update state once with all results
+        const newPayments: Record<string, boolean> = {};
+        results.forEach(({ dateStr, isPaid }) => {
+          newPayments[dateStr] = isPaid;
+        });
+        
+        console.log(`[Employee Salary] All payments fetched:`, newPayments);
+        setDailyPayments(newPayments);
+      };
+      
+      fetchAllPayments().catch(error => {
         console.error('Error fetching daily payments:', error);
       });
     }
   }, [employeeId, orders]);
-
-  const fetchDailyPaymentStatusForEmployee = async (dateStr: string, employeeId: string): Promise<void> => {
-    if (!employeeId) {
-      console.warn(`[Employee Salary] No employeeId provided for date: ${dateStr}`);
-      return;
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('daily_salary_payments')
-        .select('is_paid, employee_id, date')
-        .eq('employee_id', employeeId)
-        .eq('date', dateStr)
-        .maybeSingle();
-
-      if (error) {
-        console.error(`[Employee Salary] Failed to load payment status for date: ${dateStr}, employeeId: ${employeeId}`, error);
-        return;
-      }
-
-      // Debug logging
-      console.log(`[Employee Salary] Payment query - date: ${dateStr}, employeeId: ${employeeId}, found:`, data);
-
-      setDailyPayments(prev => {
-        const newPayments = {
-          ...prev,
-          [dateStr]: data?.is_paid ?? false,
-        };
-        console.log(`[Employee Salary] Updated dailyPayments for ${dateStr}:`, newPayments[dateStr]);
-        return newPayments;
-      });
-    } catch (error) {
-      console.error('Error fetching payment status', error);
-    }
-  };
 
   const fetchOrders = async () => {
     setLoading(true);
