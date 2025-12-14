@@ -117,14 +117,17 @@ export default function EmployeeSalaryPage() {
         const dateKey = format(startOfDay(new Date(order.orderDate)), 'yyyy-MM-dd');
         uniqueDates.add(dateKey);
       });
-      // Fetch payments using the employee ID
-      uniqueDates.forEach(dateStr => {
-        fetchDailyPaymentStatusForEmployee(dateStr, employeeId);
+      // Fetch all payments in parallel and wait for completion
+      const paymentPromises = Array.from(uniqueDates).map(dateStr => 
+        fetchDailyPaymentStatusForEmployee(dateStr, employeeId)
+      );
+      Promise.all(paymentPromises).catch(error => {
+        console.error('Error fetching daily payments:', error);
       });
     }
   }, [employeeId, orders]);
 
-  const fetchDailyPaymentStatusForEmployee = async (dateStr: string, employeeId: string) => {
+  const fetchDailyPaymentStatusForEmployee = async (dateStr: string, employeeId: string): Promise<void> => {
     try {
       const { data, error } = await supabase
         .from('daily_salary_payments')
@@ -201,11 +204,6 @@ export default function EmployeeSalaryPage() {
     .map(([dateStr, orders]) => {
       const totalLoads = orders.reduce((sum, o) => sum + o.load, 0);
       const dateKey = format(new Date(dateStr), 'yyyy-MM-dd');
-      
-      // Fetch payment status for this date if not already loaded
-      if (!(dateKey in dailyPayments) && employeeId) {
-        fetchDailyPaymentStatusForEmployee(dateKey, employeeId);
-      }
       
       return {
         date: new Date(dateStr),
