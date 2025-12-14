@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ClipboardList, DollarSign, Wallet, CreditCard, MapPin, Home } from 'lucide-react';
+import { ClipboardList, DollarSign, Wallet, CreditCard, MapPin, Home, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { isAdmin } from '@/lib/auth-helpers';
@@ -15,6 +15,7 @@ const adminMenuItems = [
   { href: '/admin/expenses', label: 'Expenses', icon: CreditCard },
   { href: '/admin/branches', label: 'Branches', icon: MapPin },
   { href: '/?view=customer', label: 'Customer View', icon: Home },
+  { href: '/?view=employee', label: 'Employee View', icon: User },
 ];
 
 export function AdminMenu() {

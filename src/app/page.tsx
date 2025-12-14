@@ -69,7 +69,7 @@ const employeeGridItems = [
   { href: '/employee/salary', label: 'Salary', icon: Wallet },
 ];
 
-function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer: boolean }) {
+function HomeContent({ viewAsCustomer: initialViewAsCustomer, viewAsEmployee: initialViewAsEmployee }: { viewAsCustomer: boolean; viewAsEmployee: boolean }) {
   const router = useRouter();
   const { user, loading: authLoading, session } = useAuthSession();
   const { toast } = useToast();
@@ -82,6 +82,7 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
   const [userIsAdmin, setUserIsAdmin] = useState(false);
   const [userIsEmployee, setUserIsEmployee] = useState(false);
   const [viewAsCustomer, setViewAsCustomer] = useState(initialViewAsCustomer);
+  const [viewAsEmployee, setViewAsEmployee] = useState(initialViewAsEmployee);
 
   const fetchedUserIdRef = useRef<string | null>(null);
   const isFetchingRef = useRef(false);
@@ -204,14 +205,26 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
   // Toggle customer view
   const handleToggleCustomerView = () => {
     setViewAsCustomer(!viewAsCustomer);
+    setViewAsEmployee(false); // Reset employee view when toggling customer view
     // Update URL without navigation
     const newUrl = viewAsCustomer ? '/' : '/?view=customer';
+    window.history.pushState({}, '', newUrl);
+  };
+
+  // Toggle employee view
+  const handleToggleEmployeeView = () => {
+    setViewAsEmployee(!viewAsEmployee);
+    setViewAsCustomer(false); // Reset customer view when toggling employee view
+    // Update URL without navigation
+    const newUrl = viewAsEmployee ? '/' : '/?view=employee';
     window.history.pushState({}, '', newUrl);
   };
 
   // Combine grid items based on user role
   const gridItems = viewAsCustomer
     ? customerGridItems // Show customer items if view=customer is toggled
+    : viewAsEmployee
+    ? employeeGridItems // Show employee items if view=employee is toggled
     : [
         ...(userIsAdmin ? adminGridItems : []),
         ...(userIsEmployee ? employeeGridItems : []),
@@ -287,9 +300,9 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
               ) : null}
             </div>
 
-            {/* Customer View Toggle Button (Admin Only) */}
-            {userIsAdmin && !viewAsCustomer && (
-              <div className="flex justify-center w-full mt-4">
+            {/* View Toggle Buttons (Admin Only) */}
+            {userIsAdmin && !viewAsCustomer && !viewAsEmployee && (
+              <div className="flex justify-center gap-2 w-full mt-4 flex-wrap">
                 <Button
                   onClick={handleToggleCustomerView}
                   variant="outline"
@@ -298,14 +311,36 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
                   <Eye className="h-4 w-4" />
                   View as Customer
                 </Button>
+                <Button
+                  onClick={handleToggleEmployeeView}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  View as Employee
+                </Button>
               </div>
             )}
 
-            {/* Admin View Toggle Button (When viewing as customer) */}
+            {/* Back to Admin View Button (When viewing as customer) */}
             {userIsAdmin && viewAsCustomer && (
               <div className="flex justify-center w-full mt-4">
                 <Button
                   onClick={handleToggleCustomerView}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <EyeOff className="h-4 w-4" />
+                  Back to Admin View
+                </Button>
+              </div>
+            )}
+
+            {/* Back to Admin View Button (When viewing as employee) */}
+            {userIsAdmin && viewAsEmployee && (
+              <div className="flex justify-center w-full mt-4">
+                <Button
+                  onClick={handleToggleEmployeeView}
                   variant="outline"
                   className="flex items-center gap-2"
                 >
@@ -334,7 +369,8 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
 function HomeWithSearchParams() {
   const searchParams = useSearchParams();
   const viewAsCustomer = searchParams?.get('view') === 'customer';
-  return <HomeContent viewAsCustomer={viewAsCustomer} />;
+  const viewAsEmployee = searchParams?.get('view') === 'employee';
+  return <HomeContent viewAsCustomer={viewAsCustomer} viewAsEmployee={viewAsEmployee} />;
 }
 
 export default function Home() {
