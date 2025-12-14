@@ -110,9 +110,19 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     const [editableOrder, setEditableOrder] = useState(order);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
+    // Fix: Watch for balance and isPaid changes, not just order.id
     useEffect(() => {
+        console.log(`[OrderList - Desktop] OrderRow ${order.id} prop changed:`, {
+            balance: order.balance,
+            balance_type: typeof order.balance,
+            isPaid: order.isPaid,
+            isPaid_type: typeof order.isPaid,
+            total: order.total,
+            previous_balance: editableOrder.balance,
+            previous_isPaid: editableOrder.isPaid,
+        });
         setEditableOrder(order);
-    }, [order.id]);
+    }, [order.id, order.balance, order.isPaid, order.total]);
 
     const handleFieldChange = (field: keyof Order, value: string | number | boolean) => {
         let newOrderState = { ...editableOrder };
@@ -148,20 +158,26 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     };
 
     const handlePayment = async (amountPaid: number, balance: number) => {
+        console.log('[OrderList - Desktop] ===== PAYMENT PROCESSED =====');
         console.log('[OrderList - Desktop] Payment processed:', {
             orderId: order.id,
             amountPaid,
             balance,
             isPaid: balance === 0,
-            currentOrder: order
+            currentOrder: {
+                ...order,
+                balance: order.balance,
+                isPaid: order.isPaid,
+            }
         });
         const updatedOrder = {
             ...order,
             isPaid: balance === 0,
             balance: balance > 0 ? balance : 0, // Ensure balance is never negative
         };
-        console.log('[OrderList - Desktop] Updated order:', updatedOrder);
+        console.log('[OrderList - Desktop] Updated order being sent:', updatedOrder);
         await onUpdateOrder(updatedOrder);
+        console.log('[OrderList - Desktop] ===== PAYMENT PROCESSED END =====');
     };
 
     // Determine payment status
@@ -172,6 +188,16 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
         order.balance < order.total;
     const isUnpaid = !isFullyPaid && !isPartiallyPaid;
     
+    // Log payment status calculation
+    console.log(`[OrderList - Desktop] OrderRow ${order.id} payment status calculation:`, {
+        isPaid: order.isPaid,
+        balance: order.balance,
+        total: order.total,
+        isFullyPaid,
+        isPartiallyPaid,
+        isUnpaid,
+    });
+    
     // Calculate display values for total/balance
     // For unpaid orders, if balance is undefined or 0, use order total. For paid orders, use 0.
     const displayBalance = order.isPaid 
@@ -179,6 +205,8 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
         : (order.balance !== undefined && order.balance > 0) 
             ? order.balance 
             : order.total;
+    
+    console.log(`[OrderList - Desktop] OrderRow ${order.id} displayBalance:`, displayBalance);
 
     return (
         <>
@@ -346,9 +374,19 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     const [editableOrder, setEditableOrder] = useState(order);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
+    // Fix: Watch for balance and isPaid changes, not just order.id
     useEffect(() => {
+        console.log(`[OrderList - Mobile] OrderCard ${order.id} prop changed:`, {
+            balance: order.balance,
+            balance_type: typeof order.balance,
+            isPaid: order.isPaid,
+            isPaid_type: typeof order.isPaid,
+            total: order.total,
+            previous_balance: editableOrder.balance,
+            previous_isPaid: editableOrder.isPaid,
+        });
         setEditableOrder(order);
-    }, [order.id]);
+    }, [order.id, order.balance, order.isPaid, order.total]);
 
     const handleFieldChange = (field: keyof Order, value: string | number | boolean) => {
         let newOrderState = { ...editableOrder };
@@ -384,20 +422,26 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     };
 
     const handlePayment = async (amountPaid: number, balance: number) => {
-        console.log('[OrderList - Desktop] Payment processed:', {
+        console.log('[OrderList - Mobile] ===== PAYMENT PROCESSED =====');
+        console.log('[OrderList - Mobile] Payment processed:', {
             orderId: order.id,
             amountPaid,
             balance,
             isPaid: balance === 0,
-            currentOrder: order
+            currentOrder: {
+                ...order,
+                balance: order.balance,
+                isPaid: order.isPaid,
+            }
         });
         const updatedOrder = {
             ...order,
             isPaid: balance === 0,
             balance: balance > 0 ? balance : 0, // Ensure balance is never negative
         };
-        console.log('[OrderList - Desktop] Updated order:', updatedOrder);
+        console.log('[OrderList - Mobile] Updated order being sent:', updatedOrder);
         await onUpdateOrder(updatedOrder);
+        console.log('[OrderList - Mobile] ===== PAYMENT PROCESSED END =====');
     };
 
     // Determine payment status
@@ -408,6 +452,16 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
         order.balance < order.total;
     const isUnpaid = !isFullyPaid && !isPartiallyPaid;
     
+    // Log payment status calculation
+    console.log(`[OrderList - Mobile] OrderCard ${order.id} payment status calculation:`, {
+        isPaid: order.isPaid,
+        balance: order.balance,
+        total: order.total,
+        isFullyPaid,
+        isPartiallyPaid,
+        isUnpaid,
+    });
+    
     // Calculate display values for total/balance
     // For unpaid orders, if balance is undefined or 0, use order total. For paid orders, use 0.
     const displayBalance = order.isPaid 
@@ -415,6 +469,8 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
         : (order.balance !== undefined && order.balance > 0) 
             ? order.balance 
             : order.total;
+    
+    console.log(`[OrderList - Mobile] OrderCard ${order.id} displayBalance:`, displayBalance);
 
     return (
         <>
@@ -628,12 +684,30 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
 }
 
 export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
+  // Log when orders prop changes
+  useEffect(() => {
+    console.log('[OrderList] ===== ORDERS PROP CHANGED =====');
+    console.log('[OrderList] Orders count:', orders.length);
+    const rkr014 = orders.find(o => o.id === 'RKR014');
+    if (rkr014) {
+      console.log('[OrderList] RKR014 in orders prop:', {
+        balance: rkr014.balance,
+        balance_type: typeof rkr014.balance,
+        isPaid: rkr014.isPaid,
+        isPaid_type: typeof rkr014.isPaid,
+        total: rkr014.total,
+        total_type: typeof rkr014.total,
+      });
+    }
+    console.log('[OrderList] ===== ORDERS PROP END =====');
+  }, [orders]);
+
   return (
     <>
       {/* Mobile View - Card List */}
       <div className="md:hidden space-y-4">
         {orders.map((order) => (
-          <OrderCard key={order.id} order={order} onUpdateOrder={onUpdateOrder} />
+          <OrderCard key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} />
         ))}
       </div>
 
@@ -655,7 +729,7 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
           </TableHeader>
           <TableBody>
             {orders.map((order) => (
-              <OrderRow key={order.id} order={order} onUpdateOrder={onUpdateOrder} />
+              <OrderRow key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} />
             ))}
           </TableBody>
         </Table>
