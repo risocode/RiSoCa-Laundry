@@ -13,6 +13,7 @@ export type OrderInsert = {
   status: string;
   total: number;
   is_paid?: boolean;
+  balance?: number;
   branch_id?: string | null;
 };
 
