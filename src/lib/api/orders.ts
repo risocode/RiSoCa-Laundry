@@ -127,9 +127,11 @@ export async function fetchOrderForCustomer(orderId: string, name: string) {
   const trimmedName = name.trim();
 
   // Use RPC call to bypass RLS - allows searching admin-created orders
+  // Convert name to lowercase for case-insensitive search
+  // Order ID is kept as-is since it's typically stored in a specific case format
   const { data, error } = await supabase.rpc('search_order_by_id_and_name', {
     p_order_id: trimmedOrderId,
-    p_customer_name: trimmedName,
+    p_customer_name: trimmedName.toLowerCase(),
   });
 
   if (error) {
@@ -140,15 +142,48 @@ export async function fetchOrderForCustomer(orderId: string, name: string) {
     
     // Fallback to direct query if RPC function doesn't exist (for backwards compatibility)
     // NOTE: This will fail for non-logged-in users due to RLS restrictions
+    // Use case-insensitive search for both order ID and name
+    const orderIdLower = trimmedOrderId.toLowerCase();
     const { data: fallbackData, error: fallbackError } = await fetchOrderWithHistory(trimmedOrderId);
     if (fallbackError || !fallbackData) {
-      console.error('Fallback query also failed:', fallbackError);
-      return { data: null, error: fallbackError };
+      // Try case-insensitive order ID search
+      const { data: allOrdersData, error: allOrdersError } = await supabase
+        .from('orders')
+        .select('*, order_status_history(*)');
+      
+      if (allOrdersError) {
+        console.error('Fallback query also failed:', allOrdersError);
+        return { data: null, error: allOrdersError };
+      }
+
+      // Filter by case-insensitive order ID and name match
+      const inputNameLower = trimmedName.toLowerCase();
+      const matchedOrder = (allOrdersData || []).find(order => {
+        const orderIdMatches = order.id.toLowerCase().includes(orderIdLower);
+        const customerNameLower = (order.customer_name || '').toLowerCase();
+        const nameMatches = customerNameLower.includes(inputNameLower);
+        return orderIdMatches && nameMatches;
+      });
+
+      if (!matchedOrder) {
+        return { data: null, error: null };
+      }
+
+      return { data: matchedOrder, error: null };
     }
 
-    const customerNameLower = fallbackData.customer_name.toLowerCase();
+    // Verify name matches (case-insensitive)
+    const customerNameLower = (fallbackData.customer_name || '').toLowerCase();
     const inputNameLower = trimmedName.toLowerCase();
     const matches = customerNameLower.includes(inputNameLower);
+    
+    if (!matches) {
+      console.warn('Name mismatch:', { 
+        stored: fallbackData.customer_name, 
+        searched: trimmedName 
+      });
+      return { data: null, error: null };
+    }
     
     if (!matches) {
       console.warn('Name mismatch:', { 

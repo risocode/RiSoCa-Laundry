@@ -82,11 +82,12 @@ export default function OrderStatusPage() {
 
     let filtered = [...myOrders];
 
-    // Filter by Order ID search
+    // Filter by Order ID search (case-insensitive)
     if (orderIdSearch.trim()) {
       const searchLower = orderIdSearch.trim().toLowerCase();
       filtered = filtered.filter(order => 
-        order.id.toLowerCase().includes(searchLower)
+        order.id.toLowerCase().includes(searchLower) ||
+        order.customerName.toLowerCase().includes(searchLower)
       );
     }
 
