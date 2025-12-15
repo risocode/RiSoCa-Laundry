@@ -449,7 +449,12 @@ export async function updateOrderFields(orderId: string, patch: Partial<OrderIns
   const result = await supabase.from('orders').update(patch).eq('id', orderId).select().single();
   
   // If single() fails, try without single() to see if update actually worked
-  if (result.error && (result.error.message?.includes('coerce') || result.error.message?.includes('JSON object'))) {
+  if (result.error && (
+    result.error.message?.includes('coerce') || 
+    result.error.message?.includes('JSON object') ||
+    result.error.code === '406' ||
+    result.error.message?.includes('406')
+  )) {
     // Get full order data if update succeeded
     const { data: fullOrderData } = await supabase
     .from('orders')
