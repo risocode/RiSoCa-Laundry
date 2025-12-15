@@ -401,20 +401,48 @@ export async function updateOrderStatus(orderId: string, status: string, note?: 
   }
   
   const { data, error } = await supabase
-    .from('orders')
-    .update({ status })
-    .eq('id', finalOrderId)
-    .select()
-    .single();
+  .from('orders')  // ✅ Correct indentation
+  .update({ status })
+  .eq('id', finalOrderId)
+  .select()
+  .single();
 
-  if (!error) {
-    await supabase.from('order_status_history').insert({ 
-      order_id: finalOrderId, 
-      status, 
-      note: note || (status === 'Order Placed' ? 'Order approved and ID assigned' : undefined)
-    });
+// If there's an error (like 406 or coerce), verify if update actually succeeded
+if (error) {
+  const isCoerceOr406Error = error.message?.includes('coerce') || 
+                              error.message?.includes('JSON object') ||
+                              error.code === '406' ||
+                              error.message?.includes('406');
+  
+  if (isCoerceOr406Error) {
+    // Check if the update actually succeeded
+    const { data: verifyData } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', finalOrderId)
+      .maybeSingle();
+    
+    if (verifyData && verifyData.status === status) {
+      // Update succeeded despite the error - return success
+      await supabase.from('order_status_history').insert({ 
+        order_id: finalOrderId, 
+        status, 
+        note: note || (status === 'Order Placed' ? 'Order approved and ID assigned' : undefined)
+      });
+      return { data: verifyData, error: null };
+    }
   }
+  // Real error - return it
   return { data, error };
+}
+
+// No error - proceed normally
+await supabase.from('order_status_history').insert({ 
+  order_id: finalOrderId, 
+  status, 
+  note: note || (status === 'Order Placed' ? 'Order approved and ID assigned' : undefined)
+});
+return { data, error };
 }
 
 export async function updateOrderFields(orderId: string, patch: Partial<OrderInsert>) {

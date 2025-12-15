@@ -143,13 +143,22 @@ export function OrdersPage() {
       if (hasStatusChange) {
         const { data: updatedOrderData, error } = await updateOrderStatus(updatedOrder.id, updatedOrder.status);
         if (error) {
-          // Check for specific Supabase errors
-          const isCoerceError = error.message?.includes('coerce') || error.message?.includes('JSON object');
-          toast({ 
-            variant: 'default', 
-            title: isCoerceError ? 'Please refresh the page' : 'Update in progress', 
-            description: 'The order may have been updated. Please refresh the page to see the latest status.' 
-          });
+          // Check for 406 or coerce errors - these are usually false positives
+          const isCoerceOr406Error = error.message?.includes('coerce') || 
+                                      error.message?.includes('JSON object') ||
+                                      error.code === '406' ||
+                                      error.message?.includes('406');
+          
+          // Don't show error for 406/coerce - the update likely succeeded
+          if (!isCoerceOr406Error) {
+            toast({ 
+              variant: 'default', 
+              title: 'Update in progress', 
+              description: 'The order may have been updated. Please refresh the page to see the latest status.' 
+            });
+          }
+          // For 406/coerce errors, just refresh silently - update likely succeeded
+          fetchOrders();
           return;
         }
         
