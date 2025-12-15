@@ -60,6 +60,7 @@ type OrderListProps = {
 };
 
 const statusOptions = [
+  'Order Created',
   'Order Placed',
   'Pickup Scheduled',
   'Washing',
@@ -69,6 +70,7 @@ const statusOptions = [
   'Out for Delivery',
   'Delivered',
   'Success',
+  'Canceled',
 ];
 
 const getStatusColor = (status: string) => {
@@ -84,7 +86,12 @@ const getStatusColor = (status: string) => {
     case 'Folding':
       return 'bg-yellow-500';
     case 'Pickup Scheduled':
+    case 'Order Placed':
       return 'bg-orange-500';
+    case 'Order Created':
+      return 'bg-gray-500';
+    case 'Canceled':
+      return 'bg-red-500';
     default:
       return 'bg-gray-500';
   }

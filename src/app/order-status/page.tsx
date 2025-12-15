@@ -6,6 +6,7 @@ import { AppFooter } from '@/components/app-footer';
 import { PromoBanner } from '@/components/promo-banner';
 import { OrderStatusTracker } from '@/components/order-status-tracker';
 import { RateRKRLaundrySection } from '@/components/rate-rkr-laundry/rate-rkr-laundry-section';
+import { CancelOrderButton } from '@/components/cancel-order-button';
 import type { Order } from '@/components/order-list';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Search, Inbox, AlertTriangle, User, Loader2, Filter, X, ArrowRight, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fetchOrderForCustomer, fetchMyOrders } from '@/lib/api/orders';
+import type { Order as OrderType } from '@/components/order-list';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -425,14 +427,60 @@ export default function OrderStatusPage() {
               </div>
 
               {/* Show selected order from my orders or searched order */}
-              {(selectedOrder || (searchAttempted && searchedOrder)) && (
-                <>
-                  <OrderStatusTracker order={selectedOrder || searchedOrder!} />
-                  <div className="mt-4">
-                    <RateRKRLaundrySection orderId={(selectedOrder || searchedOrder!).id} />
-                  </div>
-                </>
-              )}
+              {(selectedOrder || (searchAttempted && searchedOrder)) && (() => {
+                const currentOrder = selectedOrder || searchedOrder!;
+                return (
+                  <>
+                    <OrderStatusTracker order={currentOrder} />
+                    {user && currentOrder.userId === user.id && (
+                      <CancelOrderButton
+                        orderId={currentOrder.id}
+                        orderStatus={currentOrder.status}
+                        onCancelSuccess={async () => {
+                          // Refresh orders after cancellation
+                          setLoadingMyOrders(true);
+                          try {
+                            const { data, error } = await fetchMyOrders();
+                            if (!error && data) {
+                              const mapped: Order[] = data.map((o: any) => ({
+                                id: o.id,
+                                userId: o.customer_id,
+                                customerName: o.customer_name,
+                                contactNumber: o.contact_number,
+                                load: o.loads,
+                                weight: o.weight,
+                                status: o.status,
+                                total: o.total,
+                                orderDate: new Date(o.created_at),
+                                isPaid: o.is_paid,
+                                balance: typeof o.balance === 'number' ? o.balance : (o.balance ? parseFloat(o.balance) : (o.is_paid ? 0 : o.total)),
+                                deliveryOption: o.delivery_option ?? undefined,
+                                servicePackage: o.service_package,
+                                distance: o.distance ?? 0,
+                                statusHistory: (o.order_status_history ?? []).map((sh: any) => ({
+                                  status: sh.status,
+                                  timestamp: new Date(sh.created_at),
+                                })),
+                              }));
+                              setMyOrders(mapped);
+                              setSelectedOrder(null);
+                            } else if (error) {
+                              console.error('Error refreshing orders after cancellation:', error);
+                            }
+                          } catch (error) {
+                            console.error('Unexpected error refreshing orders:', error);
+                          } finally {
+                            setLoadingMyOrders(false);
+                          }
+                        }}
+                      />
+                    )}
+                    <div className="mt-4">
+                      <RateRKRLaundrySection orderId={currentOrder.id} />
+                    </div>
+                  </>
+                );
+              })()}
               
               {searchAttempted && !searchedOrder && !selectedOrder && (
                 <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground border rounded-lg bg-card p-8">

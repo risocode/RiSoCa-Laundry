@@ -7,6 +7,7 @@ import { AppFooter } from '@/components/app-footer';
 import { PromoBanner } from '@/components/promo-banner';
 import { OrderStatusTracker } from '@/components/order-status-tracker';
 import { RateRKRLaundrySection } from '@/components/rate-rkr-laundry/rate-rkr-laundry-section';
+import { CancelOrderButton } from '@/components/cancel-order-button';
 import type { Order } from '@/components/order-list';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -294,6 +295,42 @@ export default function MyOrdersPage() {
                           {selectedOrder && (
                             <div className="space-y-4">
                               <OrderStatusTracker order={selectedOrder} />
+                              {user && selectedOrder.userId === user.id && (
+                                <CancelOrderButton
+                                  orderId={selectedOrder.id}
+                                  orderStatus={selectedOrder.status}
+                                  onCancelSuccess={async () => {
+                                    // Refresh orders after cancellation
+                                    setLoadingMyOrders(true);
+                                    const { data, error } = await fetchMyOrders();
+                                    if (!error && data) {
+                                      const mapped: Order[] = data.map((o: any) => ({
+                                        id: o.id,
+                                        userId: o.customer_id,
+                                        customerName: o.customer_name,
+                                        contactNumber: o.contact_number,
+                                        load: o.loads,
+                                        weight: o.weight,
+                                        status: o.status,
+                                        total: o.total,
+                                        orderDate: new Date(o.created_at),
+                                        isPaid: o.is_paid,
+                                        balance: typeof o.balance === 'number' ? o.balance : (o.balance ? parseFloat(o.balance) : (o.is_paid ? 0 : o.total)),
+                                        deliveryOption: o.delivery_option ?? undefined,
+                                        servicePackage: o.service_package,
+                                        distance: o.distance ?? 0,
+                                        statusHistory: (o.order_status_history ?? []).map((sh: any) => ({
+                                          status: sh.status,
+                                          timestamp: new Date(sh.created_at),
+                                        })),
+                                      }));
+                                      setMyOrders(mapped);
+                                      setSelectedOrder(null);
+                                    }
+                                    setLoadingMyOrders(false);
+                                  }}
+                                />
+                              )}
                               <RateRKRLaundrySection orderId={selectedOrder.id} />
                             </div>
                           )}

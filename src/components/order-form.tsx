@@ -25,7 +25,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import type { Order } from './order-list';
 import { useAuthSession } from '@/hooks/use-auth-session';
-import { createOrderWithHistory, fetchLatestOrderId, generateNextOrderId } from '@/lib/api/orders';
+import { createOrderWithHistory, generateTemporaryOrderId, countCustomerOrdersToday, cancelOrderByCustomer } from '@/lib/api/orders';
 
 const packages = [
   { id: 'package1', label: 'Package 1', description: 'Wash, Dry, & Fold' },
@@ -71,6 +71,8 @@ export function OrderForm() {
   const [isCustomerInfoDialogOpen, setIsCustomerInfoDialogOpen] = useState(false);
   const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null);
   const [showAccountPromptDialog, setShowAccountPromptDialog] = useState(false);
+  const [orderCount, setOrderCount] = useState<number | null>(null);
+  const [loadingOrderCount, setLoadingOrderCount] = useState(false);
   
   const distanceParam = searchParams.get('distance');
   const packageParam = searchParams.get('servicePackage');
@@ -108,6 +110,23 @@ export function OrderForm() {
       }
     }
   }, [distanceParam, setValue]);
+
+  // Load order count for logged-in users
+  useEffect(() => {
+    async function loadOrderCount() {
+      if (!user || authLoading) {
+        setOrderCount(null);
+        return;
+      }
+      
+      setLoadingOrderCount(true);
+      const count = await countCustomerOrdersToday(user.id);
+      setOrderCount(count);
+      setLoadingOrderCount(false);
+    }
+
+    loadOrderCount();
+  }, [user, authLoading]);
 
   const handleLocationSelect = () => {
     const params = new URLSearchParams(searchParams.toString());
@@ -214,24 +233,27 @@ export function OrderForm() {
   const onCustomerInfoSubmit = async (customerData: CustomerFormValues) => {
     if (!pendingOrder || !user) return;
 
-    // IMPORTANT: Uses the same ID generation as admin manual orders to ensure sequential numbering
-    // If customer creates RKR001, next admin order will be RKR002, and vice versa
-    const { latestId, error: latestError } = await fetchLatestOrderId();
-    if (latestError) {
-        console.error('Error fetching latest order ID:', latestError);
-        toast({ 
-            variant: 'destructive', 
-            title: 'Order ID error', 
-            description: `Could not generate order ID: ${latestError.message || 'Please try again or contact support.'}` 
-        });
-        setIsCustomerInfoDialogOpen(false);
-        return;
+    // Check daily order limit (5 orders per day, including canceled)
+    const currentOrderCount = await countCustomerOrdersToday(user.id);
+    setOrderCount(currentOrderCount);
+    if (currentOrderCount >= 5) {
+      toast({
+        variant: 'destructive',
+        title: 'Daily Order Limit Reached',
+        description: "You've reached the maximum of 5 orders today. Please try again tomorrow. If you need to place more orders, please contact us or give us a call.",
+      });
+      setIsCustomerInfoDialogOpen(false);
+      // Navigate to contact page
+      router.push('/contact-us');
+      return;
     }
-    const newOrderId = generateNextOrderId(latestId);
-    const initialStatus = 'Order Placed';
+
+    // Generate temporary ID - will be replaced with RKR format when status changes to "Order Placed"
+    const tempOrderId = generateTemporaryOrderId();
+    const initialStatus = 'Order Created';
 
     const newOrder: Order = {
-        id: newOrderId,
+        id: tempOrderId,
         userId: user.id,
         customerName: customerData.customerName,
         contactNumber: customerData.contactNumber,
@@ -248,7 +270,7 @@ export function OrderForm() {
     };
 
     const { error } = await createOrderWithHistory({
-        id: newOrder.id,
+        id: tempOrderId,
         customer_id: user.id,
         customer_name: newOrder.customerName,
         contact_number: newOrder.contactNumber,
@@ -257,57 +279,55 @@ export function OrderForm() {
         loads: newOrder.load,
         distance: newOrder.distance,
         delivery_option: newOrder.deliveryOption,
-        status: newOrder.status,
+        status: initialStatus,
         total: newOrder.total,
         is_paid: newOrder.isPaid,
     });
 
     if (error) {
-        // Handle duplicate ID error (race condition)
+        // Handle duplicate ID error (race condition) - retry with new temp ID
         if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
-          // Retry with a fresh ID fetch
-          const { latestId: retryLatestId, error: retryError } = await fetchLatestOrderId();
-          if (!retryError && retryLatestId) {
-            const retryId = generateNextOrderId(retryLatestId);
-            const retryOrder: Order = {
-              ...newOrder,
-              id: retryId,
-            };
-            const { error: retryCreateError } = await createOrderWithHistory({
-              id: retryOrder.id,
-              customer_id: user.id,
-              customer_name: retryOrder.customerName,
-              contact_number: retryOrder.contactNumber,
-              service_package: retryOrder.servicePackage as Order['servicePackage'],
-              weight: retryOrder.weight,
-              loads: retryOrder.load,
-              distance: retryOrder.distance,
-              delivery_option: retryOrder.deliveryOption,
-              status: retryOrder.status,
-              total: retryOrder.total,
-              is_paid: retryOrder.isPaid,
-            });
-            if (retryCreateError) {
-              console.error("Failed to save order to Supabase (retry)", retryCreateError);
-              toast({
-                variant: "destructive",
-                title: 'Save Error!',
-                description: `Could not save your order. Please try again.`
-              });
-              return;
-            }
+          const retryTempId = generateTemporaryOrderId();
+          const { error: retryCreateError } = await createOrderWithHistory({
+            id: retryTempId,
+            customer_id: user.id,
+            customer_name: newOrder.customerName,
+            contact_number: newOrder.contactNumber,
+            service_package: newOrder.servicePackage as Order['servicePackage'],
+            weight: newOrder.weight,
+            loads: newOrder.load,
+            distance: newOrder.distance,
+            delivery_option: newOrder.deliveryOption,
+            status: initialStatus,
+            total: newOrder.total,
+            is_paid: newOrder.isPaid,
+          });
+          if (retryCreateError) {
+            console.error("Failed to save order to Supabase (retry)", retryCreateError);
             toast({
-              title: 'Order Placed!',
-              description: `Your order #${retryId} has been successfully submitted.`
-            });
-            setIsCustomerInfoDialogOpen(false);
-            customerForm.reset();
-            form.reset();
-            startTransition(() => {
-              router.push('/order-status');
+              variant: "destructive",
+              title: 'Save Error!',
+              description: `Could not save your order. Please try again.`
             });
             return;
           }
+          toast({
+            title: 'Order Created!',
+            description: `Your order has been created. Please wait for approval. Your laundry must first arrive at the shop before this order can be processed.`
+          });
+          // Optimistically update order count
+          setOrderCount(prev => (prev !== null ? prev + 1 : 1));
+          setTimeout(async () => {
+            const newCount = await countCustomerOrdersToday(user.id);
+            setOrderCount(newCount);
+          }, 500);
+          setIsCustomerInfoDialogOpen(false);
+          customerForm.reset();
+          form.reset();
+          startTransition(() => {
+            router.push('/order-status');
+          });
+          return;
         }
         console.error("Failed to save order to Supabase", error);
         toast({
@@ -319,9 +339,19 @@ export function OrderForm() {
     }
     
     toast({
-      title: 'Order Placed!',
-      description: `Your order #${newOrderId} has been successfully submitted.`
+      title: 'Order Created!',
+      description: `Your order has been created. Please wait for approval. Your laundry must first arrive at the shop before this order can be processed.`
     });
+
+    // Optimistically update order count (increment by 1)
+    // Then refresh from server to ensure accuracy
+    setOrderCount(prev => (prev !== null ? prev + 1 : 1));
+    
+    // Refresh order count from server after a short delay to ensure DB consistency
+    setTimeout(async () => {
+      const newCount = await countCustomerOrdersToday(user.id);
+      setOrderCount(newCount);
+    }, 500);
 
     setIsCustomerInfoDialogOpen(false);
     customerForm.reset();
@@ -337,8 +367,24 @@ export function OrderForm() {
     <Card className="shadow-lg w-full flex flex-col">
       <form onSubmit={form.handleSubmit(onOrderSubmit)} className="flex flex-col">
         <CardHeader className="p-4 flex-shrink-0">
-          <CardTitle>Create Order</CardTitle>
-          <CardDescription className="text-xs">Select a package to calculate the price.</CardDescription>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle>Create Order</CardTitle>
+              <CardDescription className="text-xs">Select a package to calculate the price.</CardDescription>
+            </div>
+            {user && (
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Orders today</p>
+                {loadingOrderCount ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                ) : orderCount !== null ? (
+                  <p className={`text-sm font-semibold ${orderCount >= 5 ? 'text-destructive' : ''}`}>
+                    {orderCount}/5
+                  </p>
+                ) : null}
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4 p-4 pt-0">
           

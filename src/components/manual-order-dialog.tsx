@@ -98,7 +98,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
 
   const onSubmit = async (data: ManualOrderFormValues) => {
     setIsSaving(true);
-    const initialStatus = 'Order Placed';
+    const initialStatus = 'Order Created';
     
     const newOrder: Omit<Order, 'id' | 'userId'> = {
       customerName: data.customerName,

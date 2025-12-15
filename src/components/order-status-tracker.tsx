@@ -2,12 +2,19 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Shirt, Truck, PackageCheck, CircleCheck, Wind, WashingMachine, Package, CheckCircle2, User, Weight as WeightIcon, Layers, Wallet } from 'lucide-react';
+import { Shirt, Truck, PackageCheck, CircleCheck, Wind, WashingMachine, Package, CheckCircle2, User, Weight as WeightIcon, Layers, Wallet, X, Info } from 'lucide-react';
 import type { Order, StatusHistory } from '@/components/order-list';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const statuses = [
+  { name: 'Order Created', icon: CircleCheck },
   { name: 'Order Placed', icon: CircleCheck },
   { name: 'Pickup Scheduled', icon: Truck },
   { name: 'Washing', icon: WashingMachine },
@@ -17,6 +24,7 @@ const statuses = [
   { name: 'Out for Delivery', icon: Truck },
   { name: 'Delivered', icon: PackageCheck },
   { name: 'Success', icon: CheckCircle2 },
+  { name: 'Canceled', icon: X },
 ];
 
 export function OrderStatusTracker({ order }: { order: Order }) {
@@ -57,7 +65,23 @@ export function OrderStatusTracker({ order }: { order: Order }) {
         <div className="space-y-4">
           <div>
             <div className="flex justify-between items-center mb-1">
-              <h3 className="font-semibold text-base text-primary">{statuses[currentStatusIndex]?.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-base text-primary">{statuses[currentStatusIndex]?.name}</h3>
+                {order.status === 'Order Created' && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">
+                          Please wait for approval. Your laundry must first arrive at the shop before this order can be processed.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
               <CurrentIcon className="h-6 w-6 text-primary" />
             </div>
             <Progress value={progress} className="w-full h-2 [&>div]:bg-primary [&>div]:transition-all [&>div]:duration-1000" />

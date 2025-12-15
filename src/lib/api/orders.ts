@@ -15,6 +15,9 @@ export type OrderInsert = {
   is_paid?: boolean;
   balance?: number;
   branch_id?: string | null;
+  canceled_by?: string | null;
+  canceled_at?: string | null;
+  cancel_reason?: string | null;
 };
 
 /**
@@ -110,10 +113,12 @@ export async function fetchMyOrders() {
   }
 
   // Filter orders by the current user's ID (customer_id)
+  // Exclude "Order Created" status - customers can't see orders until they're "Order Placed"
   return supabase
     .from('orders')
     .select('*, order_status_history(*)')
     .eq('customer_id', user.id)
+    .neq('status', 'Order Created') // Hide orders that haven't been approved yet
     .order('created_at', { ascending: false });
 }
 
@@ -292,20 +297,139 @@ export async function fetchOrderForCustomer(orderId: string, name: string) {
 }
 
 export async function updateOrderStatus(orderId: string, status: string, note?: string) {
+  let finalOrderId = orderId;
+  
+  // If changing to "Order Placed" and order doesn't have a proper RKR ID yet, generate one
+  if (status === 'Order Placed') {
+    // Check if current ID is a UUID or temporary ID (doesn't start with RKR)
+    const { data: currentOrder } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('id', orderId)
+      .maybeSingle();
+    
+    if (currentOrder && !currentOrder.id.match(/^RKR\d+$/i)) {
+      // Generate new RKR ID
+      const { latestId, error: idError } = await fetchLatestOrderId();
+      
+      if (idError) {
+        console.error('Error fetching latest order ID:', idError);
+        // Continue with status update but don't change ID - will retry on next status change
+      } else {
+        const newOrderId = generateNextOrderId(latestId);
+        
+        // Use database function to update ID and all foreign key references
+        const { error: updateIdError } = await supabase.rpc('update_order_id_on_placed', {
+          p_order_id: orderId,
+          p_new_order_id: newOrderId,
+        });
+        
+        if (!updateIdError) {
+          finalOrderId = newOrderId;
+        } else {
+          // Fallback: manual update if function doesn't exist
+          console.warn('update_order_id_on_placed function not found, using manual update');
+          await supabase
+            .from('order_status_history')
+            .update({ order_id: newOrderId })
+            .eq('order_id', orderId);
+          
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({ id: newOrderId })
+            .eq('id', orderId);
+          
+          if (!updateError) {
+            finalOrderId = newOrderId;
+          } else {
+            console.error('Failed to update order ID:', updateError);
+            // Continue with status update using original ID
+          }
+        }
+      }
+    }
+  }
+  
   const { data, error } = await supabase
     .from('orders')
     .update({ status })
-    .eq('id', orderId)
+    .eq('id', finalOrderId)
     .select()
     .single();
 
   if (!error) {
-    await supabase.from('order_status_history').insert({ order_id: orderId, status, note });
+    await supabase.from('order_status_history').insert({ 
+      order_id: finalOrderId, 
+      status, 
+      note: note || (status === 'Order Placed' ? 'Order approved and ID assigned' : undefined)
+    });
   }
   return { data, error };
 }
 
 export async function updateOrderFields(orderId: string, patch: Partial<OrderInsert>) {
   return supabase.from('orders').update(patch).eq('id', orderId).select().single();
+}
+
+/**
+ * Cancel an order by customer
+ */
+export async function cancelOrderByCustomer(orderId: string, customerId: string) {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({
+      status: 'Canceled',
+      canceled_by: 'customer',
+      canceled_at: new Date().toISOString(),
+    })
+    .eq('id', orderId)
+    .eq('customer_id', customerId) // Ensure customer can only cancel their own orders
+    .eq('status', 'Order Created') // Only allow cancellation for "Order Created" status
+    .select()
+    .single();
+
+  if (!error && data) {
+    await supabase.from('order_status_history').insert({
+      order_id: orderId,
+      status: 'Canceled',
+      note: 'Order canceled by customer',
+    });
+  }
+
+  return { data, error };
+}
+
+/**
+ * Count orders created by a customer today (including canceled orders)
+ * Uses UTC for consistency with database timestamps
+ */
+export async function countCustomerOrdersToday(customerId: string): Promise<number> {
+  // Use UTC for consistency with database timestamps
+  const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+  const tomorrow = new Date(today);
+  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+
+  const { count, error } = await supabase
+    .from('orders')
+    .select('*', { count: 'exact', head: true })
+    .eq('customer_id', customerId)
+    .gte('created_at', today.toISOString())
+    .lt('created_at', tomorrow.toISOString());
+
+  if (error) {
+    console.error('Error counting customer orders:', error);
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
+/**
+ * Generate a temporary UUID for orders in "Order Created" status
+ */
+export function generateTemporaryOrderId(): string {
+  // Use timestamp + random to create a unique temporary ID
+  return `TEMP-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
 
