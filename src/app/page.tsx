@@ -253,26 +253,28 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
                         {initial}
                       </div>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center">
-                      <DropdownMenuItem asChild>
-                        <Link href="/profile" className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          Profile
-                        </Link>
+                    <DropdownMenuContent align="center" className="w-48">
+                      <DropdownMenuItem
+                        onClick={() => router.push('/profile')}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <User className="h-4 w-4" />
+                        Profile
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/my-orders" className="flex items-center gap-2">
-                          <ShoppingBag className="h-4 w-4" />
-                          My Orders
-                        </Link>
+                      <DropdownMenuItem
+                        onClick={() => router.push('/my-orders')}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <ShoppingBag className="h-4 w-4" />
+                        My Orders
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={handleLogout}
-                        className="text-destructive flex items-center gap-2"
+                        className="text-destructive flex items-center gap-2 cursor-pointer"
                       >
                         <LogOut className="h-4 w-4" />
-                        Logout
+                        Log Out
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

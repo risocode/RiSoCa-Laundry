@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { supabase } from '@/lib/supabase-client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Phone } from 'lucide-react';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -28,6 +28,7 @@ export default function ProfilePage() {
   const [fetching, setFetching] = useState(true);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
   const [email, setEmail] = useState('');
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function ProfilePage() {
         // Get profile from profiles table
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('first_name, last_name')
+          .select('first_name, last_name, contact_number')
           .eq('id', user.id)
           .single();
 
@@ -63,9 +64,11 @@ export default function ProfilePage() {
           (user.user_metadata?.last_name as string | undefined) || 
           (user.user_metadata?.lastName as string | undefined) || 
           '';
+        const profileContactNumber = profileData?.contact_number || '';
 
         setFirstName(profileFirstName);
         setLastName(profileLastName);
+        setContactNumber(profileContactNumber);
         setEmail(user.email || '');
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -105,6 +108,7 @@ export default function ProfilePage() {
           id: user.id,
           first_name: firstName.trim() || null,
           last_name: lastName.trim() || null,
+          contact_number: contactNumber.trim() || null,
         }, {
           onConflict: 'id'
         });
@@ -192,6 +196,24 @@ export default function ProfilePage() {
                       disabled={loading}
                     />
                   </div>
+                </div>
+
+                <div className="grid gap-1.5">
+                  <Label htmlFor="contactNumber" className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Contact Number
+                  </Label>
+                  <Input
+                    id="contactNumber"
+                    type="tel"
+                    value={contactNumber}
+                    onChange={(e) => setContactNumber(e.target.value)}
+                    placeholder="09123456789"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    This number will be used for order notifications
+                  </p>
                 </div>
 
                 <div className="grid gap-1.5">
