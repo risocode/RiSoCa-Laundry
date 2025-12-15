@@ -28,7 +28,7 @@ import {
 export default function DeleteAccountPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuthSession();
+  const { user, session, loading: authLoading } = useAuthSession();
   const [confirmText, setConfirmText] = useState('');
   const [loading, setLoading] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -36,7 +36,7 @@ export default function DeleteAccountPage() {
   const CONFIRM_TEXT = 'DELETE';
 
   const handleDeleteAccount = async () => {
-    if (!user) {
+    if (!user || !session) {
       toast({
         variant: 'destructive',
         title: 'Not Authenticated',
@@ -58,11 +58,15 @@ export default function DeleteAccountPage() {
     setLoading(true);
 
     try {
-      // Call API route to delete account
+      // Get the access token from the session
+      const accessToken = session.access_token;
+      
+      // Call API route to delete account with authorization token
       const response = await fetch('/api/delete-account', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
       });
 
@@ -77,12 +81,12 @@ export default function DeleteAccountPage() {
         description: 'Your account and all associated data have been permanently deleted.',
       });
 
-      // Redirect to home page after a short delay
+      // Sign out and redirect to home page after a short delay
+      await supabase.auth.signOut();
       setTimeout(() => {
         router.push('/');
       }, 2000);
     } catch (error: any) {
-      console.error('Error deleting account:', error);
       toast({
         variant: 'destructive',
         title: 'Deletion Failed',

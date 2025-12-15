@@ -57,42 +57,31 @@ export default function EmployeeSalaryPage() {
   const [employeeId, setEmployeeId] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log(`[Employee Salary] Initial useEffect - user:`, user);
     fetchOrders();
     if (user) {
       checkUserRole();
-    } else {
-      console.log(`[Employee Salary] No user yet, will check role when user is available`);
     }
   }, [user]);
 
   const checkUserRole = async () => {
-    console.log(`[Employee Salary] checkUserRole called, user:`, user);
     if (!user) {
-      console.log(`[Employee Salary] No user found, returning early`);
       return;
     }
     
-    console.log(`[Employee Salary] Checking roles for user.id: ${user.id}`);
     const [adminStatus, employeeStatus] = await Promise.all([
       isAdmin(user.id),
       isEmployee(user.id),
     ]);
     
-    console.log(`[Employee Salary] Role check results - admin: ${adminStatus}, employee: ${employeeStatus}`);
     setUserIsAdmin(adminStatus);
     setUserIsEmployee(employeeStatus);
     
     if (employeeStatus) {
       // If user is an employee, use their own ID
-      console.log(`[Employee Salary] User is employee, using user.id: ${user.id}`);
       setEmployeeId(user.id);
     } else if (adminStatus) {
       // If user is an admin, fetch the single employee's ID
-      console.log(`[Employee Salary] User is admin, fetching employee ID`);
       fetchSingleEmployee();
-    } else {
-      console.warn(`[Employee Salary] User is neither admin nor employee - admin: ${adminStatus}, employee: ${employeeStatus}`);
     }
   };
 
@@ -106,27 +95,20 @@ export default function EmployeeSalaryPage() {
         .maybeSingle();
 
       if (error) {
-        console.error("Failed to load employee", error);
         return;
       }
       
       if (data) {
-        console.log(`[Employee Salary] Fetched employee ID: ${data.id}`);
         setEmployeeId(data.id);
-      } else {
-        console.warn(`[Employee Salary] No employee found in database`);
       }
     } catch (error) {
-      console.error('Error fetching employee', error);
+      // Silently handle error
     }
   };
 
   // Refetch payment status when employee ID is set and orders are loaded
   useEffect(() => {
-    console.log(`[Employee Salary] useEffect triggered - employeeId: ${employeeId}, orders.length: ${orders.length}`);
-    
     if (employeeId && orders.length > 0) {
-      console.log(`[Employee Salary] Condition met, fetching payments...`);
       // Get unique dates from orders
       const uniqueDates = new Set<string>();
       orders.forEach((order) => {
@@ -136,8 +118,6 @@ export default function EmployeeSalaryPage() {
       
       // Fetch all payments in parallel and wait for completion BEFORE updating state
       const fetchAllPayments = async () => {
-        console.log(`[Employee Salary] Fetching payments for employeeId: ${employeeId}, dates:`, Array.from(uniqueDates));
-        
         const paymentPromises = Array.from(uniqueDates).map(async (dateStr) => {
           const { data, error } = await supabase
             .from('daily_salary_payments')
@@ -147,11 +127,9 @@ export default function EmployeeSalaryPage() {
             .maybeSingle();
           
           if (error) {
-            console.error(`[Employee Salary] Failed to load payment for ${dateStr}:`, error);
             return { dateStr, isPaid: false };
           }
           
-          console.log(`[Employee Salary] Payment for ${dateStr}:`, data);
           return { dateStr, isPaid: data?.is_paid ?? false };
         });
         
@@ -163,15 +141,12 @@ export default function EmployeeSalaryPage() {
           newPayments[dateStr] = isPaid;
         });
         
-        console.log(`[Employee Salary] All payments fetched:`, newPayments);
         setDailyPayments(newPayments);
       };
       
-      fetchAllPayments().catch(error => {
-        console.error('Error fetching daily payments:', error);
+      fetchAllPayments().catch(() => {
+        // Silently handle error
       });
-    } else {
-      console.log(`[Employee Salary] Condition NOT met - employeeId: ${employeeId}, orders.length: ${orders.length}`);
     }
   }, [employeeId, orders]);
 
@@ -184,7 +159,6 @@ export default function EmployeeSalaryPage() {
         .select('*');
 
       if (error) {
-        console.error("Failed to load orders", error);
         setOrders([]);
       } else {
         const mapped: Order[] = (data ?? []).map(o => ({
@@ -206,7 +180,6 @@ export default function EmployeeSalaryPage() {
         setOrders(mapped);
       }
     } catch (error) {
-      console.error('Error fetching orders', error);
       setOrders([]);
     } finally {
       setLoading(false);
@@ -228,15 +201,10 @@ export default function EmployeeSalaryPage() {
   }, [orders]);
 
   const dailySalaries: DailySalary[] = useMemo(() => {
-    console.log(`[Employee Salary] Computing dailySalaries - dailyPayments keys:`, Object.keys(dailyPayments));
-    console.log(`[Employee Salary] dailyPayments values:`, dailyPayments);
-    
-    return Object.entries(completedOrdersByDate)
+    const allSalaries = Object.entries(completedOrdersByDate)
       .map(([dateKey, orders]) => {
         const totalLoads = orders.reduce((sum, o) => sum + o.load, 0);
         const isPaid = dailyPayments[dateKey] ?? false;
-        
-        console.log(`[Employee Salary] Date: ${dateKey}, isPaid from dailyPayments: ${dailyPayments[dateKey]}, final isPaid: ${isPaid}`);
         
         return {
           date: new Date(dateKey + 'T00:00:00'), // Parse dateKey as local date
@@ -247,18 +215,20 @@ export default function EmployeeSalaryPage() {
         };
       })
       .sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [completedOrdersByDate, dailyPayments]);
 
-  // Apply date range filter if set
-  if (dateRange.start) {
-    const fromDate = startOfDay(dateRange.start);
-    const toDate = dateRange.end ? startOfDay(dateRange.end) : fromDate;
-    
-    dailySalaries = dailySalaries.filter(({ date }) => {
-      const orderDate = startOfDay(date);
-      return orderDate >= fromDate && orderDate <= toDate;
-    });
-  }
+    // Apply date range filter if set
+    if (dateRange.start) {
+      const fromDate = startOfDay(dateRange.start);
+      const toDate = dateRange.end ? startOfDay(dateRange.end) : fromDate;
+      
+      return allSalaries.filter(({ date }) => {
+        const orderDate = startOfDay(date);
+        return orderDate >= fromDate && orderDate <= toDate;
+      });
+    }
+
+    return allSalaries;
+  }, [completedOrdersByDate, dailyPayments, dateRange]);
 
   const handleCalendarApply = (start: Date | null, end: Date | null) => {
     setDateRange({ start, end });

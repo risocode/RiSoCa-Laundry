@@ -25,36 +25,68 @@ export default function EmployeePage() {
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const mapOrder = (o: any): Order => ({
-    id: o.id,
-    userId: o.customer_id,
-    customerName: o.customer_name,
-    contactNumber: o.contact_number,
-    load: o.loads,
-    weight: o.weight,
-    status: o.status,
-    total: o.total,
-    orderDate: new Date(o.created_at),
-    isPaid: o.is_paid,
-    deliveryOption: o.delivery_option ?? undefined,
-    servicePackage: o.service_package,
-    distance: o.distance ?? 0,
-    statusHistory: (o.order_status_history ?? []).map((sh: any) => ({
-      status: sh.status,
-      timestamp: new Date(sh.created_at),
-    })) as StatusHistory[],
-    branchId: o.branch_id ?? null,
-  });
+  const mapOrder = (o: any): Order => {
+    const totalNum = typeof o.total === 'string' ? parseFloat(o.total) : Number(o.total);
+    
+    // Handle balance more explicitly
+    let balanceNum: number;
+    if (o.balance !== null && o.balance !== undefined && o.balance !== '') {
+      balanceNum = typeof o.balance === 'string' ? parseFloat(o.balance) : Number(o.balance);
+      if (isNaN(balanceNum)) {
+        balanceNum = o.is_paid ? 0 : totalNum;
+      }
+    } else {
+      balanceNum = o.is_paid ? 0 : totalNum;
+    }
+    
+    return {
+      id: o.id,
+      userId: o.customer_id,
+      customerName: o.customer_name,
+      contactNumber: o.contact_number,
+      load: o.loads,
+      weight: o.weight,
+      status: o.status,
+      total: totalNum,
+      orderDate: new Date(o.created_at),
+      isPaid: o.is_paid,
+      balance: balanceNum,
+      deliveryOption: o.delivery_option ?? undefined,
+      servicePackage: o.service_package,
+      distance: o.distance ?? 0,
+      statusHistory: (o.order_status_history ?? []).map((sh: any) => ({
+        status: sh.status,
+        timestamp: new Date(sh.created_at),
+      })) as StatusHistory[],
+      branchId: o.branch_id ?? null,
+    };
+  };
 
   const fetchOrders = async () => {
     setLoadingOrders(true);
     const { data, error } = await supabase
       .from('orders')
-      .select('*, order_status_history(*)')
+      .select(`
+        id,
+        customer_id,
+        customer_name,
+        contact_number,
+        loads,
+        weight,
+        status,
+        total,
+        created_at,
+        is_paid,
+        balance,
+        delivery_option,
+        service_package,
+        distance,
+        branch_id,
+        order_status_history(*)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Failed to load orders', error);
       toast({ variant: 'destructive', title: 'Load error', description: 'Could not load orders.' });
       setLoadingOrders(false);
       return;
@@ -87,6 +119,7 @@ export default function EmployeePage() {
       loads: updatedOrder.load,
       total: updatedOrder.total,
       is_paid: updatedOrder.isPaid,
+      balance: updatedOrder.balance ?? (updatedOrder.isPaid ? 0 : updatedOrder.total),
       delivery_option: updatedOrder.deliveryOption,
       distance: updatedOrder.distance,
       service_package: updatedOrder.servicePackage,
