@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ManualOrderDialog } from '@/components/manual-order-dialog';
-import { createOrderWithHistory, generateTemporaryOrderId, updateOrderStatus, updateOrderFields } from '@/lib/api/orders';
+import { createOrderWithHistory, fetchLatestOrderId, generateNextOrderId, updateOrderStatus, updateOrderFields } from '@/lib/api/orders';
 import { supabase } from '@/lib/supabase-client';
 import { useAuthSession } from '@/hooks/use-auth-session';
 
@@ -139,12 +139,17 @@ export default function EmployeePage() {
   };
 
   const handleAddOrder = async (newOrder: Omit<Order, 'id' | 'userId'>) => {
-    // Use temporary ID - will be replaced with RKR format when status changes to "Order Placed"
-    const tempOrderId = generateTemporaryOrderId();
-    const initialStatus = newOrder.status || 'Order Created';
+    // Employee orders get RKR ID immediately with "Order Placed" status
+    const { latestId, error: idError } = await fetchLatestOrderId();
+    if (idError) {
+      toast({ variant: 'destructive', title: 'Order ID error', description: 'Could not generate new order ID.' });
+      return;
+    }
+    const newOrderId = generateNextOrderId(latestId);
+    const initialStatus = 'Order Placed';
 
     const { error } = await createOrderWithHistory({
-      id: tempOrderId,
+      id: newOrderId,
       customer_id: user?.id ?? 'employee-manual',
       customer_name: newOrder.customerName,
       contact_number: newOrder.contactNumber,
@@ -159,12 +164,17 @@ export default function EmployeePage() {
     });
 
     if (error) {
-      // Handle duplicate ID error (race condition)
+      // Handle duplicate ID error (race condition) - retry with fresh ID fetch
       if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
-        // Retry with a new temporary ID
-        const retryTempId = generateTemporaryOrderId();
+        // Retry with a fresh ID fetch
+        const { latestId: retryLatestId, error: retryIdError } = await fetchLatestOrderId();
+        if (retryIdError) {
+          toast({ variant: 'destructive', title: 'Create failed', description: 'Could not generate order ID. Please try again.' });
+          return;
+        }
+        const retryOrderId = generateNextOrderId(retryLatestId);
         const { error: retryCreateError } = await createOrderWithHistory({
-          id: retryTempId,
+          id: retryOrderId,
           customer_id: user?.id ?? 'employee-manual',
           customer_name: newOrder.customerName,
           contact_number: newOrder.contactNumber,
@@ -182,8 +192,8 @@ export default function EmployeePage() {
           return;
         }
         toast({
-          title: 'Order Created',
-          description: `New order for ${newOrder.customerName} has been created. Change status to "Order Placed" to assign order ID.`,
+          title: 'Order Placed',
+          description: `New order #${retryOrderId} for ${newOrder.customerName} has been created.`,
         });
         fetchOrders();
         return;
@@ -193,8 +203,8 @@ export default function EmployeePage() {
     }
 
     toast({
-        title: 'Order Created',
-        description: `New order for ${newOrder.customerName} has been created. Change status to "Order Placed" to assign order ID.`,
+        title: 'Order Placed',
+        description: `New order #${newOrderId} for ${newOrder.customerName} has been created.`,
     });
     fetchOrders();
   };
