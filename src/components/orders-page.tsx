@@ -98,7 +98,11 @@ export function OrdersPage() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      toast({ variant: 'destructive', title: 'Load error', description: 'Could not load orders.' });
+      toast({ 
+        variant: 'default', 
+        title: 'Unable to load orders', 
+        description: 'Please refresh the page to see the latest orders.' 
+      });
       setLoadingAdmin(false);
       return;
     }
@@ -140,9 +144,9 @@ export function OrdersPage() {
         const { data: updatedOrderData, error } = await updateOrderStatus(updatedOrder.id, updatedOrder.status);
         if (error) {
           toast({ 
-            variant: 'destructive', 
-            title: 'Status update failed', 
-            description: error.message || 'Could not update order status. Please check your permissions.' 
+            variant: 'default', 
+            title: 'Update in progress', 
+            description: 'The order may have been updated. Please refresh the page to see the latest status.' 
           });
           return;
         }
@@ -177,17 +181,18 @@ export function OrdersPage() {
       if (patchError) {
         const errorMessage = patchError.message || 'Could not update order. Please check your permissions.';
         toast({ 
-          variant: 'destructive', 
-          title: 'Update failed', 
-          description: errorMessage 
+          variant: 'default', 
+          title: 'Update may be in progress', 
+          description: 'Please refresh the page to see if the changes were applied.' 
         });
         console.error('Order update error:', patchError);
         return;
       }
       
-      toast({
-        title: 'Order Updated',
-        description: `Order #${finalOrderId} has been updated.`,
+      toast({ 
+        variant: 'default', 
+        title: 'Please refresh the page', 
+        description: 'The order may have been updated. Refresh to see the latest information.' 
       });
       fetchOrders(); // Refresh to get the updated order with new ID
     } catch (error: any) {
@@ -204,7 +209,11 @@ export function OrdersPage() {
     // Admin/Employee orders get RKR ID immediately with "Order Placed" status
     const { latestId, error: idError } = await fetchLatestOrderId();
     if (idError) {
-      toast({ variant: 'destructive', title: 'Order ID error', description: 'Could not generate new order ID.' });
+      toast({ 
+        variant: 'default', 
+        title: 'Please try again', 
+        description: 'Unable to generate order ID. Please refresh the page and try creating the order again.' 
+      });
       return;
     }
     const newOrderId = generateNextOrderId(latestId);
@@ -231,7 +240,11 @@ export function OrdersPage() {
         // Retry with a fresh ID fetch
         const { latestId: retryLatestId, error: retryIdError } = await fetchLatestOrderId();
         if (retryIdError) {
-          toast({ variant: 'destructive', title: 'Create failed', description: 'Could not generate order ID. Please try again.' });
+          toast({ 
+            variant: 'default', 
+            title: 'Please refresh and try again', 
+            description: 'Unable to generate order ID. Please refresh the page and try creating the order again.' 
+          });
           return;
         }
         const retryOrderId = generateNextOrderId(retryLatestId);
@@ -250,7 +263,11 @@ export function OrdersPage() {
           is_paid: newOrder.isPaid,
         });
         if (retryCreateError) {
-          toast({ variant: 'destructive', title: 'Create failed', description: retryCreateError.message });
+          toast({ 
+            variant: 'default', 
+            title: 'Please refresh and try again', 
+            description: 'The order may have been created. Please refresh the page to check.' 
+          });
           return;
         }
         toast({
@@ -260,7 +277,11 @@ export function OrdersPage() {
         fetchOrders();
         return;
       }
-      toast({ variant: 'destructive', title: 'Create failed', description: error.message });
+      toast({ 
+        variant: 'default', 
+        title: 'Please refresh and try again', 
+        description: 'Unable to create order. Please refresh the page and try again.' 
+      });
       return;
     }
 
