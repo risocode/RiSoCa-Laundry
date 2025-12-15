@@ -27,7 +27,6 @@ import type { Order } from './order-list';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { createOrderWithHistory, generateTemporaryOrderId, countCustomerOrdersToday, cancelOrderByCustomer } from '@/lib/api/orders';
 import { supabase } from '@/lib/supabase-client';
-import { supabase } from '@/lib/supabase-client';
 
 const packages = [
   { id: 'package1', label: 'Package 1', description: 'Wash, Dry, & Fold' },
