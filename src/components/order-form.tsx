@@ -26,6 +26,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { Order } from './order-list';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { createOrderWithHistory, generateTemporaryOrderId, countCustomerOrdersToday, cancelOrderByCustomer } from '@/lib/api/orders';
+import { supabase } from '@/lib/supabase-client';
+import { supabase } from '@/lib/supabase-client';
 
 const packages = [
   { id: 'package1', label: 'Package 1', description: 'Wash, Dry, & Fold' },
@@ -101,6 +103,49 @@ export function OrderForm() {
   const servicePackage = watch('servicePackage');
   const needsLocation = servicePackage === 'package2' || servicePackage === 'package3';
   const isFreeDelivery = needsLocation && watchedValues.distance > 0 && watchedValues.distance <= 0.5;
+
+  // Auto-populate customer info from profile when dialog opens
+  useEffect(() => {
+    async function loadCustomerProfile() {
+      if (!isCustomerInfoDialogOpen || !user) return;
+      
+      try {
+        // Fetch profile data
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('first_name, contact_number')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching profile:', error);
+          return;
+        }
+        
+        // Auto-fill form with profile data
+        if (profileData) {
+          if (profileData.first_name) {
+            customerForm.setValue('customerName', profileData.first_name);
+          }
+          if (profileData.contact_number) {
+            customerForm.setValue('contactNumber', profileData.contact_number);
+          }
+        } else {
+          // Fallback to user metadata if profile doesn't exist
+          const firstName = user.user_metadata?.first_name || 
+                           user.user_metadata?.firstName || 
+                           '';
+          if (firstName) {
+            customerForm.setValue('customerName', firstName);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading customer profile:', error);
+      }
+    }
+    
+    loadCustomerProfile();
+  }, [isCustomerInfoDialogOpen, user, customerForm]);
 
   useEffect(() => {
     if (distanceParam) {
@@ -248,6 +293,7 @@ export function OrderForm() {
       return;
     }
 
+    // Note: Contact number is NOT saved to profile - only used for this order
     // Generate temporary ID - will be replaced with RKR format when status changes to "Order Placed"
     const tempOrderId = await generateTemporaryOrderId();
     const initialStatus = 'Order Created';
@@ -570,7 +616,16 @@ export function OrderForm() {
             <form onSubmit={customerForm.handleSubmit(onCustomerInfoSubmit)} className="space-y-4">
                  <div className="space-y-2">
                     <Label htmlFor="customerName" className="flex items-center gap-2"><User className="h-4 w-4"/>Customer Name</Label>
-                    <Input id="customerName" placeholder="e.g., Jane Doe" {...customerForm.register('customerName')} />
+                    <Input 
+                      id="customerName" 
+                      placeholder="e.g., Jane Doe" 
+                      {...customerForm.register('customerName')} 
+                      disabled
+                      className="bg-muted cursor-not-allowed"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Name is taken from your profile
+                    </p>
                      {customerForm.formState.errors.customerName && (
                         <p className="text-xs font-medium text-destructive">{customerForm.formState.errors.customerName.message}</p>
                     )}
@@ -578,6 +633,9 @@ export function OrderForm() {
                  <div className="space-y-2">
                     <Label htmlFor="contactNumber" className="flex items-center gap-2"><Phone className="h-4 w-4"/>Contact Number</Label>
                     <Input id="contactNumber" type="tel" placeholder="e.g., 09123456789" {...customerForm.register('contactNumber')} />
+                    <p className="text-xs text-muted-foreground">
+                      You can edit this number for this order only (won't update your profile)
+                    </p>
                     {customerForm.formState.errors.contactNumber && (
                         <p className="text-xs font-medium text-destructive">{customerForm.formState.errors.contactNumber.message}</p>
                     )}
