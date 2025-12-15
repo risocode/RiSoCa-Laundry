@@ -134,9 +134,10 @@ export function OrdersPage() {
     try {
       const previous = allOrders.find(o => o.id === updatedOrder.id);
       const hasStatusChange = previous?.status !== updatedOrder.status;
+      let finalOrderId = updatedOrder.id;
 
       if (hasStatusChange) {
-        const { error } = await updateOrderStatus(updatedOrder.id, updatedOrder.status);
+        const { data: updatedOrderData, error } = await updateOrderStatus(updatedOrder.id, updatedOrder.status);
         if (error) {
           toast({ 
             variant: 'destructive', 
@@ -144,6 +145,16 @@ export function OrdersPage() {
             description: error.message || 'Could not update order status. Please check your permissions.' 
           });
           return;
+        }
+        
+        // If the order ID was updated (from TEMP to RKR), use the new ID
+        if (updatedOrderData && updatedOrderData.id && updatedOrderData.id !== updatedOrder.id) {
+          finalOrderId = updatedOrderData.id;
+          // Update the order object with the new ID
+          updatedOrder = {
+            ...updatedOrder,
+            id: updatedOrderData.id
+          };
         }
       }
 
@@ -158,9 +169,11 @@ export function OrdersPage() {
         delivery_option: updatedOrder.deliveryOption,
         distance: updatedOrder.distance,
         service_package: updatedOrder.servicePackage,
+        status: updatedOrder.status,
       };
 
-      const { error: patchError } = await updateOrderFields(updatedOrder.id, patch as any);
+      // Use finalOrderId (which might be the new RKR ID) for the update
+      const { error: patchError } = await updateOrderFields(finalOrderId, patch as any);
       if (patchError) {
         const errorMessage = patchError.message || 'Could not update order. Please check your permissions.';
         toast({ 
@@ -174,9 +187,9 @@ export function OrdersPage() {
       
       toast({
         title: 'Order Updated',
-        description: `Order #${updatedOrder.id} has been updated.`,
+        description: `Order #${finalOrderId} has been updated.`,
       });
-      fetchOrders();
+      fetchOrders(); // Refresh to get the updated order with new ID
     } catch (error: any) {
       console.error('Unexpected error updating order:', error);
       toast({ 
