@@ -215,28 +215,27 @@ export function OrdersPage() {
         const { error: retryCreateError } = await createOrderWithHistory({
           id: retryTempId,
           customer_id: user?.id ?? 'admin-manual',
-            customer_name: newOrder.customerName,
-            contact_number: newOrder.contactNumber,
-            service_package: newOrder.servicePackage as any,
-            weight: newOrder.weight,
-            loads: newOrder.load,
-            distance: newOrder.distance,
-            delivery_option: newOrder.deliveryOption,
-            status: initialStatus,
-            total: newOrder.total,
-            is_paid: newOrder.isPaid,
-          });
-          if (retryCreateError) {
-            toast({ variant: 'destructive', title: 'Create failed', description: retryCreateError.message });
-            return;
-          }
-          toast({
-            title: 'Order Created',
-            description: `New order for ${newOrder.customerName} has been created. Change status to "Order Placed" to assign order ID.`,
-          });
-          fetchOrders();
+          customer_name: newOrder.customerName,
+          contact_number: newOrder.contactNumber,
+          service_package: newOrder.servicePackage as any,
+          weight: newOrder.weight,
+          loads: newOrder.load,
+          distance: newOrder.distance,
+          delivery_option: newOrder.deliveryOption,
+          status: initialStatus,
+          total: newOrder.total,
+          is_paid: newOrder.isPaid,
+        });
+        if (retryCreateError) {
+          toast({ variant: 'destructive', title: 'Create failed', description: retryCreateError.message });
           return;
         }
+        toast({
+          title: 'Order Created',
+          description: `New order for ${newOrder.customerName} has been created. Change status to "Order Placed" to assign order ID.`,
+        });
+        fetchOrders();
+        return;
       }
       toast({ variant: 'destructive', title: 'Create failed', description: error.message });
       return;
