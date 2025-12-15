@@ -319,31 +319,82 @@ export async function updateOrderStatus(orderId: string, status: string, note?: 
         const newOrderId = generateNextOrderId(latestId);
         
         // Use database function to update ID and all foreign key references
-        const { error: updateIdError } = await supabase.rpc('update_order_id_on_placed', {
+        const { data: updateResult, error: updateIdError } = await supabase.rpc('update_order_id_on_placed', {
           p_order_id: orderId,
           p_new_order_id: newOrderId,
         });
         
-        if (!updateIdError) {
-          finalOrderId = newOrderId;
-        } else {
-          // Fallback: manual update if function doesn't exist
-          console.warn('update_order_id_on_placed function not found, using manual update');
-          await supabase
-            .from('order_status_history')
-            .update({ order_id: newOrderId })
-            .eq('order_id', orderId);
+        // Handle 406 errors from void functions - they don't mean the function failed
+        // Verify the update actually succeeded by checking if new ID exists
+        if (updateIdError && updateIdError.code !== '406') {
+          // Non-406 error - function might have failed, try fallback
+          console.warn('update_order_id_on_placed returned error:', updateIdError);
           
-          const { error: updateError } = await supabase
+          // Verify if update actually succeeded despite the error
+          const { data: verifyData } = await supabase
             .from('orders')
-            .update({ id: newOrderId })
-            .eq('id', orderId);
+            .select('id')
+            .eq('id', newOrderId)
+            .maybeSingle();
           
-          if (!updateError) {
+          if (verifyData && verifyData.id === newOrderId) {
+            // Update actually succeeded, use new ID
             finalOrderId = newOrderId;
           } else {
-            console.error('Failed to update order ID:', updateError);
-            // Continue with status update using original ID
+            // Update failed, try fallback manual update
+            await supabase
+              .from('order_status_history')
+              .update({ order_id: newOrderId })
+              .eq('order_id', orderId);
+            
+            const { error: updateError } = await supabase
+              .from('orders')
+              .update({ id: newOrderId })
+              .eq('id', orderId);
+            
+            if (!updateError) {
+              finalOrderId = newOrderId;
+            } else {
+              console.error('Failed to update order ID:', updateError);
+              // Continue with status update using original ID
+            }
+          }
+        } else {
+          // No error or 406 error - check if function returned success
+          if (updateResult === true) {
+            // Function returned success status (boolean true)
+            finalOrderId = newOrderId;
+          } else {
+            // Verify the update succeeded by checking if new ID exists
+            const { data: verifyData } = await supabase
+              .from('orders')
+              .select('id')
+              .eq('id', newOrderId)
+              .maybeSingle();
+            
+            if (verifyData && verifyData.id === newOrderId) {
+              // Update succeeded (function worked but didn't return value properly)
+              finalOrderId = newOrderId;
+            } else {
+              // Update didn't work, try fallback
+              console.warn('ID update verification failed, using fallback');
+              await supabase
+                .from('order_status_history')
+                .update({ order_id: newOrderId })
+                .eq('order_id', orderId);
+              
+              const { error: updateError } = await supabase
+                .from('orders')
+                .update({ id: newOrderId })
+                .eq('id', orderId);
+              
+              if (!updateError) {
+                finalOrderId = newOrderId;
+              } else {
+                console.error('Failed to update order ID (fallback):', updateError);
+                // Continue with status update using original ID
+              }
+            }
           }
         }
       }
