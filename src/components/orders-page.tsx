@@ -189,18 +189,17 @@ export function OrdersPage() {
         return;
       }
       
-      toast({ 
-        variant: 'default', 
-        title: 'Please refresh the page', 
-        description: 'The order may have been updated. Refresh to see the latest information.' 
+      toast({
+        title: 'Order Updated',
+        description: `Order #${finalOrderId} has been updated successfully.`,
       });
       fetchOrders(); // Refresh to get the updated order with new ID
     } catch (error: any) {
       console.error('Unexpected error updating order:', error);
       toast({ 
-        variant: 'destructive', 
-        title: 'Update failed', 
-        description: error?.message || 'An unexpected error occurred while updating the order.' 
+        variant: 'default', 
+        title: 'Please refresh the page', 
+        description: 'The order may have been updated. Refresh to see the latest information.' 
       });
     }
   };
