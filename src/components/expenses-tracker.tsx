@@ -62,7 +62,7 @@ export function ExpensesTracker() {
       title: '',
       amount: 0,
       category: '',
-      expense_for: 'Racky',
+      expense_for: 'RKR',
       incurred_on: new Date().toISOString().slice(0, 10)
     }
   });
