@@ -68,11 +68,11 @@ export function PromoBanner() {
           </div>
 
           {/* Main Text */}
-          <span className="text-center flex items-center gap-1 sm:gap-2 flex-wrap justify-center min-w-0 flex-1">
+          <span className="text-center flex items-center gap-1 sm:gap-2 flex-wrap justify-center min-w-0 flex-1 w-full">
             <span className="text-yellow-900 font-bold text-xs sm:text-sm">
               ✨ <strong className="text-red-700 text-sm sm:text-base">Special Offer!</strong> ✨
             </span>
-            <span className="text-yellow-900 font-semibold text-xs sm:text-sm">
+            <span className="text-yellow-900 font-semibold text-xs sm:text-sm whitespace-nowrap">
               <strong className="text-red-700">December 17, 2025</strong>
             </span>
             <span className="text-yellow-900 font-bold text-xs sm:text-sm">
