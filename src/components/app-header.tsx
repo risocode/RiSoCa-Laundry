@@ -141,11 +141,12 @@ export function AppHeader() {
                   }}
                 />
                 
-                {/* Limited Time Badge */}
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                {/* Limited Time Badge with Countdown */}
+                <div className="flex flex-col items-center gap-1.5 sm:gap-2 flex-shrink-0">
                   <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-md animate-pulse">
                     Once a Year Only!
                   </div>
+                  <CountdownTimer />
                 </div>
 
                 {/* Gift Icon with animation */}
@@ -167,9 +168,6 @@ export function AppHeader() {
                     <strong className="text-red-700">December 17, 2025</strong>
                   </span>
                 </div>
-
-                {/* Countdown Timer */}
-                <CountdownTimer />
 
                 {/* Right side sparkle */}
                 <div className="flex-shrink-0 animate-pulse">
