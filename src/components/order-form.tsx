@@ -331,7 +331,7 @@ export function OrderForm() {
         customer_id: user.id,
         customer_name: newOrder.customerName,
         contact_number: newOrder.contactNumber,
-        service_package: newOrder.servicePackage as Order['servicePackage'],
+        service_package: pendingOrder.orderData.servicePackage as 'package1' | 'package2' | 'package3',
         weight: newOrder.weight,
         loads: newOrder.load,
         distance: newOrder.distance,
@@ -350,7 +350,7 @@ export function OrderForm() {
             customer_id: user.id,
             customer_name: newOrder.customerName,
             contact_number: newOrder.contactNumber,
-            service_package: newOrder.servicePackage as Order['servicePackage'],
+            service_package: pendingOrder.orderData.servicePackage as 'package1' | 'package2' | 'package3',
             weight: newOrder.weight,
             loads: newOrder.load,
             distance: newOrder.distance,
@@ -678,6 +678,34 @@ export function OrderForm() {
                         />
                     </div>
                 )}
+                {(pendingOrder?.orderData.servicePackage === 'package2' || 
+                  pendingOrder?.orderData.servicePackage === 'package3') && 
+                  (!pendingOrder?.orderData.weight || pendingOrder.orderData.weight <= 7.5) && (
+                    <div className="space-y-2 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                        <div className="space-y-2 flex-1">
+                          <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                            Important: Price May Change
+                          </p>
+                          <div className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
+                            <p>
+                              • The current price is based on estimated weight (1 load = 7.5kg).
+                            </p>
+                            <p>
+                              • <strong>If your actual weight exceeds 7.5kg</strong>, the final price will be adjusted accordingly.
+                            </p>
+                            <p>
+                              • We will contact you via phone to confirm the updated weight and price before processing your order.
+                            </p>
+                            <p className="mt-2 font-medium">
+                              📱 Please track your order status to see the confirmed weight and loads once your laundry arrives at the shop.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 <DialogFooter>
                     <Button type="submit">Confirm Order</Button>
                 </DialogFooter>
