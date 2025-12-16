@@ -38,8 +38,8 @@ export function PromoBanner() {
       <div className="container flex items-center justify-center px-4 py-3 relative z-10">
         <div
           className={cn(
-            "flex items-center gap-2 sm:gap-3 rounded-lg border-2 border-yellow-400/50 px-3 sm:px-4 py-2 shadow-lg",
-            "text-xs sm:text-sm w-full max-w-5xl relative overflow-hidden",
+            "flex items-center flex-wrap sm:flex-nowrap gap-2 sm:gap-3 rounded-lg border-2 border-yellow-400/50 px-3 sm:px-4 py-2 shadow-lg",
+            "text-xs sm:text-sm w-full max-w-5xl relative overflow-visible sm:overflow-hidden",
             "bg-gradient-to-r from-yellow-50 via-orange-50 to-red-50",
             "backdrop-blur-sm"
           )}
