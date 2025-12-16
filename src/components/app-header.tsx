@@ -5,25 +5,37 @@ import { Gift, WashingMachine, Sparkles, Clock } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import { getActivePromo, type Promo } from '@/lib/api/promos';
 
-function CountdownTimer() {
+function CountdownTimer({ promo }: { promo: Promo }) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
     minutes: number;
     seconds: number;
+    isDuringPromo?: boolean;
   } | null>(null);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date();
-      const promoDate = new Date('2025-12-17');
-      promoDate.setHours(23, 59, 59, 999); // End of day on Dec 17
+      const promoStart = new Date(promo.start_date);
+      const promoEnd = new Date(promo.end_date);
       
-      // If it's Dec 17, countdown to end of day, otherwise countdown to Dec 17 start
-      const targetDate = now.getDate() === 17 && now.getMonth() === 11
-        ? new Date('2025-12-17T23:59:59')
-        : new Date('2025-12-17T00:00:00');
+      let targetDate: Date;
+      let isDuringPromo = false;
+      
+      if (now < promoStart) {
+        // Before promo starts: countdown to start
+        targetDate = promoStart;
+      } else if (now >= promoStart && now < promoEnd) {
+        // During promo: countdown to end
+        targetDate = promoEnd;
+        isDuringPromo = true;
+      } else {
+        // After promo ends: hide countdown
+        return null;
+      }
 
       const difference = targetDate.getTime() - now.getTime();
 
@@ -33,7 +45,7 @@ function CountdownTimer() {
         const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-        return { days, hours, minutes, seconds };
+        return { days, hours, minutes, seconds, isDuringPromo };
       }
       return null;
     };
@@ -44,14 +56,13 @@ function CountdownTimer() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [promo]);
 
   if (!timeLeft) {
     return null;
   }
 
-  const isPromoDay = new Date().getDate() === 17 && new Date().getMonth() === 11;
-  const label = isPromoDay ? 'Promo Ends In:' : 'Promo Starts In:';
+  const label = timeLeft.isDuringPromo ? 'Promo Ends In:' : 'Promo Starts In:';
 
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
@@ -79,13 +90,32 @@ function CountdownTimer() {
 }
 
 export function AppHeader() {
-    const pathname = usePathname();
-    const isHome = pathname === '/';
+  const pathname = usePathname();
+  const isHome = pathname === '/';
+  const [promo, setPromo] = useState<Promo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPromo = async () => {
+      const { data } = await getActivePromo();
+      setPromo(data);
+      setLoading(false);
+    };
+
+    fetchPromo();
+    // Refresh every minute to check for new/ended promos
+    const interval = setInterval(fetchPromo, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const now = new Date();
+  const hidePromoBanner = loading || !promo || now >= new Date(promo.end_date);
 
   return (
     <>
       <header className="w-full border-b bg-background/95">
-        {isHome ? (
+        {isHome && !hidePromoBanner ? (
           /* Homepage: Full-width promo banner with no margins */
           <div className="w-full flex items-center justify-center h-auto relative overflow-hidden">
             {/* Animated background gradient */}
@@ -146,10 +176,10 @@ export function AppHeader() {
                   <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-md animate-pulse">
                     Once a Year Only!
                   </div>
-                  <CountdownTimer />
+                  <CountdownTimer promo={promo} />
                   {/* Date for mobile only */}
                   <span className="text-yellow-900 font-semibold text-xs sm:text-sm text-center sm:hidden">
-                    <strong className="text-red-700">December 17, 2025</strong>
+                    <strong className="text-red-700">{promo.display_date}</strong>
                   </span>
                 </div>
 
@@ -165,12 +195,12 @@ export function AppHeader() {
                       ✨ <strong className="text-red-700 text-sm sm:text-base">Special Offer!</strong> ✨
                     </span>
                     <span className="text-yellow-900 font-bold text-xs sm:text-sm">
-                      — Only <strong className="text-red-700 text-base sm:text-lg">₱150 per load</strong>! 🎉
+                      — Only <strong className="text-red-700 text-base sm:text-lg">₱{promo.price_per_load} per load</strong>! 🎉
                     </span>
                   </div>
                   {/* Date for desktop only - below Special Offer */}
                   <span className="text-yellow-900 font-semibold text-xs sm:text-sm text-center hidden sm:block">
-                    <strong className="text-red-700">December 17, 2025</strong>
+                    <strong className="text-red-700">{promo.display_date}</strong>
                   </span>
                 </div>
 

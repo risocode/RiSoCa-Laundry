@@ -3,8 +3,9 @@
 import { Gift, Sparkles, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import { getActivePromo, type Promo } from '@/lib/api/promos';
 
-function CountdownTimer() {
+function CountdownTimer({ promo }: { promo: Promo }) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -16,8 +17,8 @@ function CountdownTimer() {
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date();
-      const promoStart = new Date('2025-12-17T18:00:00'); // Dec 17, 6:00 PM
-      const promoEnd = new Date('2025-12-17T20:00:00');   // Dec 17, 8:00 PM
+      const promoStart = new Date(promo.start_date);
+      const promoEnd = new Date(promo.end_date);
       
       let targetDate: Date;
       let isDuringPromo = false;
@@ -53,13 +54,12 @@ function CountdownTimer() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [promo]);
 
   if (!timeLeft) {
     return null;
   }
 
-  const isPromoDay = new Date().getDate() === 17 && new Date().getMonth() === 11;
   const label = timeLeft.isDuringPromo ? 'Promo Ends In:' : 'Promo Starts In:';
 
   return (
@@ -88,6 +88,37 @@ function CountdownTimer() {
 }
 
 export function PromoBanner() {
+  const [promo, setPromo] = useState<Promo | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPromo = async () => {
+      const { data } = await getActivePromo();
+      setPromo(data);
+      setLoading(false);
+    };
+
+    fetchPromo();
+    // Refresh every minute to check for new/ended promos
+    const interval = setInterval(fetchPromo, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Don't render if loading or no active promo
+  if (loading || !promo) {
+    return null;
+  }
+
+  const now = new Date();
+  const promoStart = new Date(promo.start_date);
+  const promoEnd = new Date(promo.end_date);
+
+  // Hide banner if promo has ended
+  if (now >= promoEnd) {
+    return null;
+  }
+
   return (
     <div className="w-full border-b bg-background/95 relative overflow-hidden">
       {/* Animated background gradient */}
@@ -144,10 +175,10 @@ export function PromoBanner() {
             <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-md animate-pulse">
               Once a Year Only!
             </div>
-            <CountdownTimer />
+            <CountdownTimer promo={promo} />
             {/* Date for mobile only */}
             <span className="text-yellow-900 font-semibold text-xs sm:text-sm text-center sm:hidden">
-              <strong className="text-red-700">December 17, 2025</strong>
+              <strong className="text-red-700">{promo.display_date}</strong>
             </span>
           </div>
 
@@ -163,12 +194,12 @@ export function PromoBanner() {
                 ✨ <strong className="text-red-700 text-sm sm:text-base">Special Offer!</strong> ✨
               </span>
               <span className="text-yellow-900 font-bold text-xs sm:text-sm">
-                — Only <strong className="text-red-700 text-base sm:text-lg">₱150 per load</strong>! 🎉
+                — Only <strong className="text-red-700 text-base sm:text-lg">₱{promo.price_per_load} per load</strong>! 🎉
               </span>
             </div>
             {/* Date for desktop only - below Special Offer */}
             <span className="text-yellow-900 font-semibold text-xs sm:text-sm text-center hidden sm:block">
-              <strong className="text-red-700">December 17, 2025</strong>
+              <strong className="text-red-700">{promo.display_date}</strong>
             </span>
           </div>
 
