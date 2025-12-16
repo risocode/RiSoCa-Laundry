@@ -227,11 +227,11 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
       <div className="flex flex-col h-screen overflow-hidden select-none">
         <AppHeader />
 
-        <main className="flex-1 overflow-y-auto pb-20">
-          <div className="container mx-auto px-4 py-6 text-center">
+        <main className="flex-1 overflow-hidden pb-20">
+          <div className="container mx-auto px-4 py-3 sm:py-4 text-center h-full flex flex-col justify-center">
 
             {/* Logo */}
-            <div className="mb-6 flex flex-col items-center">
+            <div className="mb-4 sm:mb-6 flex flex-col items-center">
               <div className="flex items-center gap-3 mb-2">
                 <WashingMachine className="h-16 w-16 text-primary" />
                 <span className="text-4xl font-bold text-primary">RKR Laundry</span>
@@ -328,7 +328,7 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
             )}
 
             {/* Grid Menu */}
-            <div className="flex justify-center w-full mt-6">
+            <div className="flex justify-center w-full mt-4 sm:mt-6">
               <div className="grid grid-cols-3 gap-2 md:gap-4 w-full max-w-md">
                 {/* Grid items will be rendered by HomePageWrapper */}
               </div>
