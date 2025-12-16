@@ -11,18 +11,14 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="w-full border-b bg-background/95 -mt-8 md:-mt-10 relative z-20">
+      <header className="w-full border-b bg-background/95">
         {isHome ? (
-          /* Homepage: Full-width promo banner with no margins - overlaps ad arrow */
-          <div className="w-full flex items-center justify-center h-auto relative overflow-visible">
-            {/* Animated background gradient - extends upward to cover ad arrow */}
+          /* Homepage: Full-width promo banner with no margins */
+          <div className="w-full flex items-center justify-center h-auto relative overflow-hidden">
+            {/* Animated background gradient */}
             <div 
-              className="absolute opacity-100"
+              className="absolute inset-0 opacity-100"
               style={{
-                top: '-2rem',
-                left: 0,
-                right: 0,
-                bottom: 0,
                 background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 15%, #fbbf24 30%, #f59e0b 45%, #dc2626 60%, #b91c1c 75%, #991b1b 90%, #7c2d12 100%)',
                 backgroundSize: '200% 200%',
                 animation: 'gradientShift 8s ease infinite',
