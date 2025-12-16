@@ -76,6 +76,8 @@ export default function OrderStatusPage() {
             status: sh.status,
             timestamp: new Date(sh.created_at),
           })),
+          orderType: o.order_type || 'customer',
+          assignedEmployeeId: o.assigned_employee_id ?? null,
         }));
         setMyOrders(mapped);
         // Auto-select the most recent non-Success order
@@ -175,6 +177,8 @@ export default function OrderStatusPage() {
           status: sh.status,
           timestamp: new Date(sh.created_at),
         })),
+        orderType: data.order_type || 'customer',
+        assignedEmployeeId: data.assigned_employee_id ?? null,
       };
       setSearchedOrder(mapped);
     } else {
@@ -461,6 +465,8 @@ export default function OrderStatusPage() {
                                   status: sh.status,
                                   timestamp: new Date(sh.created_at),
                                 })),
+                                orderType: o.order_type || 'customer',
+                                assignedEmployeeId: o.assigned_employee_id ?? null,
                               }));
                               setMyOrders(mapped);
                               setSelectedOrder(null);

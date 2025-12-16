@@ -18,6 +18,8 @@ export type OrderInsert = {
   canceled_by?: string | null;
   canceled_at?: string | null;
   cancel_reason?: string | null;
+  order_type?: 'customer' | 'internal';
+  assigned_employee_id?: string | null;
 };
 
 /**
@@ -216,6 +218,8 @@ export async function fetchOrderForCustomer(orderId: string, name: string) {
               created_at: order.created_at,
               updated_at: order.updated_at,
               order_status_history: statusHistory,
+              order_type: order.order_type || 'customer',
+              assigned_employee_id: order.assigned_employee_id ?? null,
             },
             error: null,
           };
@@ -286,6 +290,8 @@ export async function fetchOrderForCustomer(orderId: string, name: string) {
         created_at: matchedOrder.created_at,
         updated_at: matchedOrder.updated_at,
         order_status_history: (matchedOrder.order_status_history as any[]) || [],
+        order_type: matchedOrder.order_type || 'customer',
+        assigned_employee_id: matchedOrder.assigned_employee_id ?? null,
       },
       error: null,
     };

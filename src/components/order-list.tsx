@@ -52,6 +52,8 @@ export type Order = {
   distance: number;
   statusHistory: StatusHistory[];
   branchId?: string | null;
+  orderType?: 'customer' | 'internal';
+  assignedEmployeeId?: string | null;
 };
 
 type OrderListProps = {
@@ -195,7 +197,16 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     return (
         <>
         <TableRow>
-            <TableCell className="font-medium">{workingOrder.id}</TableCell>
+            <TableCell className="font-medium">
+              <div className="flex items-center gap-2">
+                {workingOrder.id}
+                {workingOrder.orderType === 'internal' && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                    Internal
+                  </Badge>
+                )}
+              </div>
+            </TableCell>
             <TableCell>
                 {isEditing ? (
                     <Input 

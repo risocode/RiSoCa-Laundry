@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ManualOrderDialog } from '@/components/manual-order-dialog';
+import { InternalOrderDialog } from '@/components/internal-order-dialog';
 import { createOrderWithHistory, fetchLatestOrderId, generateNextOrderId, updateOrderFields, updateOrderStatus } from '@/lib/api/orders';
 import { supabase } from '@/lib/supabase-client';
 import { useAuthSession } from '@/hooks/use-auth-session';
@@ -24,6 +25,7 @@ export function OrdersPage() {
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loadingAdmin, setLoadingAdmin] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isInternalDialogOpen, setIsInternalDialogOpen] = useState(false);
 
   const mapOrder = (o: any): Order => {
     const totalNum = typeof o.total === 'string' ? parseFloat(o.total) : Number(o.total);
@@ -63,6 +65,8 @@ export function OrdersPage() {
         timestamp: new Date(sh.created_at),
       })) as StatusHistory[],
       branchId: o.branch_id ?? null,
+      orderType: o.order_type || 'customer',
+      assignedEmployeeId: o.assigned_employee_id ?? null,
     };
 
     // CRITICAL: Ensure balance is never undefined
@@ -93,6 +97,8 @@ export function OrdersPage() {
         service_package,
         distance,
         branch_id,
+        order_type,
+        assigned_employee_id,
         order_status_history(*)
       `)
       .order('created_at', { ascending: false });
@@ -173,7 +179,7 @@ export function OrdersPage() {
         }
       }
 
-      const patch = {
+      const patch: any = {
         customer_name: updatedOrder.customerName,
         contact_number: updatedOrder.contactNumber,
         weight: updatedOrder.weight,
@@ -186,6 +192,14 @@ export function OrdersPage() {
         service_package: updatedOrder.servicePackage,
         status: updatedOrder.status,
       };
+      
+      // Include order_type and assigned_employee_id if they exist
+      if (updatedOrder.orderType !== undefined) {
+        patch.order_type = updatedOrder.orderType;
+      }
+      if (updatedOrder.assignedEmployeeId !== undefined) {
+        patch.assigned_employee_id = updatedOrder.assignedEmployeeId;
+      }
 
       // Use finalOrderId (which might be the new RKR ID) for the update
       const { error: patchError } = await updateOrderFields(finalOrderId, patch as any);
@@ -230,7 +244,7 @@ export function OrdersPage() {
     const newOrderId = generateNextOrderId(latestId);
     const initialStatus = 'Order Placed';
 
-    const { error } = await createOrderWithHistory({
+      const { error } = await createOrderWithHistory({
       id: newOrderId,
       customer_id: user?.id ?? 'admin-manual',
       customer_name: newOrder.customerName,
@@ -243,6 +257,8 @@ export function OrdersPage() {
       status: initialStatus,
       total: newOrder.total,
       is_paid: newOrder.isPaid,
+      order_type: newOrder.orderType || 'customer',
+      assigned_employee_id: newOrder.assignedEmployeeId || null,
     });
 
     if (error) {
@@ -260,18 +276,20 @@ export function OrdersPage() {
         }
         const retryOrderId = generateNextOrderId(retryLatestId);
         const { error: retryCreateError } = await createOrderWithHistory({
-          id: retryOrderId,
-          customer_id: user?.id ?? 'admin-manual',
-          customer_name: newOrder.customerName,
-          contact_number: newOrder.contactNumber,
-          service_package: newOrder.servicePackage as any,
-          weight: newOrder.weight,
-          loads: newOrder.load,
-          distance: newOrder.distance,
-          delivery_option: newOrder.deliveryOption,
-          status: initialStatus,
-          total: newOrder.total,
-          is_paid: newOrder.isPaid,
+        id: retryOrderId,
+        customer_id: user?.id ?? 'admin-manual',
+        customer_name: newOrder.customerName,
+        contact_number: newOrder.contactNumber,
+        service_package: newOrder.servicePackage as any,
+        weight: newOrder.weight,
+        loads: newOrder.load,
+        distance: newOrder.distance,
+        delivery_option: newOrder.deliveryOption,
+        status: initialStatus,
+        total: newOrder.total,
+        is_paid: newOrder.isPaid,
+        order_type: newOrder.orderType || 'customer',
+        assigned_employee_id: newOrder.assignedEmployeeId || null,
         });
         if (retryCreateError) {
           toast({ 
@@ -311,9 +329,14 @@ export function OrdersPage() {
             <CardTitle className="text-lg sm:text-xl">Orders</CardTitle>
             <CardDescription className="text-xs sm:text-sm">View and update all customer orders.</CardDescription>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)} className="w-full sm:w-auto">
-            New Order
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button onClick={() => setIsInternalDialogOpen(true)} variant="outline" className="flex-1 sm:flex-none">
+              Internal Order
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)} className="flex-1 sm:flex-none">
+              New Order
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-y-auto overflow-x-hidden scrollable pt-4 pb-4">
           {loadingAdmin ? (
@@ -337,6 +360,11 @@ export function OrdersPage() {
       <ManualOrderDialog
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
+        onAddOrder={handleAddOrder}
+      />
+      <InternalOrderDialog
+        isOpen={isInternalDialogOpen}
+        onClose={() => setIsInternalDialogOpen(false)}
         onAddOrder={handleAddOrder}
       />
     </>

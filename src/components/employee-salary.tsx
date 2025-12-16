@@ -24,6 +24,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Loader2, Inbox, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Order } from '@/components/order-list';
@@ -69,7 +70,7 @@ export function EmployeeSalary() {
     // Fetch all orders, we'll filter by status and is_paid in the component
     const { data, error } = await supabase
       .from('orders')
-      .select('*');
+      .select('*, order_type, assigned_employee_id');
     if (error) {
       console.error("Failed to load orders", error);
       setLoading(false);
@@ -90,6 +91,8 @@ export function EmployeeSalary() {
       servicePackage: o.service_package,
       distance: o.distance ?? 0,
       statusHistory: [],
+      orderType: o.order_type || 'customer',
+      assignedEmployeeId: o.assigned_employee_id ?? null,
     }));
     setOrders(mapped);
     setLoading(false);
@@ -238,7 +241,13 @@ export function EmployeeSalary() {
   const dailySalaries: DailySalary[] = Object.entries(completedOrdersByDate)
     .map(([dateStr, orders]) => {
         const totalLoads = orders.reduce((sum, o) => sum + o.load, 0);
-        const totalSalary = totalLoads * SALARY_PER_LOAD;
+        // Calculate base salary from loads
+        const baseSalary = totalLoads * SALARY_PER_LOAD;
+        // Calculate internal order bonuses (+30 per assigned internal order)
+        const internalOrderBonus = orders
+          .filter(o => o.orderType === 'internal' && o.assignedEmployeeId)
+          .length * 30;
+        const totalSalary = baseSalary + internalOrderBonus;
         
         return {
             date: new Date(dateStr),
@@ -340,7 +349,20 @@ export function EmployeeSalary() {
                            const dateKey = format(date, 'yyyy-MM-dd');
                            const payment = dailyPayments[dateKey]?.[emp.id];
                            const isPaid = payment?.is_paid ?? false;
-                           const employeeSalary = employees.length > 0 ? totalSalary / employees.length : 0;
+                           
+                           // Calculate employee-specific salary
+                           // Base: equal share of customer order loads
+                           const customerOrders = orders.filter(o => o.orderType !== 'internal');
+                           const customerLoads = customerOrders.reduce((sum, o) => sum + o.load, 0);
+                           const baseSalaryPerEmployee = employees.length > 0 ? (customerLoads * SALARY_PER_LOAD) / employees.length : 0;
+                           
+                           // Bonus: +30 for each internal order assigned to this employee
+                           const internalOrdersForEmployee = orders.filter(
+                             o => o.orderType === 'internal' && o.assignedEmployeeId === emp.id
+                           );
+                           const internalBonus = internalOrdersForEmployee.length * 30;
+                           
+                           const employeeSalary = baseSalaryPerEmployee + internalBonus;
                            const paymentKey = `${emp.id}-${dateKey}`;
                            
                            return (
@@ -449,9 +471,24 @@ export function EmployeeSalary() {
                                 </div>
                               )}
                             </TableCell>
-                            <TableCell className="text-xs">{order.customerName}</TableCell>
+                            <TableCell className="text-xs">
+                              <div className="flex items-center gap-2">
+                                {order.customerName}
+                                {order.orderType === 'internal' && (
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 text-xs">
+                                    Internal
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
                             <TableCell className="text-center text-xs">{order.load}</TableCell>
-                            <TableCell className="text-right text-xs">₱{(order.load * SALARY_PER_LOAD).toFixed(2)}</TableCell>
+                            <TableCell className="text-right text-xs">
+                              {order.orderType === 'internal' && order.assignedEmployeeId ? (
+                                <span className="text-green-600 font-semibold">₱30.00</span>
+                              ) : (
+                                `₱${(order.load * SALARY_PER_LOAD).toFixed(2)}`
+                              )}
+                            </TableCell>
                             </TableRow>
                         ))}
                         </TableBody>

@@ -81,6 +81,8 @@ export default function MyOrdersPage() {
             status: sh.status,
             timestamp: new Date(sh.created_at),
           })),
+          orderType: o.order_type || 'customer',
+          assignedEmployeeId: o.assigned_employee_id ?? null,
         }));
         setMyOrders(mapped);
         // Auto-select the most recent order
