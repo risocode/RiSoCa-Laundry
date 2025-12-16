@@ -210,6 +210,7 @@ export function AppHeader() {
                   <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
                 </div>
               </div>
+              </div>
             </div>
           </div>
         ) : (
