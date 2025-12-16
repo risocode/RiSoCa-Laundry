@@ -10,28 +10,39 @@ function CountdownTimer() {
     hours: number;
     minutes: number;
     seconds: number;
+    isDuringPromo?: boolean;
   } | null>(null);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date();
-      const promoDate = new Date('2025-12-17');
-      promoDate.setHours(23, 59, 59, 999); // End of day on Dec 17
+      const promoStart = new Date('2025-12-17T18:00:00'); // Dec 17, 6:00 PM
+      const promoEnd = new Date('2025-12-17T20:00:00');   // Dec 17, 8:00 PM
       
-      // If it's Dec 17, countdown to end of day, otherwise countdown to Dec 17 start
-      const targetDate = now.getDate() === 17 && now.getMonth() === 11
-        ? new Date('2025-12-17T23:59:59')
-        : new Date('2025-12-17T00:00:00');
-
+      let targetDate: Date;
+      let isDuringPromo = false;
+      
+      if (now < promoStart) {
+        // Before promo starts: countdown to start
+        targetDate = promoStart;
+      } else if (now >= promoStart && now < promoEnd) {
+        // During promo: countdown to end
+        targetDate = promoEnd;
+        isDuringPromo = true;
+      } else {
+        // After promo ends: hide countdown
+        return null;
+      }
+    
       const difference = targetDate.getTime() - now.getTime();
-
+    
       if (difference > 0) {
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
         const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-        return { days, hours, minutes, seconds };
+    
+        return { days, hours, minutes, seconds, isDuringPromo };
       }
       return null;
     };
@@ -49,7 +60,7 @@ function CountdownTimer() {
   }
 
   const isPromoDay = new Date().getDate() === 17 && new Date().getMonth() === 11;
-  const label = isPromoDay ? 'Promo Ends In:' : 'Promo Starts In:';
+  const label = timeLeft.isDuringPromo ? 'Promo Ends In:' : 'Promo Starts In:';
 
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
