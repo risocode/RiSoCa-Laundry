@@ -116,43 +116,44 @@ export function AppHeader() {
     <>
       <header className="w-full border-b bg-background/95">
         {isHome && showPromoBanner ? (
-          /* Homepage: Full-width promo banner in header */
-          <div className="w-full flex items-center justify-center h-auto relative overflow-hidden">
-            {/* Animated background gradient */}
-            <div 
-              className="absolute inset-0 opacity-100"
-              style={{
-                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 15%, #fbbf24 30%, #f59e0b 45%, #dc2626 60%, #b91c1c 75%, #991b1b 90%, #7c2d12 100%)',
-                backgroundSize: '200% 200%',
-                animation: 'gradientShift 8s ease infinite',
-              }}
-            />
-            
-            {/* Sparkle overlay */}
-            <div className="absolute inset-0 opacity-30">
-              <div className="absolute top-2 left-[10%] animate-pulse">
-                <Sparkles className="h-3 w-3 text-yellow-300" />
+          /* Homepage: Promo banner in header with container size */
+          <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
+            <div className="relative overflow-hidden rounded-lg">
+              {/* Animated background gradient */}
+              <div 
+                className="absolute inset-0 opacity-100"
+                style={{
+                  background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 15%, #fbbf24 30%, #f59e0b 45%, #dc2626 60%, #b91c1c 75%, #991b1b 90%, #7c2d12 100%)',
+                  backgroundSize: '200% 200%',
+                  animation: 'gradientShift 8s ease infinite',
+                }}
+              />
+              
+              {/* Sparkle overlay */}
+              <div className="absolute inset-0 opacity-30">
+                <div className="absolute top-2 left-[10%] animate-pulse">
+                  <Sparkles className="h-3 w-3 text-yellow-300" />
+                </div>
+                <div className="absolute top-1 left-[30%] animate-pulse delay-75">
+                  <Sparkles className="h-2 w-2 text-yellow-200" />
+                </div>
+                <div className="absolute top-3 left-[50%] animate-pulse delay-150">
+                  <Sparkles className="h-3 w-3 text-yellow-300" />
+                </div>
+                <div className="absolute top-1 left-[70%] animate-pulse delay-200">
+                  <Sparkles className="h-2 w-2 text-yellow-200" />
+                </div>
+                <div className="absolute top-2 left-[90%] animate-pulse delay-300">
+                  <Sparkles className="h-3 w-3 text-yellow-300" />
+                </div>
               </div>
-              <div className="absolute top-1 left-[30%] animate-pulse delay-75">
-                <Sparkles className="h-2 w-2 text-yellow-200" />
-              </div>
-              <div className="absolute top-3 left-[50%] animate-pulse delay-150">
-                <Sparkles className="h-3 w-3 text-yellow-300" />
-              </div>
-              <div className="absolute top-1 left-[70%] animate-pulse delay-200">
-                <Sparkles className="h-2 w-2 text-yellow-200" />
-              </div>
-              <div className="absolute top-2 left-[90%] animate-pulse delay-300">
-                <Sparkles className="h-3 w-3 text-yellow-300" />
-              </div>
-            </div>
 
-            <div
-              className={cn(
-                "flex items-center gap-2 sm:gap-3 w-full px-4 py-3 relative z-10",
-                "text-xs sm:text-sm"
-              )}
-            >
+              <div
+                className={cn(
+                  "flex items-center gap-2 sm:gap-3 w-full px-3 sm:px-4 py-2 relative z-10",
+                  "text-xs sm:text-sm"
+                )}
+              >
               <div
                 className={cn(
                   "flex items-center gap-2 sm:gap-3 rounded-lg border-2 border-yellow-400/50 px-3 sm:px-4 py-2 shadow-lg w-full",
@@ -210,7 +211,6 @@ export function AppHeader() {
                 </div>
               </div>
             </div>
-
           </div>
         ) : (
           /* Other pages: Logo only */

@@ -230,7 +230,7 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
         <AppHeader />
 
         <main className="flex-1 overflow-y-auto sm:overflow-hidden pb-20">
-          <div className="container mx-auto px-4 py-3 sm:py-4 text-center h-full flex flex-col sm:justify-center">
+          <div className="container mx-auto px-4 py-3 sm:py-4 mt-2 sm:mt-4 text-center h-full flex flex-col sm:justify-center">
 
             {/* Logo */}
             <div className="mb-4 sm:mb-6 flex flex-col items-center">
