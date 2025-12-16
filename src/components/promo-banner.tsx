@@ -128,13 +128,14 @@ export function PromoBanner() {
             }}
           />
           
-          {/* Limited Time Badge with Countdown and Date */}
+          {/* Limited Time Badge with Countdown */}
           <div className="flex flex-col items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-md animate-pulse">
               Once a Year Only!
             </div>
             <CountdownTimer />
-            <span className="text-yellow-900 font-semibold text-xs sm:text-sm text-center">
+            {/* Date for mobile only */}
+            <span className="text-yellow-900 font-semibold text-xs sm:text-sm text-center sm:hidden">
               <strong className="text-red-700">December 17, 2025</strong>
             </span>
           </div>
@@ -145,12 +146,18 @@ export function PromoBanner() {
           </div>
 
           {/* Main Text */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center flex-1 w-full min-w-0">
-            <span className="text-yellow-900 font-bold text-xs sm:text-sm">
-              ✨ <strong className="text-red-700 text-sm sm:text-base">Special Offer!</strong> ✨
-            </span>
-            <span className="text-yellow-900 font-bold text-xs sm:text-sm">
-              — Only <strong className="text-red-700 text-base sm:text-lg">₱150 per load</strong>! 🎉
+          <div className="flex flex-col items-center gap-1 sm:gap-2 flex-1 w-full min-w-0">
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
+              <span className="text-yellow-900 font-bold text-xs sm:text-sm">
+                ✨ <strong className="text-red-700 text-sm sm:text-base">Special Offer!</strong> ✨
+              </span>
+              <span className="text-yellow-900 font-bold text-xs sm:text-sm">
+                — Only <strong className="text-red-700 text-base sm:text-lg">₱150 per load</strong>! 🎉
+              </span>
+            </div>
+            {/* Date for desktop only - below Special Offer */}
+            <span className="text-yellow-900 font-semibold text-xs sm:text-sm text-center hidden sm:block">
+              <strong className="text-red-700">December 17, 2025</strong>
             </span>
           </div>
 
