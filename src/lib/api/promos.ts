@@ -23,7 +23,8 @@ export type Promo = {
 
 /**
  * Get the currently active promo (if any)
- * Returns promo if current time is between start_date and end_date and is_active = true
+ * Returns promo if is_active = true and current time is before end_date
+ * This includes upcoming promos (before start_date) and active promos (between start and end)
  */
 export async function getActivePromo() {
   const now = new Date().toISOString();
@@ -32,8 +33,7 @@ export async function getActivePromo() {
     .from('promos')
     .select('*')
     .eq('is_active', true)
-    .lte('start_date', now)
-    .gte('end_date', now)
+    .gte('end_date', now) // Promo hasn't ended yet
     .order('start_date', { ascending: false })
     .limit(1)
     .maybeSingle();

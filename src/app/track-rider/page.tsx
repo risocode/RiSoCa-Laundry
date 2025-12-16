@@ -1,14 +1,12 @@
 
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
-import { PromoBanner } from '@/components/promo-banner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function TrackRiderPage() {
   return (
     <div className="flex flex-col h-screen">
       <AppHeader />
-      <PromoBanner />
       <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">
         <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-start min-h-full">
         <div className="flex flex-col items-center text-center mb-8">

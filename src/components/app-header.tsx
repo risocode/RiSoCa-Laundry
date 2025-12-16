@@ -115,8 +115,8 @@ export function AppHeader() {
   return (
     <>
       <header className="w-full border-b bg-background/95">
-        {isHome && !hidePromoBanner ? (
-          /* Homepage: Full-width promo banner with no margins */
+        {!hidePromoBanner ? (
+          /* Promo banner on all pages when active */
           <div className="w-full flex items-center justify-center h-auto relative overflow-hidden">
             {/* Animated background gradient */}
             <div 
@@ -213,7 +213,7 @@ export function AppHeader() {
 
           </div>
         ) : (
-          /* Other pages: Logo only */
+          /* No active promo: Show logo only */
           <div className="container flex h-16 items-center px-4">
             <Link href="/" className="flex items-center gap-2 flex-shrink-0">
               <WashingMachine className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />

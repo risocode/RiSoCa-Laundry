@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
-import { PromoBanner } from '@/components/promo-banner';
 import { Button } from '@/components/ui/button';
 import { Download, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -87,7 +86,6 @@ export default function DownloadAppPage() {
   return (
     <div className="flex flex-col h-screen">
       <AppHeader />
-      <PromoBanner />
       <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">
         <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-full">
           <div className="flex flex-col items-center text-center max-w-md">

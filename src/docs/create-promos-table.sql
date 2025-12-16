@@ -47,9 +47,10 @@ CREATE POLICY "Admins can manage promos"
     )
   );
 
--- Allow everyone to read active promos
+-- Allow everyone (including anonymous users) to read active promos
 CREATE POLICY "Everyone can read active promos"
   ON promos
   FOR SELECT
-  USING (is_active = true);
+  USING (is_active = true)
+  WITH CHECK (true);
 
