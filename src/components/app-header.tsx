@@ -116,8 +116,8 @@ export function AppHeader() {
     <>
       <header className="w-full border-b bg-background/95">
         {isHome && showPromoBanner ? (
-          /* Homepage: Promo banner in header with container size */
-          <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
+          /* Homepage: Promo banner in header with container size - minimized */
+          <div className="container mx-auto py-1">
             <div className="relative overflow-hidden rounded-lg">
               {/* Animated background gradient */}
               <div 
@@ -131,32 +131,32 @@ export function AppHeader() {
               
               {/* Sparkle overlay */}
               <div className="absolute inset-0 opacity-30">
-                <div className="absolute top-2 left-[10%] animate-pulse">
-                  <Sparkles className="h-3 w-3 text-yellow-300" />
+                <div className="absolute top-1 left-[10%] animate-pulse">
+                  <Sparkles className="h-2 w-2 text-yellow-300" />
                 </div>
-                <div className="absolute top-1 left-[30%] animate-pulse delay-75">
-                  <Sparkles className="h-2 w-2 text-yellow-200" />
+                <div className="absolute top-0.5 left-[30%] animate-pulse delay-75">
+                  <Sparkles className="h-1.5 w-1.5 text-yellow-200" />
                 </div>
-                <div className="absolute top-3 left-[50%] animate-pulse delay-150">
-                  <Sparkles className="h-3 w-3 text-yellow-300" />
+                <div className="absolute top-1.5 left-[50%] animate-pulse delay-150">
+                  <Sparkles className="h-2 w-2 text-yellow-300" />
                 </div>
-                <div className="absolute top-1 left-[70%] animate-pulse delay-200">
-                  <Sparkles className="h-2 w-2 text-yellow-200" />
+                <div className="absolute top-0.5 left-[70%] animate-pulse delay-200">
+                  <Sparkles className="h-1.5 w-1.5 text-yellow-200" />
                 </div>
-                <div className="absolute top-2 left-[90%] animate-pulse delay-300">
-                  <Sparkles className="h-3 w-3 text-yellow-300" />
+                <div className="absolute top-1 left-[90%] animate-pulse delay-300">
+                  <Sparkles className="h-2 w-2 text-yellow-300" />
                 </div>
               </div>
 
               <div
                 className={cn(
-                  "flex items-center gap-2 sm:gap-3 w-full px-3 sm:px-4 py-2 relative z-10",
+                  "flex items-center gap-1.5 sm:gap-2 w-full px-2 sm:px-3 py-1 relative z-10",
                   "text-xs sm:text-sm"
                 )}
               >
               <div
                 className={cn(
-                  "flex items-center gap-2 sm:gap-3 rounded-lg border-2 border-yellow-400/50 px-3 sm:px-4 py-2 shadow-lg w-full",
+                  "flex items-center gap-1.5 sm:gap-2 rounded-lg border-2 border-yellow-400/50 px-2 sm:px-3 py-1 shadow-lg w-full",
                   "bg-gradient-to-r from-yellow-50 via-orange-50 to-red-50",
                   "backdrop-blur-sm"
                 )}
@@ -173,41 +173,41 @@ export function AppHeader() {
                 />
                 
                 {/* Limited Time Badge with Countdown */}
-                <div className="flex flex-col items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                  <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider shadow-md animate-pulse">
+                <div className="flex flex-col items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                  <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider shadow-md animate-pulse">
                     Once a Year Only!
                   </div>
                   <CountdownTimer promo={promo} />
                   {/* Date for mobile only */}
-                  <span className="text-yellow-900 font-semibold text-xs sm:text-sm text-center sm:hidden">
+                  <span className="text-yellow-900 font-semibold text-[10px] sm:text-xs text-center sm:hidden">
                     <strong className="text-red-700">{promo.display_date}</strong>
                   </span>
                 </div>
 
                 {/* Gift Icon with animation */}
                 <div className="flex-shrink-0 animate-bounce" style={{ animationDuration: '2s' }}>
-                  <Gift className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600 drop-shadow-lg" fill="currentColor" />
+                  <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600 drop-shadow-lg" fill="currentColor" />
                 </div>
 
                 {/* Main Text */}
-                <div className="flex flex-col items-center gap-1 sm:gap-2 flex-1 w-full min-w-0">
-                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
-                    <span className="text-yellow-900 font-bold text-xs sm:text-sm">
-                      ✨ <strong className="text-red-700 text-sm sm:text-base">Special Offer!</strong> ✨
+                <div className="flex flex-col items-center gap-0.5 sm:gap-1 flex-1 w-full min-w-0">
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-center">
+                    <span className="text-yellow-900 font-bold text-[10px] sm:text-xs">
+                      ✨ <strong className="text-red-700 text-xs sm:text-sm">Special Offer!</strong> ✨
                     </span>
-                    <span className="text-yellow-900 font-bold text-xs sm:text-sm">
-                      — Only <strong className="text-red-700 text-base sm:text-lg">₱{promo.price_per_load} per load</strong>! 🎉
+                    <span className="text-yellow-900 font-bold text-[10px] sm:text-xs">
+                      — Only <strong className="text-red-700 text-sm sm:text-base">₱{promo.price_per_load} per load</strong>! 🎉
                     </span>
                   </div>
                   {/* Date for desktop only - below Special Offer */}
-                  <span className="text-yellow-900 font-semibold text-xs sm:text-sm text-center hidden sm:block">
+                  <span className="text-yellow-900 font-semibold text-[10px] sm:text-xs text-center hidden sm:block">
                     <strong className="text-red-700">{promo.display_date}</strong>
                   </span>
                 </div>
 
                 {/* Right side sparkle */}
                 <div className="flex-shrink-0 animate-pulse">
-                  <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
+                  <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
                 </div>
               </div>
               </div>
