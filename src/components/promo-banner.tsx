@@ -72,7 +72,7 @@ export function PromoBanner() {
             <span className="text-yellow-900 font-bold text-xs sm:text-sm">
               ✨ <strong className="text-red-700 text-sm sm:text-base">Special Offer!</strong> ✨
             </span>
-            <span className="text-yellow-900 font-semibold hidden sm:inline">
+            <span className="text-yellow-900 font-semibold text-xs sm:text-sm">
               <strong className="text-red-700">December 17, 2025</strong>
             </span>
             <span className="text-yellow-900 font-bold text-xs sm:text-sm">
