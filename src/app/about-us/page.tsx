@@ -80,20 +80,20 @@ export default function AboutUsPage() {
 
         // Fetch average rating
         const { average, count: ratingCount } = await getAverageRating();
-        const averageRating = average > 0 ? average.toFixed(1) : '0.0';
+        const averageRating = average > 0 ? Math.round(average * 10) / 10 : 0;
         const ratingDisplay = average > 0 ? `${averageRating}/5` : '';
 
         setStats([
           { 
             label: 'Orders Completed', 
-            value: totalOrdersCount ? `${totalOrdersCount}+` : '0+', 
+            value: totalOrdersCount ? totalOrdersCount.toString() : '0', 
             icon: Package, 
             color: 'text-blue-600',
             loading: false
           },
           { 
             label: 'Happy Customers', 
-            value: uniqueCustomers > 0 ? `${uniqueCustomers}+` : '0+', 
+            value: uniqueCustomers > 0 ? uniqueCustomers.toString() : '0', 
             icon: Smile, 
             color: 'text-green-600',
             loading: false,
