@@ -501,125 +501,162 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
 
     return (
         <>
-        <Card>
+        <Card className="border-2 hover:border-primary/30 transition-all shadow-md">
             <Accordion type="single" collapsible>
                 <AccordionItem value={workingOrder.id} className="border-b-0">
                     <AccordionTrigger className="p-4 hover:no-underline">
-                         <div className="flex flex-col items-start text-left w-full gap-1">
+                         <div className="flex flex-col items-start text-left w-full gap-2">
                             <div className='flex items-center justify-between w-full'>
-                                <span className="font-bold text-lg">{workingOrder.id}</span>
+                                <div className="flex items-center gap-2">
+                                    <Package className="h-4 w-4 text-primary" />
+                                    <span className="font-bold text-lg text-primary">{workingOrder.id}</span>
+                                    {workingOrder.orderType === 'internal' && (
+                                      <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700 text-xs font-semibold">
+                                        Internal
+                                      </Badge>
+                                    )}
+                                </div>
                                 <Badge className={cn(
                                     getStatusColor(workingOrder.status),
                                     "hover:" + getStatusColor(workingOrder.status),
-                                    "text-white text-xs"
+                                    "text-white text-xs font-semibold shadow-sm"
                                 )}>
                                     {workingOrder.status}
                                 </Badge>
                             </div>
                             <div className="flex flex-wrap items-center justify-between w-full gap-x-3 text-foreground/90">
-                                <span className="text-base font-medium">{workingOrder.customerName}</span>
-                                {(() => {
-                                    const badgeInfo = getPaymentBadgeInfo(workingOrder.isPaid, isPartiallyPaid);
-                                    const amountText = isPartiallyPaid 
-                                        ? `₱${workingOrder.balance!.toFixed(2)}` 
-                                        : isFullyPaid 
-                                            ? `₱${workingOrder.total.toFixed(2)}` 
-                                            : `₱${workingOrder.total.toFixed(2)}`;
-                                    
-                                    return badgeInfo.clickable ? (
-                                        <Badge 
-                                            className={cn(
-                                                `${badgeInfo.color} hover:${badgeInfo.color} text-white cursor-pointer hover:opacity-80 transition-opacity text-xs`
-                                            )}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setIsPaymentDialogOpen(true);
-                                            }}
-                                            role="button"
-                                            tabIndex={0}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                    e.preventDefault();
+                                <div className="flex items-center gap-2">
+                                    <User className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-base font-semibold">{workingOrder.customerName}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                    {(() => {
+                                        const badgeInfo = getPaymentBadgeInfo(workingOrder.isPaid, isPartiallyPaid);
+                                        const amountText = isPartiallyPaid 
+                                            ? `₱${workingOrder.balance!.toFixed(0)}` 
+                                            : isFullyPaid 
+                                                ? `₱${workingOrder.total.toFixed(0)}` 
+                                                : `₱${workingOrder.total.toFixed(0)}`;
+                                        
+                                        return badgeInfo.clickable ? (
+                                            <Badge 
+                                                className={cn(
+                                                    `${badgeInfo.color} hover:${badgeInfo.color} text-white cursor-pointer hover:opacity-90 transition-opacity text-xs font-semibold shadow-sm`
+                                                )}
+                                                onClick={(e) => {
                                                     e.stopPropagation();
                                                     setIsPaymentDialogOpen(true);
-                                                }
-                                            }}
-                                        >
-                                            {badgeInfo.text} {amountText}
-                                        </Badge>
-                                    ) : (
-                                        <Badge 
-                                            className={`${badgeInfo.color} hover:${badgeInfo.color} text-white text-xs`}
-                                        >
-                                            {badgeInfo.text} {amountText}
-                                        </Badge>
-                                    );
-                                })()}
+                                                }}
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setIsPaymentDialogOpen(true);
+                                                    }
+                                                }}
+                                            >
+                                                {badgeInfo.text} {amountText}
+                                            </Badge>
+                                        ) : (
+                                            <Badge 
+                                                className={`${badgeInfo.color} text-white text-xs font-semibold shadow-sm`}
+                                            >
+                                                {badgeInfo.text} {amountText}
+                                            </Badge>
+                                        );
+                                    })()}
+                                </div>
                             </div>
                         </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-4 pt-0">
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 gap-3">
-                                <div className="space-y-1">
-                                    <Label htmlFor={`customer-name-mob-${order.id}`}>Customer Name</Label>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor={`customer-name-mob-${order.id}`} className="flex items-center gap-2">
+                                        <User className="h-3 w-3 text-muted-foreground" />
+                                        Customer Name
+                                    </Label>
                                     <Input 
                                         id={`customer-name-mob-${order.id}`} 
                                         type="text" 
                                         value={editableOrder.customerName} 
                                         onChange={e => handleFieldChange('customerName', e.target.value)} 
-                                        className="h-8" 
+                                        className="h-9 border-2" 
                                         disabled={!isEditing || isSaving} 
                                     />
                                 </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor={`contact-number-mob-${order.id}`}>Contact Number</Label>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor={`contact-number-mob-${order.id}`} className="flex items-center gap-2">
+                                        <Phone className="h-3 w-3 text-muted-foreground" />
+                                        Contact Number
+                                    </Label>
                                     <Input 
                                         id={`contact-number-mob-${order.id}`} 
                                         type="tel" 
                                         value={editableOrder.contactNumber} 
                                         onChange={e => handleFieldChange('contactNumber', e.target.value)} 
-                                        className="h-8" 
+                                        className="h-9 border-2" 
                                         disabled={!isEditing || isSaving} 
                                     />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1">
-                                    <Label htmlFor={`load-mob-${order.id}`}>Load</Label>
-                                    <Input id={`load-mob-${order.id}`} type="number" value={editableOrder.load} onChange={e => handleFieldChange('load', e.target.value)} className="h-8" disabled={!isEditing || isSaving} />
+                                <div className="space-y-1.5">
+                                    <Label htmlFor={`load-mob-${order.id}`} className="flex items-center gap-2">
+                                        <Layers className="h-3 w-3 text-muted-foreground" />
+                                        Load
+                                    </Label>
+                                    <Input id={`load-mob-${order.id}`} type="number" value={editableOrder.load} onChange={e => handleFieldChange('load', e.target.value)} className="h-9 border-2" disabled={!isEditing || isSaving} />
                                 </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor={`weight-mob-${order.id}`}>Weight (kg)</Label>
-                                    <Input id={`weight-mob-${order.id}`} type="number" value={editableOrder.weight} onChange={e => handleFieldChange('weight', e.target.value)} className="h-8" disabled={!isEditing || isSaving} />
+                                <div className="space-y-1.5">
+                                    <Label htmlFor={`weight-mob-${order.id}`} className="flex items-center gap-2">
+                                        <Weight className="h-3 w-3 text-muted-foreground" />
+                                        Weight (kg)
+                                    </Label>
+                                    <Input id={`weight-mob-${order.id}`} type="number" value={editableOrder.weight} onChange={e => handleFieldChange('weight', e.target.value)} className="h-9 border-2" disabled={!isEditing || isSaving} />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 items-end">
-                                <div className="space-y-1">
-                                    <Label htmlFor={`total-mob-${order.id}`}>Total (₱)</Label>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor={`total-mob-${order.id}`} className="flex items-center gap-2">
+                                        <DollarSign className="h-3 w-3 text-muted-foreground" />
+                                        Total (₱)
+                                    </Label>
                                     {isEditing ? (
-                                        <Input id={`total-mob-${order.id}`} type="number" value={editableOrder.total.toString()} onChange={e => handleFieldChange('total', e.target.value)} className="h-8" disabled={isSaving} />
+                                        <Input id={`total-mob-${order.id}`} type="number" value={editableOrder.total.toString()} onChange={e => handleFieldChange('total', e.target.value)} className="h-9 border-2 font-semibold" disabled={isSaving} />
                                     ) : (
                                         <div className="flex flex-col gap-1">
                                             {isPartiallyPaid ? (
                                                 <>
-                                                    <span className="line-through text-muted-foreground text-sm">₱{workingOrder.total.toFixed(2)}</span>
-                                                    <span className="text-red-600 font-semibold">₱{workingOrder.balance!.toFixed(2)}</span>
+                                                    <span className="line-through text-muted-foreground text-sm">₱{workingOrder.total.toFixed(0)}</span>
+                                                    <span className="text-orange-600 dark:text-orange-400 font-bold text-base">₱{workingOrder.balance!.toFixed(0)}</span>
                                                 </>
                                             ) : isFullyPaid ? (
-                                                <span className="text-green-600 font-semibold text-base">₱{workingOrder.total.toFixed(2)}</span>
+                                                <span className="text-green-600 dark:text-green-400 font-bold text-base">₱{workingOrder.total.toFixed(0)}</span>
                                             ) : (
-                                                <span className="text-red-600 font-semibold text-base">₱{workingOrder.total.toFixed(2)}</span>
+                                                <span className="text-red-600 dark:text-red-400 font-bold text-base">₱{workingOrder.total.toFixed(0)}</span>
                                             )}
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex flex-col items-start space-y-1">
-                                    <Label>Payment</Label>
+                                <div className="flex flex-col items-start space-y-1.5">
+                                    <Label className="flex items-center gap-2">
+                                        <CreditCard className="h-3 w-3 text-muted-foreground" />
+                                        Payment
+                                    </Label>
                                     {isEditing ? (
                                         <Button
                                             size="sm"
-                                            className={cn("h-8 w-20", getPaymentStatusColor(editableOrder.isPaid), `hover:${getPaymentStatusColor(editableOrder.isPaid)}`)}
+                                            className={cn(
+                                                "h-9 w-24 font-semibold shadow-sm",
+                                                editableOrder.isPaid 
+                                                    ? "bg-green-500 hover:bg-green-600 text-white" 
+                                                    : "bg-red-500 hover:bg-red-600 text-white"
+                                            )}
                                             onClick={() => handleFieldChange('isPaid', !editableOrder.isPaid)}
                                             disabled={isSaving}
                                         >
@@ -631,7 +668,7 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                             return badgeInfo.clickable ? (
                                                 <Badge 
                                                     className={cn(
-                                                        `${badgeInfo.color} hover:${badgeInfo.color} text-white cursor-pointer hover:opacity-80 transition-opacity`
+                                                        `${badgeInfo.color} hover:${badgeInfo.color} text-white cursor-pointer hover:opacity-90 transition-opacity font-semibold shadow-sm px-3 py-1.5`
                                                     )}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -651,7 +688,7 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                                 </Badge>
                                             ) : (
                                                 <Badge 
-                                                    className={`${badgeInfo.color} hover:${badgeInfo.color} text-white`}
+                                                    className={`${badgeInfo.color} text-white font-semibold shadow-sm px-3 py-1.5`}
                                                 >
                                                     {badgeInfo.text}
                                                 </Badge>
@@ -660,15 +697,18 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                     )}
                                 </div>
                             </div>
-                             {isEditing && (
-                                <div className="relative w-full">
-                                    <Label>Status</Label>
+                            <div className="space-y-1.5">
+                                <Label className="flex items-center gap-2">
+                                    <CheckCircle2 className="h-3 w-3 text-muted-foreground" />
+                                    Status
+                                </Label>
+                                {isEditing ? (
                                     <Select
                                         value={editableOrder.status}
                                         onValueChange={(value) => handleFieldChange('status', value)}
                                         disabled={isSaving}
                                     >
-                                        <SelectTrigger className="h-9">
+                                        <SelectTrigger className="h-9 border-2 font-semibold">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -677,20 +717,56 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                </div>
-                            )}
+                                ) : (
+                                    <Badge className={cn(
+                                        getStatusColor(workingOrder.status),
+                                        "hover:" + getStatusColor(workingOrder.status),
+                                        "text-white text-xs font-semibold shadow-sm px-3 py-1.5"
+                                    )}>
+                                        {workingOrder.status}
+                                    </Badge>
+                                )}
+                            </div>
 
-                            <div className="flex justify-center gap-2 pt-2">
+                            <div className="flex justify-end gap-2 pt-2 border-t">
                                 {isEditing ? (
                                     <>
-                                        <Button variant="ghost" onClick={handleCancel} disabled={isSaving}><X className="mr-2 h-4 w-4" /> Cancel</Button>
-                                        <Button onClick={handleSave} disabled={isSaving}>
-                                            {isSaving ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <Save className="mr-2 h-4 w-4" />}
-                                            Save
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={handleCancel} 
+                                            disabled={isSaving}
+                                            className="gap-2"
+                                        >
+                                            <X className="h-4 w-4" />
+                                            Cancel
+                                        </Button>
+                                        <Button 
+                                            onClick={handleSave} 
+                                            disabled={isSaving}
+                                            className="gap-2 bg-primary hover:bg-primary/90 shadow-sm"
+                                        >
+                                            {isSaving ? (
+                                                <>
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Saving...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="h-4 w-4" />
+                                                    Save
+                                                </>
+                                            )}
                                         </Button>
                                     </>
                                 ) : (
-                                    <Button variant="outline" onClick={() => setIsEditing(true)} className="w-full"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                                    <Button 
+                                        variant="outline" 
+                                        onClick={() => setIsEditing(true)} 
+                                        className="gap-2 hover:bg-primary/10 hover:border-primary hover:text-primary"
+                                    >
+                                        <Edit className="h-4 w-4" />
+                                        Edit
+                                    </Button>
                                 )}
                             </div>
                         </div>
@@ -711,13 +787,115 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
 }
 
 export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const ordersPerPage = 10;
+
+  // Calculate pagination
+  const totalPages = Math.ceil(orders.length / ordersPerPage);
+  const startIndex = (currentPage - 1) * ordersPerPage;
+  const endIndex = startIndex + ordersPerPage;
+  const paginatedOrders = orders.slice(startIndex, endIndex);
+
+  // Reset to page 1 when orders change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [orders.length]);
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      // Show all pages if total pages is less than max visible
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+
+      if (currentPage > 3) {
+        pages.push('...');
+      }
+
+      // Show pages around current page
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pages.push('...');
+      }
+
+      // Always show last page
+      if (totalPages > 1) {
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   return (
     <>
       {/* Mobile View - Card List */}
       <div className="md:hidden space-y-4">
-        {orders.map((order) => (
+        {paginatedOrders.map((order) => (
           <OrderCard key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} />
         ))}
+        
+        {/* Mobile Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 pt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {getPageNumbers().map((page, index) => (
+                page === '...' ? (
+                  <span key={`ellipsis-${index}`} className="px-2 text-muted-foreground">...</span>
+                ) : (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => goToPage(page as number)}
+                    className="min-w-[2.5rem]"
+                  >
+                    {page}
+                  </Button>
+                )
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="gap-1"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Desktop View - Table */}
@@ -782,11 +960,59 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {orders.map((order) => (
+            {paginatedOrders.map((order) => (
               <OrderRow key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} />
             ))}
           </TableBody>
         </Table>
+
+        {/* Desktop Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4 pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {startIndex + 1} to {Math.min(endIndex, orders.length)} of {orders.length} orders
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="gap-1"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {getPageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span key={`ellipsis-${index}`} className="px-2 text-muted-foreground">...</span>
+                  ) : (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(page as number)}
+                      className="min-w-[2.5rem]"
+                    >
+                      {page}
+                    </Button>
+                  )
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="gap-1"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
