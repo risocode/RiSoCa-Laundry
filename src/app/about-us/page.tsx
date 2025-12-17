@@ -58,14 +58,13 @@ export default function AboutUsPage() {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const operatingDays = diffDays.toString();
 
-        // Fetch completed orders count (status = 'Success' or 'Completed')
-        const { count: completedOrdersCount, error: ordersError } = await supabase
+        // Fetch total orders count (all orders)
+        const { count: totalOrdersCount, error: ordersError } = await supabase
           .from('orders')
-          .select('*', { count: 'exact', head: true })
-          .in('status', ['Success', 'Completed']);
+          .select('*', { count: 'exact', head: true });
 
         if (ordersError) {
-          console.error('Error fetching completed orders:', ordersError);
+          console.error('Error fetching total orders:', ordersError);
         }
 
         // Fetch unique customers count (distinct customer_ids from orders)
@@ -87,7 +86,7 @@ export default function AboutUsPage() {
         setStats([
           { 
             label: 'Orders Completed', 
-            value: completedOrdersCount ? `${completedOrdersCount}+` : '0+', 
+            value: totalOrdersCount ? `${totalOrdersCount}+` : '0+', 
             icon: Package, 
             color: 'text-blue-600',
             loading: false
