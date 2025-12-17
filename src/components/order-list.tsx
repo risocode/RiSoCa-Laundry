@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Edit, Save, X, Loader2 } from 'lucide-react';
+import { Edit, Save, X, Loader2, Package, User, Phone, Weight, Layers, DollarSign, CreditCard, CheckCircle2, MoreVertical } from 'lucide-react';
 import { PaymentDialog } from '@/components/payment-dialog';
 import {
     Accordion,
@@ -196,12 +196,15 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
 
     return (
         <>
-        <TableRow>
-            <TableCell className="font-medium">
+        <TableRow className={cn(
+          "hover:bg-muted/30 transition-colors border-b",
+          isEditing && "bg-primary/5 border-primary/20"
+        )}>
+            <TableCell className="font-semibold">
               <div className="flex items-center gap-2">
-                {workingOrder.id}
+                <span className="text-primary font-bold">{workingOrder.id}</span>
                 {workingOrder.orderType === 'internal' && (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300">
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700 text-xs font-semibold">
                     Internal
                   </Badge>
                 )}
@@ -213,11 +216,11 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         type="text" 
                         value={editableOrder.customerName} 
                         onChange={e => handleFieldChange('customerName', e.target.value)} 
-                        className="h-8 w-full min-w-[120px] max-w-[200px]" 
+                        className="h-9 w-full min-w-[120px] max-w-[200px] border-2" 
                         disabled={isSaving}
                     />
                 ) : (
-                    workingOrder.customerName
+                    <span className="font-medium">{workingOrder.customerName}</span>
                 )}
             </TableCell>
             <TableCell>
@@ -226,50 +229,75 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         type="tel" 
                         value={editableOrder.contactNumber} 
                         onChange={e => handleFieldChange('contactNumber', e.target.value)} 
-                        className="h-8 w-full min-w-[130px] max-w-[180px]" 
+                        className="h-9 w-full min-w-[130px] max-w-[180px] border-2" 
                         disabled={isSaving}
                     />
                 ) : (
-                    workingOrder.contactNumber
+                    <span className="text-muted-foreground">{workingOrder.contactNumber || 'N/A'}</span>
                 )}
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
                 {isEditing ? (
-                    <Input type="number" value={editableOrder.weight} onChange={e => handleFieldChange('weight', e.target.value)} className="h-8 w-full min-w-[80px] max-w-[120px]" disabled={isSaving}/>
+                    <Input 
+                        type="number" 
+                        value={editableOrder.weight} 
+                        onChange={e => handleFieldChange('weight', e.target.value)} 
+                        className="h-9 w-full min-w-[80px] max-w-[120px] border-2 text-center" 
+                        disabled={isSaving}
+                    />
                 ) : (
-                    workingOrder.weight
+                    <span className="font-medium">{workingOrder.weight}</span>
                 )}
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
                 {isEditing ? (
-                    <Input type="number" value={editableOrder.load} onChange={e => handleFieldChange('load', e.target.value)} className="h-8 w-full min-w-[60px] max-w-[100px]" disabled={isSaving}/>
+                    <Input 
+                        type="number" 
+                        value={editableOrder.load} 
+                        onChange={e => handleFieldChange('load', e.target.value)} 
+                        className="h-9 w-full min-w-[60px] max-w-[100px] border-2 text-center" 
+                        disabled={isSaving}
+                    />
                 ) : (
-                    workingOrder.load
+                    <Badge variant="outline" className="font-semibold">
+                        {workingOrder.load}
+                    </Badge>
                 )}
             </TableCell>
-            <TableCell>
+            <TableCell className="text-right">
                 {isEditing ? (
-                    <Input type="number" value={editableOrder.total.toString()} onChange={e => handleFieldChange('total', e.target.value)} className="h-8 w-full min-w-[100px] max-w-[150px]" disabled={isSaving}/>
+                    <Input 
+                        type="number" 
+                        value={editableOrder.total.toString()} 
+                        onChange={e => handleFieldChange('total', e.target.value)} 
+                        className="h-9 w-full min-w-[100px] max-w-[150px] border-2 text-right font-semibold" 
+                        disabled={isSaving}
+                    />
                 ) : (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-end gap-2">
                         {isPartiallyPaid ? (
                             <>
-                                <span className="line-through text-muted-foreground">₱{workingOrder.total.toFixed(2)}</span>
-                                <span className="text-red-600 font-semibold">₱{workingOrder.balance!.toFixed(2)}</span>
+                                <span className="line-through text-muted-foreground text-sm">₱{workingOrder.total.toFixed(0)}</span>
+                                <span className="text-orange-600 dark:text-orange-400 font-bold text-base">₱{workingOrder.balance!.toFixed(0)}</span>
                             </>
                         ) : isFullyPaid ? (
-                            <span className="text-green-600 font-semibold">₱{workingOrder.total.toFixed(2)}</span>
+                            <span className="text-green-600 dark:text-green-400 font-bold text-base">₱{workingOrder.total.toFixed(0)}</span>
                         ) : (
-                            <span className="text-red-600 font-semibold">₱{workingOrder.total.toFixed(2)}</span>
+                            <span className="text-red-600 dark:text-red-400 font-bold text-base">₱{workingOrder.total.toFixed(0)}</span>
                         )}
                     </div>
                 )}
             </TableCell>
-             <TableCell>
+             <TableCell className="text-center">
                 {isEditing ? (
                     <Button
                         size="sm"
-                        className={cn("h-8 w-20", getPaymentStatusColor(editableOrder.isPaid), `hover:${getPaymentStatusColor(editableOrder.isPaid)}`)}
+                        className={cn(
+                            "h-9 w-24 font-semibold shadow-sm",
+                            editableOrder.isPaid 
+                                ? "bg-green-500 hover:bg-green-600 text-white" 
+                                : "bg-red-500 hover:bg-red-600 text-white"
+                        )}
                         onClick={() => handleFieldChange('isPaid', !editableOrder.isPaid)}
                         disabled={isSaving}
                     >
@@ -281,7 +309,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         return badgeInfo.clickable ? (
                             <Badge 
                                 className={cn(
-                                    `${badgeInfo.color} hover:${badgeInfo.color} text-white cursor-pointer hover:opacity-80 transition-opacity`
+                                    `${badgeInfo.color} hover:${badgeInfo.color} text-white cursor-pointer hover:opacity-90 transition-all shadow-sm font-semibold px-3 py-1.5`
                                 )}
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -301,7 +329,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                             </Badge>
                         ) : (
                             <Badge 
-                                className={`${badgeInfo.color} hover:${badgeInfo.color} text-white`}
+                                className={`${badgeInfo.color} text-white shadow-sm font-semibold px-3 py-1.5`}
                             >
                                 {badgeInfo.text}
                             </Badge>
@@ -309,15 +337,15 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     })()
                 )}
             </TableCell>
-            <TableCell>
+            <TableCell className="text-center">
                 {isEditing ? (
-                     <div className="relative w-full min-w-[140px] max-w-[200px]">
+                     <div className="relative w-full min-w-[140px] max-w-[200px] mx-auto">
                         <Select
                             value={editableOrder.status}
                             onValueChange={(value) => handleFieldChange('status', value)}
                             disabled={isSaving}
                         >
-                            <SelectTrigger className="w-full h-9">
+                            <SelectTrigger className="w-full h-9 border-2 font-semibold">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -328,21 +356,48 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         </Select>
                     </div>
                 ) : (
-                   <Badge className={`${getStatusColor(workingOrder.status)} hover:${getStatusColor(workingOrder.status)} text-white`}>
+                   <Badge className={cn(
+                       `${getStatusColor(workingOrder.status)} text-white shadow-sm font-semibold px-3 py-1.5`,
+                       "hover:opacity-90 transition-opacity"
+                   )}>
                        {workingOrder.status}
                     </Badge>
                 )}
             </TableCell>
-            <TableCell className="space-x-2">
+            <TableCell className="text-center">
                  {isEditing ? (
-                    <>
-                        <Button size="icon" variant="ghost" onClick={handleCancel} disabled={isSaving}><X className="h-4 w-4" /></Button>
-                        <Button size="icon" onClick={handleSave} disabled={isSaving}>
-                            {isSaving ? <Loader2 className="animate-spin h-4 w-4"/> : <Save className="h-4 w-4" />}
+                    <div className="flex items-center justify-center gap-2">
+                        <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={handleCancel} 
+                            disabled={isSaving}
+                            className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive"
+                        >
+                            <X className="h-4 w-4" />
                         </Button>
-                    </>
+                        <Button 
+                            size="icon" 
+                            onClick={handleSave} 
+                            disabled={isSaving}
+                            className="h-9 w-9 bg-primary hover:bg-primary/90 shadow-sm"
+                        >
+                            {isSaving ? (
+                                <Loader2 className="animate-spin h-4 w-4"/>
+                            ) : (
+                                <Save className="h-4 w-4" />
+                            )}
+                        </Button>
+                    </div>
                 ) : (
-                    <Button size="icon" variant="outline" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4" /></Button>
+                    <Button 
+                        size="icon" 
+                        variant="outline" 
+                        onClick={() => setIsEditing(true)}
+                        className="h-9 w-9 hover:bg-primary/10 hover:border-primary hover:text-primary transition-all"
+                    >
+                        <Edit className="h-4 w-4" />
+                    </Button>
                 )}
             </TableCell>
         </TableRow>
@@ -669,16 +724,61 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
       <div className="hidden md:block overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="min-w-[100px]">ORDER #</TableHead>
-              <TableHead className="min-w-[120px]">Name</TableHead>
-              <TableHead className="min-w-[130px]">Contact number</TableHead>
-              <TableHead className="min-w-[100px]">Weight (kg)</TableHead>
-              <TableHead className="min-w-[80px]">Load</TableHead>
-              <TableHead className="min-w-[110px]">Total (₱)</TableHead>
-              <TableHead className="min-w-[100px]">Payment</TableHead>
-              <TableHead className="min-w-[140px]">Status</TableHead>
-              <TableHead className="min-w-[100px]">Action</TableHead>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="min-w-[120px] font-semibold">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-primary" />
+                  ORDER #
+                </div>
+              </TableHead>
+              <TableHead className="min-w-[140px] font-semibold">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  Name
+                </div>
+              </TableHead>
+              <TableHead className="min-w-[140px] font-semibold">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-primary" />
+                  Contact
+                </div>
+              </TableHead>
+              <TableHead className="min-w-[110px] font-semibold text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <Weight className="h-4 w-4 text-primary" />
+                  Weight (kg)
+                </div>
+              </TableHead>
+              <TableHead className="min-w-[90px] font-semibold text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  Load
+                </div>
+              </TableHead>
+              <TableHead className="min-w-[130px] font-semibold text-right">
+                <div className="flex items-center justify-end gap-2">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  Total (₱)
+                </div>
+              </TableHead>
+              <TableHead className="min-w-[110px] font-semibold text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  Payment
+                </div>
+              </TableHead>
+              <TableHead className="min-w-[150px] font-semibold text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  Status
+                </div>
+              </TableHead>
+              <TableHead className="min-w-[120px] font-semibold text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <MoreVertical className="h-4 w-4 text-primary" />
+                  Action
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
