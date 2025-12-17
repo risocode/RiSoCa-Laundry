@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Edit, Save, X, Loader2, Package, User, Phone, Weight, Layers, DollarSign, CreditCard, CheckCircle2, MoreVertical } from 'lucide-react';
+import { Edit, Save, X, Loader2, Package, User, Phone, Weight, Layers, DollarSign, CreditCard, CheckCircle2, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PaymentDialog } from '@/components/payment-dialog';
 import {
     Accordion,

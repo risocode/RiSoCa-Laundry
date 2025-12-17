@@ -109,24 +109,35 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if (typeof window !== 'undefined' && !window.adsbygoogle) {
-                // Pages with minimal content that should not show ads
-                const minimalContentPages = [
-                  '/select-location',
-                  '/download-app',
-                  '/branches',
-                  '/contact-us',
-                ];
-                
-                // Check if current page should have ads
-                const path = window.location.pathname;
-                const shouldShowAds = !minimalContentPages.some(page => path.startsWith(page));
-                
-                if (shouldShowAds) {
-                  (adsbygoogle = window.adsbygoogle || []).push({
-                    google_ad_client: "ca-pub-1036864152624333",
-                    enable_page_level_ads: true
-                  });
+              if (typeof window !== 'undefined') {
+                // Check if we've already initialized page-level ads
+                if (!window.__adsbygoogle_page_level_initialized) {
+                  // Initialize adsbygoogle array if it doesn't exist
+                  window.adsbygoogle = window.adsbygoogle || [];
+                  
+                  // Pages with minimal content that should not show ads
+                  const minimalContentPages = [
+                    '/select-location',
+                    '/download-app',
+                    '/branches',
+                    '/contact-us',
+                    '/admin',
+                    '/employee',
+                  ];
+                  
+                  // Check if current page should have ads
+                  const path = window.location.pathname;
+                  const shouldShowAds = !minimalContentPages.some(page => path.startsWith(page));
+                  
+                  if (shouldShowAds) {
+                    window.adsbygoogle.push({
+                      google_ad_client: "ca-pub-1036864152624333",
+                      enable_page_level_ads: true
+                    });
+                    
+                    // Mark as initialized to prevent duplicate calls
+                    window.__adsbygoogle_page_level_initialized = true;
+                  }
                 }
               }
             `,
