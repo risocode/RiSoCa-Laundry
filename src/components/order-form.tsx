@@ -639,7 +639,7 @@ export function OrderForm() {
                         <div className="flex justify-between items-center pt-2">
                             <span className="text-base font-semibold text-foreground">Total Amount</span>
                             <span className="text-3xl font-bold text-primary">
-                                ₱{pricingResult.computedPrice.toFixed(0)}
+                                ₱{Math.ceil(pricingResult.computedPrice).toFixed(0)}
                             </span>
                         </div>
                         <p className="text-xs text-muted-foreground text-center pt-2 border-t">
