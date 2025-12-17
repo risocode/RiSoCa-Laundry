@@ -518,42 +518,52 @@ export default function LoginPage() {
     <div className="flex flex-col min-h-screen">
       <AppHeader />
       <PromoBanner />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">
-        <div className="container mx-auto px-4 py-8 flex items-start justify-center min-h-full">
-        <Card className="mx-auto w-full max-w-sm">
-          <CardHeader className="p-4">
-            <CardTitle className="text-2xl">Login</CardTitle>
-            <CardDescription>
-              Enter your email below to login to your account.
+      <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20 bg-gradient-to-br from-primary/5 via-background to-primary/5">
+        <div className="container mx-auto px-4 py-8 sm:py-12 flex items-start justify-center min-h-full">
+        <Card className="mx-auto w-full max-w-md shadow-2xl border-2">
+          <CardHeader className="p-6 bg-gradient-to-r from-primary/10 to-primary/5 border-b">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/20">
+                <LogIn className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle className="text-2xl sm:text-3xl">Welcome Back</CardTitle>
+            </div>
+            <CardDescription className="text-sm">
+              Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="p-4 pt-0">
-            <form onSubmit={handleSubmit} className="grid gap-3">
-              <div className="grid gap-1.5">
-                <Label htmlFor="email">Email</Label>
+          <CardContent className="p-6 space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-semibold flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  Email Address
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="your.email@example.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
+                  className="h-11 text-base"
                 />
               </div>
 
-              <div className="grid gap-1.5">
-                <Label htmlFor="password">Password</Label>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-semibold">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
-                    className="pr-10"
+                    className="pr-10 h-11 text-base"
                   />
                   <button
                     type="button"
@@ -564,9 +574,9 @@ export default function LoginPage() {
                     tabIndex={0}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOff className="h-5 w-5" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-5 w-5" />
                     )}
                   </button>
                 </div>
@@ -638,32 +648,40 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={loading || (lockoutTime !== null && Date.now() < lockoutTime)}
-                className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white"
+                className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+                size="lg"
               >
                 {lockoutTime && Date.now() < lockoutTime ? (
                   <>
-                    <Clock className="mr-2 h-4 w-4" />
-                    Wait {remainingSeconds}s
+                    <Clock className="mr-2 h-5 w-5 animate-pulse" />
+                    Please wait {remainingSeconds}s
                   </>
                 ) : (
                   <>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    {loading ? 'Logging in...' : 'Login'}
+                    <LogIn className="mr-2 h-5 w-5" />
+                    {loading ? 'Logging in...' : 'Sign In'}
                   </>
                 )}
               </Button>
               
               {lockoutTime && Date.now() < lockoutTime && (
-                <p className="text-xs text-center text-destructive mt-2">
-                  Too many failed attempts for this email. Please wait {remainingSeconds} second{remainingSeconds !== 1 ? 's' : ''} before trying again.
-                </p>
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <p className="text-xs text-center text-destructive font-medium">
+                    Too many failed attempts. Please wait {remainingSeconds} second{remainingSeconds !== 1 ? 's' : ''} before trying again.
+                  </p>
+                </div>
               )}
             </form>
-             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="underline">
-                Sign up
-              </Link>
+            
+            <div className="pt-4 border-t">
+              <div className="text-center text-sm space-y-2">
+                <p className="text-muted-foreground">
+                  Don&apos;t have an account?{' '}
+                  <Link href="/register" className="font-semibold text-primary hover:underline">
+                    Create one now
+                  </Link>
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

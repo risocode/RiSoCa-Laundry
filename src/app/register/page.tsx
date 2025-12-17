@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { UserPlus, Eye, EyeOff } from 'lucide-react'
+import { UserPlus, Eye, EyeOff, Mail, User, Lock, CheckCircle2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { signUpWithEmail } from '@/lib/auth'
 
@@ -92,65 +92,83 @@ export default function RegisterPage() {
     <div className="flex flex-col min-h-screen">
       <AppHeader />
       <PromoBanner />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">
-        <div className="container mx-auto px-4 py-8 flex items-start justify-center min-h-full">
-        <Card className="mx-auto w-full max-w-sm">
-          <CardHeader className="p-4">
-            <CardTitle className="text-xl">Sign Up</CardTitle>
-            <CardDescription>
-              Enter your information to create an account
+      <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20 bg-gradient-to-br from-primary/5 via-background to-primary/5">
+        <div className="container mx-auto px-4 py-8 sm:py-12 flex items-start justify-center min-h-full">
+        <Card className="mx-auto w-full max-w-md shadow-2xl border-2">
+          <CardHeader className="p-6 bg-gradient-to-r from-primary/10 to-primary/5 border-b">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-primary/20">
+                <UserPlus className="h-6 w-6 text-primary" />
+              </div>
+              <CardTitle className="text-2xl sm:text-3xl">Create Account</CardTitle>
+            </div>
+            <CardDescription className="text-sm">
+              Join RKR Laundry and start tracking your orders
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="p-4 pt-0">
-            <form onSubmit={handleSubmit} className="grid gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="grid gap-1.5">
-                  <Label htmlFor="firstName">First name</Label>
+          <CardContent className="p-6 space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-sm font-semibold flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    First Name
+                  </Label>
                   <Input
                     id="firstName"
                     name="firstName"
-                    placeholder="Max"
+                    placeholder="John"
                     disabled={loading}
                     required
+                    className="h-11 text-base"
                   />
                 </div>
 
-                <div className="grid gap-1.5">
-                  <Label htmlFor="lastName">Last name</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-sm font-semibold">Last Name</Label>
                   <Input
                     id="lastName"
                     name="lastName"
-                    placeholder="Robinson"
+                    placeholder="Doe"
                     disabled={loading}
                     required
+                    className="h-11 text-base"
                   />
                 </div>
               </div>
 
-              <div className="grid gap-1.5">
-                <Label htmlFor="email">Email</Label>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-semibold flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  Email Address
+                </Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="your.email@example.com"
                   required
                   disabled={loading}
+                  className="h-11 text-base"
                 />
               </div>
 
-              <div className="grid gap-1.5">
-                <Label htmlFor="password">Password</Label>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-semibold flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-muted-foreground" />
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
+                    placeholder="At least 6 characters"
                     minLength={6}
                     required
                     disabled={loading}
-                    className="pr-10"
+                    className="pr-10 h-11 text-base"
                   />
                   <button
                     type="button"
@@ -161,25 +179,27 @@ export default function RegisterPage() {
                     tabIndex={0}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOff className="h-5 w-5" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-5 w-5" />
                     )}
                   </button>
                 </div>
+                <p className="text-xs text-muted-foreground">Must be at least 6 characters long</p>
               </div>
 
-              <div className="grid gap-1.5">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-sm font-semibold">Confirm Password</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Re-enter your password"
                     minLength={6}
                     required
                     disabled={loading}
-                    className="pr-10"
+                    className="pr-10 h-11 text-base"
                   />
                   <button
                     type="button"
@@ -190,38 +210,49 @@ export default function RegisterPage() {
                     tabIndex={0}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOff className="h-5 w-5" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-5 w-5" />
                     )}
                   </button>
                 </div>
                 {passwordError && (
-                  <p className="text-xs text-destructive">{passwordError}</p>
+                  <p className="text-xs text-destructive font-medium">{passwordError}</p>
                 )}
               </div>
 
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-amber-400 to-yellow-500 text-white"
+                className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+                size="lg"
               >
-                <UserPlus className="mr-2 h-4 w-4" />
-                {loading ? 'Creating account...' : 'Create an account'}
+                <UserPlus className="mr-2 h-5 w-5" />
+                {loading ? 'Creating account...' : 'Create Account'}
               </Button>
             </form>
 
             {error && (
-              <p className="mt-3 text-center text-xs text-destructive">
-                {error}
-              </p>
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-xs text-center text-destructive font-medium">
+                  {error}
+                </p>
+              </div>
             )}
 
-            <div className="mt-3 text-center text-xs">
-              Already have an account?{' '}
-              <Link href="/login" className="underline">
-                Sign in
-              </Link>
+            <div className="pt-4 border-t">
+              <div className="text-center text-sm space-y-3">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground mb-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span>Free to join • No credit card required</span>
+                </div>
+                <p className="text-muted-foreground">
+                  Already have an account?{' '}
+                  <Link href="/login" className="font-semibold text-primary hover:underline">
+                    Sign in here
+                  </Link>
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
