@@ -107,6 +107,8 @@ export default function RootLayout({
                 const minimalContentPages = [
                   '/select-location',
                   '/download-app',
+                  '/branches',
+                  '/contact-us',
                 ];
                 
                 // Check if current page should have ads
