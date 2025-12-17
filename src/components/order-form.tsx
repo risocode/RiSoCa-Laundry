@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Loader2, Weight, Layers, Info, MapPin, User, Phone, Bike, PersonStanding } from 'lucide-react';
+import { Loader2, Weight, Layers, Info, MapPin, User, Phone, Bike, PersonStanding, Package, Truck, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -419,23 +419,34 @@ export function OrderForm() {
     });
   }
 
+  const packageIcons = {
+    package1: Package,
+    package2: Truck,
+    package3: Sparkles,
+  };
+
   return (
     <>
-    <Card className="shadow-lg w-full flex flex-col">
+    <Card className="shadow-xl w-full flex flex-col border-2">
       <form onSubmit={form.handleSubmit(onOrderSubmit)} className="flex flex-col">
-        <CardHeader className="p-4 flex-shrink-0">
+        <CardHeader className="p-5 sm:p-6 border-b bg-gradient-to-r from-primary/5 to-primary/10">
           <div className="flex items-start justify-between">
-            <div>
-              <CardTitle>Create Order</CardTitle>
-              <CardDescription className="text-xs">Select a package to calculate the price.</CardDescription>
+            <div className="flex-1">
+              <CardTitle className="text-xl sm:text-2xl flex items-center gap-2">
+                <Package className="h-6 w-6 text-primary" />
+                Order Details
+              </CardTitle>
+              <CardDescription className="text-sm mt-1">
+                Complete the form below to create your order. All fields are required unless marked optional.
+              </CardDescription>
             </div>
             {user && (
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Orders today</p>
+              <div className="text-right bg-background/80 px-3 py-2 rounded-lg border">
+                <p className="text-xs text-muted-foreground font-medium">Orders Today</p>
                 {loadingOrderCount ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mt-1" />
                 ) : orderCount !== null ? (
-                  <p className={`text-sm font-semibold ${orderCount >= 5 ? 'text-destructive' : ''}`}>
+                  <p className={`text-lg font-bold ${orderCount >= 5 ? 'text-destructive' : 'text-primary'}`}>
                     {orderCount}/5
                   </p>
                 ) : null}
@@ -443,10 +454,16 @@ export function OrderForm() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 p-4 pt-0">
+        <CardContent className="space-y-6 p-5 sm:p-6">
           
-          <div className="space-y-2">
-            <Label className="text-base font-semibold">1. Select a Package</Label>
+          {/* Package Selection */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-primary font-bold text-sm">1</span>
+              </div>
+              <Label className="text-base font-semibold">Select Service Package</Label>
+            </div>
             <Controller
               name="servicePackage"
               control={control}
@@ -454,71 +471,129 @@ export function OrderForm() {
                 <RadioGroup
                   value={field.value}
                   onValueChange={field.onChange}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-2"
+                  className="grid grid-cols-1 md:grid-cols-3 gap-3"
                 >
-                  {packages.map((pkg) => (
-                    <Label
-                      key={pkg.id}
-                      htmlFor={pkg.id}
-                      className={`flex items-start gap-3 rounded-lg border p-3 transition-all cursor-pointer hover:bg-muted/50 ${field.value === pkg.id ? 'border-primary bg-primary/5' : ''}`}
-                    >
-                      <RadioGroupItem value={pkg.id} id={pkg.id} className="mt-1"/>
-                      <div className="grid gap-0.5">
-                        <span className="font-semibold text-sm">{pkg.label}</span>
-                        <span className="text-xs text-muted-foreground">{pkg.description}</span>
-                      </div>
-                    </Label>
-                  ))}
+                  {packages.map((pkg) => {
+                    const Icon = packageIcons[pkg.id as keyof typeof packageIcons] || Package;
+                    return (
+                      <Label
+                        key={pkg.id}
+                        htmlFor={pkg.id}
+                        className={`flex flex-col items-start gap-3 rounded-lg border-2 p-4 transition-all cursor-pointer hover:shadow-md ${
+                          field.value === pkg.id 
+                            ? 'border-primary bg-primary/5 shadow-md' 
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <RadioGroupItem value={pkg.id} id={pkg.id} className="flex-shrink-0"/>
+                          <Icon className={`h-5 w-5 flex-shrink-0 ${field.value === pkg.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                          <div className="flex-1 min-w-0">
+                            <span className="font-semibold text-base block">{pkg.label}</span>
+                            <span className="text-xs text-muted-foreground block mt-0.5">{pkg.description}</span>
+                          </div>
+                        </div>
+                      </Label>
+                    );
+                  })}
                 </RadioGroup>
               )}
             />
             {form.formState.errors.servicePackage && (
-              <p className="text-xs font-medium text-destructive">{form.formState.errors.servicePackage.message}</p>
+              <p className="text-xs font-medium text-destructive ml-10">{form.formState.errors.servicePackage.message}</p>
             )}
           </div>
 
-          <div className={`grid gap-4 ${needsLocation ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <div className="space-y-2">
+          <Separator />
+
+          {/* Weight and Location Section */}
+          <div className={`grid gap-4 ${needsLocation ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+            <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="weight" className="text-base font-semibold">2. Weight (kg)</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto">
-                      <p className="max-w-xs text-sm">
-                        Final weight will be confirmed at the shop. One load is 7.5kg. Any excess is considered a new load.
-                      </p>
-                    </PopoverContent>
-                  </Popover>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-primary font-bold text-sm">2</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-1">
+                    <Label htmlFor="weight" className="text-base font-semibold">Weight (kg)</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto max-w-xs">
+                        <p className="text-sm">
+                          Final weight will be confirmed at the shop. One load is 7.5kg. Any excess is considered a new load.
+                        </p>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-md">
-                    <Weight className="h-5 w-5 text-muted-foreground" />
+                <div className="flex items-center gap-3 bg-gradient-to-r from-muted/50 to-muted/30 p-4 rounded-lg border border-border">
+                    <div className="flex-shrink-0 p-2 rounded-lg bg-primary/10">
+                      <Weight className="h-5 w-5 text-primary" />
+                    </div>
                     <div className='flex-grow'>
-                        <Label htmlFor="weight" className="text-xs font-medium text-muted-foreground">Weight in KG (Optional)</Label>
+                        <Label htmlFor="weight" className="text-xs font-medium text-muted-foreground mb-1 block">Weight in KG (Optional)</Label>
                         <Controller
                             name="weight"
                             control={control}
-                            render={({ field }) => <Input id="weight" type="number" placeholder="e.g., 7.5" className="text-center bg-transparent border-0 text-base font-semibold p-0 h-auto focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" {...field} value={field.value ?? ''} disabled={isFreeDelivery}/>}
+                            render={({ field }) => (
+                              <Input 
+                                id="weight" 
+                                type="number" 
+                                placeholder="e.g., 7.5" 
+                                className="text-center bg-background border-0 text-lg font-bold p-0 h-auto focus-visible:ring-0 focus-visible:ring-offset-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                {...field} 
+                                value={field.value ?? ''} 
+                                disabled={isFreeDelivery}
+                              />
+                            )}
                         />
                     </div>
                 </div>
                  {form.formState.errors.weight && (
-                    <p className="text-xs font-medium text-destructive">{form.formState.errors.weight.message}</p>
+                    <p className="text-xs font-medium text-destructive ml-10">{form.formState.errors.weight.message}</p>
                 )}
-                 {isFreeDelivery && <p className="text-xs text-center text-primary font-semibold">Free delivery applied! Weight set to 7.5kg.</p>}
+                 {isFreeDelivery && (
+                   <div className="ml-10 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                     <p className="text-xs text-center text-green-700 dark:text-green-300 font-semibold flex items-center justify-center gap-2">
+                       <CheckCircle2 className="h-4 w-4" />
+                       Free delivery applied! Weight set to 7.5kg.
+                     </p>
+                   </div>
+                 )}
             </div>
             {needsLocation && (
-              <div className="space-y-2">
-                  <Label htmlFor="distance" className="text-base font-semibold">3. Location</Label>
+              <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-primary font-bold text-sm">3</span>
+                    </div>
+                    <Label htmlFor="distance" className="text-base font-semibold">Delivery Location</Label>
+                  </div>
                   <div className="flex flex-col gap-2">
-                      <Button type="button" variant="outline" onClick={handleLocationSelect} className="w-full whitespace-normal h-auto justify-start text-left">
-                        <MapPin className="mr-2 h-4 w-4"/>
-                        {watchedValues.distance > 0 ? `Distance: ${watchedValues.distance.toFixed(2)} km (Change)` : 'Select Location'}
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={handleLocationSelect} 
+                        className="w-full h-auto py-4 justify-start text-left border-2 hover:border-primary hover:bg-primary/5 transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 p-2 rounded-lg bg-primary/10">
+                            <MapPin className="h-5 w-5 text-primary"/>
+                          </div>
+                          <div className="flex-1 text-left">
+                            <p className="font-semibold text-sm">
+                              {watchedValues.distance > 0 ? `Distance: ${watchedValues.distance.toFixed(2)} km` : 'Select Location'}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {watchedValues.distance > 0 ? 'Click to change location' : 'Required for delivery'}
+                            </p>
+                          </div>
+                        </div>
                       </Button>
                   </div>
                   {form.formState.errors.distance && !watchedValues.distance ? (
-                  <p className="text-xs font-medium text-destructive">Please select a location.</p>
+                  <p className="text-xs font-medium text-destructive ml-10">Please select a location.</p>
                   ): null}
               </div>
             )}
@@ -526,49 +601,77 @@ export function OrderForm() {
 
           <Separator />
 
-          <div className="space-y-2">
-            <h3 className="text-base font-semibold">Pricing Summary</h3>
-            <div className="bg-muted/50 p-3 rounded-lg space-y-2">
+          {/* Pricing Summary */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-primary font-bold text-sm">$</span>
+              </div>
+              <h3 className="text-base font-semibold">Pricing Summary</h3>
+            </div>
+            <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 p-5 rounded-lg border-2 border-primary/20 space-y-4">
                 {isPending ? (
-                    <div className="flex items-center justify-center text-muted-foreground h-16">
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        <span className="text-sm">Calculating...</span>
+                    <div className="flex items-center justify-center text-muted-foreground h-20">
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin text-primary" />
+                        <span className="text-sm font-medium">Calculating price...</span>
                     </div>
                 ) : showDistancePrompt ? (
-                    <div className="text-center text-primary h-16 flex items-center justify-center text-sm font-semibold">
-                        {servicePackage === 'package2'
-                            ? 'Please select a location for delivery or Pick Up.'
-                            : 'Please select a location for delivery.'}
+                    <div className="text-center text-primary h-20 flex flex-col items-center justify-center gap-2">
+                        <MapPin className="h-5 w-5" />
+                        <p className="text-sm font-semibold">
+                            {servicePackage === 'package2'
+                                ? 'Please select a location for delivery or Pick Up.'
+                                : 'Please select a location for delivery.'}
+                        </p>
                     </div>
                 ) : pricingResult ? (
                     <>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground text-base flex items-center gap-2"><Layers className="h-4 w-4" /> Loads</span>
-                             <span className="text-base font-bold">
-                                {calculatedLoads}
+                        <div className="flex justify-between items-center p-3 bg-background/50 rounded-lg">
+                            <span className="text-muted-foreground text-sm font-medium flex items-center gap-2">
+                              <Layers className="h-4 w-4" /> 
+                              Number of Loads
+                            </span>
+                            <span className="text-lg font-bold text-foreground">
+                                {calculatedLoads} {calculatedLoads === 1 ? 'load' : 'loads'}
                             </span>
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground text-base">Total</span>
-                            <span className="text-2xl font-bold text-primary">
+                        <Separator />
+                        <div className="flex justify-between items-center pt-2">
+                            <span className="text-base font-semibold text-foreground">Total Amount</span>
+                            <span className="text-3xl font-bold text-primary">
                                 ₱{pricingResult.computedPrice.toFixed(2)}
                             </span>
                         </div>
+                        <p className="text-xs text-muted-foreground text-center pt-2 border-t">
+                          Final price may vary based on actual weight at the shop
+                        </p>
                     </>
                 ) : (
-                     <div className="text-center text-muted-foreground h-16 flex items-center justify-center text-sm">Enter weight and select package.</div>
+                     <div className="text-center text-muted-foreground h-20 flex items-center justify-center text-sm">
+                       <p>Select a package and enter details to see pricing</p>
+                     </div>
                 )}
             </div>
           </div>
         </CardContent>
-        <CardFooter className="p-4 pt-0 flex-shrink-0 border-t">
+        <CardFooter className="p-5 sm:p-6 pt-0 flex-shrink-0 border-t bg-muted/30">
           <Button 
             type="submit" 
-            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-base py-5"
+            className="w-full text-base font-semibold py-6 h-auto shadow-lg hover:shadow-xl transition-all"
             disabled={isPending || !form.formState.isValid || showDistancePrompt}
+            size="lg"
           >
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Place Order
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="mr-2 h-5 w-5" />
+                Place Order
+              </>
+            )}
           </Button>
         </CardFooter>
       </form>
@@ -619,21 +722,32 @@ export function OrderForm() {
     </Dialog>
 
     <Dialog open={isCustomerInfoDialogOpen} onOpenChange={setIsCustomerInfoDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
             <DialogHeader>
-                <DialogTitle>Customer Information</DialogTitle>
-                <DialogDescription>Please enter your details to complete the order.</DialogDescription>
+                <DialogTitle className="text-xl flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  Customer Information
+                </DialogTitle>
+                <DialogDescription>
+                  Please confirm your details to complete the order. Your contact number can be updated for this order only.
+                </DialogDescription>
             </DialogHeader>
-            <form onSubmit={customerForm.handleSubmit(onCustomerInfoSubmit)} className="space-y-4">
+            <form onSubmit={customerForm.handleSubmit(onCustomerInfoSubmit)} className="space-y-5">
                  <div className="space-y-2">
-                    <Label htmlFor="customerName" className="flex items-center gap-2"><User className="h-4 w-4"/>Customer Name</Label>
-                    <Input 
-                      id="customerName" 
-                      placeholder="e.g., Jane Doe" 
-                      {...customerForm.register('customerName')} 
-                      disabled
-                      className="bg-muted cursor-not-allowed"
-                    />
+                    <Label htmlFor="customerName" className="flex items-center gap-2 text-sm font-semibold">
+                      <User className="h-4 w-4 text-muted-foreground"/>
+                      Customer Name
+                    </Label>
+                    <div className="relative">
+                      <Input 
+                        id="customerName" 
+                        placeholder="e.g., Jane Doe" 
+                        {...customerForm.register('customerName')} 
+                        disabled
+                        className="bg-muted/50 cursor-not-allowed pl-10 h-11"
+                      />
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       Name is taken from your profile
                     </p>
@@ -642,8 +756,20 @@ export function OrderForm() {
                     )}
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="contactNumber" className="flex items-center gap-2"><Phone className="h-4 w-4"/>Contact Number</Label>
-                    <Input id="contactNumber" type="tel" placeholder="e.g., 09123456789" {...customerForm.register('contactNumber')} />
+                    <Label htmlFor="contactNumber" className="flex items-center gap-2 text-sm font-semibold">
+                      <Phone className="h-4 w-4 text-muted-foreground"/>
+                      Contact Number
+                    </Label>
+                    <div className="relative">
+                      <Input 
+                        id="contactNumber" 
+                        type="tel" 
+                        placeholder="e.g., 09123456789" 
+                        {...customerForm.register('contactNumber')} 
+                        className="pl-10 h-11"
+                      />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       You can edit this number for this order only (won't update your profile)
                     </p>
@@ -706,8 +832,22 @@ export function OrderForm() {
                       </div>
                     </div>
                   )}
-                <DialogFooter>
-                    <Button type="submit">Confirm Order</Button>
+                <DialogFooter className="gap-2 sm:gap-0">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsCustomerInfoDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="min-w-[120px]"
+                      size="lg"
+                    >
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Confirm Order
+                    </Button>
                 </DialogFooter>
             </form>
         </DialogContent>
