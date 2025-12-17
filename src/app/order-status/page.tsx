@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Inbox, AlertTriangle, User, Loader2, X, ArrowRight, Info } from 'lucide-react';
+import { Search, Inbox, AlertTriangle, User, Loader2, X, ArrowRight, Info, Package, Clock, CheckCircle2 } from 'lucide-react';
 import { AverageRatingCard } from '@/components/average-rating-card';
 import { useToast } from '@/hooks/use-toast';
 import { fetchOrderForCustomer, fetchMyOrders } from '@/lib/api/orders';
@@ -209,147 +209,189 @@ export default function OrderStatusPage() {
       <AppHeader />
       <PromoBanner />
       <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">
-        <div className="container mx-auto px-4 py-8 flex items-start justify-center min-h-full">
-        <div className="w-full max-w-2xl">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <CardTitle className="text-lg sm:text-xl">Check Order Status</CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    {user 
-                      ? 'View your active orders below or search for a specific order.'
-                      : 'Enter the Order ID and Name provided by the admin to track your laundry order status.'}
-                  </CardDescription>
+        <div className="container mx-auto px-4 py-6 sm:py-8">
+          <div className="w-full max-w-4xl mx-auto space-y-6">
+            {/* Page Header */}
+            <div className="text-center space-y-2">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Package className="h-6 w-6 text-primary" />
                 </div>
-                {user && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push('/my-orders')}
-                    className="flex items-center gap-2 w-full sm:w-auto"
-                  >
-                    Show All Orders
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                )}
+                <h1 className="text-2xl sm:text-3xl font-bold">Check Order Status</h1>
               </div>
-            </CardHeader>
-            <CardContent>
-              {/* Average Rating Card */}
-              <div className="mb-6">
-                <AverageRatingCard />
-              </div>
+              <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto">
+                {user 
+                  ? 'Track your active orders in real-time or search for a specific order.'
+                  : 'Enter your Order ID and Name to track your laundry order status.'}
+              </p>
+            </div>
+
+            {/* Average Rating Card */}
+            <AverageRatingCard />
+
+            {/* Main Content Card */}
+            <Card className="shadow-lg">
+              <CardHeader className="border-b bg-muted/30">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-primary" />
+                      Order Tracking
+                    </CardTitle>
+                    <CardDescription className="text-xs sm:text-sm mt-1">
+                      {user 
+                        ? 'Your active orders are listed below. Select one to view details.'
+                        : 'Search for your order using the form below.'}
+                    </CardDescription>
+                  </div>
+                  {user && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push('/my-orders')}
+                      className="flex items-center gap-2 w-full sm:w-auto"
+                    >
+                      View All Orders
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6 space-y-6">
 
               {user && myOrders.length > 0 && (
-                <div className="mb-6 space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-5 w-5 text-primary" />
                       <Label className="text-base font-semibold">Your Active Orders</Label>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">
-                              Only active orders are shown here. Completed orders are available in "My Orders".
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
                     </div>
-                    
-                    {/* Search Controls */}
-                    <div className="space-y-3 mb-4">
-                      {/* Order ID Search */}
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Search by Order ID (e.g., RKR001)"
-                          value={orderIdSearch}
-                          onChange={(e) => setOrderIdSearch(e.target.value)}
-                          className="pl-10 pr-10"
-                        />
-                        {orderIdSearch && (
-                          <button
-                            type="button"
-                            onClick={() => setOrderIdSearch('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">
+                            Only active orders are shown here. Completed orders are available in "My Orders".
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  
+                  {/* Search Controls */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                    <Input
+                      placeholder="Search by Order ID or customer name..."
+                      value={orderIdSearch}
+                      onChange={(e) => setOrderIdSearch(e.target.value)}
+                      className="pl-10 pr-10"
+                    />
+                    {orderIdSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setOrderIdSearch('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
 
-                    {/* Orders List */}
-                    {filteredOrders.length > 0 ? (
-                      <div className="space-y-2 max-h-64 overflow-y-auto scrollable">
-                        {filteredOrders.map((order) => (
-                          <button
-                            key={order.id}
-                            type="button"
-                            onClick={() => setSelectedOrder(order)}
-                            className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                              selectedOrder?.id === order.id
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:bg-muted'
-                            }`}
-                          >
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <p className="font-semibold text-sm">Order #{order.id}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {order.customerName} • {new Date(order.orderDate).toLocaleDateString('en-US', { 
-                                    year: 'numeric', 
+                  {/* Orders List */}
+                  {filteredOrders.length > 0 ? (
+                    <div className="space-y-3 max-h-80 overflow-y-auto scrollable pr-2 -mr-2">
+                      {filteredOrders.map((order) => (
+                        <button
+                          key={order.id}
+                          type="button"
+                          onClick={() => setSelectedOrder(order)}
+                          className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
+                            selectedOrder?.id === order.id
+                              ? 'border-primary bg-primary/5 shadow-md'
+                              : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Package className="h-4 w-4 text-primary flex-shrink-0" />
+                                <p className="font-semibold text-sm sm:text-base truncate">Order #{order.id}</p>
+                              </div>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-muted-foreground">
+                                <span className="truncate">{order.customerName}</span>
+                                <span className="hidden sm:inline">•</span>
+                                <span className="whitespace-nowrap">
+                                  {new Date(order.orderDate).toLocaleDateString('en-US', { 
                                     month: 'short', 
                                     day: 'numeric',
+                                    year: 'numeric',
                                     hour: '2-digit',
                                     minute: '2-digit'
                                   })}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-semibold text-sm">₱{order.total.toFixed(2)}</p>
-                                <p className="text-xs text-muted-foreground">{order.status}</p>
+                                </span>
                               </div>
                             </div>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 border border-dashed rounded-lg text-center text-sm text-muted-foreground">
-                        <Inbox className="h-8 w-8 mx-auto mb-2" />
-                        <p>No orders found matching your search.</p>
-                      </div>
-                    )}
-                  </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="font-bold text-sm sm:text-base text-primary">₱{order.total.toFixed(2)}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{order.status}</p>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 border-2 border-dashed rounded-lg text-center bg-muted/30">
+                      <Inbox className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                      <p className="text-sm font-medium text-muted-foreground">No orders found matching your search.</p>
+                      {orderIdSearch && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setOrderIdSearch('')}
+                          className="mt-3"
+                        >
+                          Clear search
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
               {user && loadingMyOrders && (
-                <div className="mb-6 flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+                  <p className="text-sm text-muted-foreground">Loading your orders...</p>
                 </div>
               )}
 
               {user && myOrders.length === 0 && !loadingMyOrders && (
-                <div className="mb-6 p-4 border border-dashed rounded-lg text-center text-sm text-muted-foreground">
-                  <Inbox className="h-8 w-8 mx-auto mb-2" />
-                  <p>You don't have any orders yet.</p>
+                <div className="p-8 border-2 border-dashed rounded-lg text-center bg-muted/30">
+                  <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-base font-medium mb-1">No orders yet</p>
+                  <p className="text-sm text-muted-foreground mb-4">Start by creating your first order!</p>
+                  <Button
+                    onClick={() => router.push('/create-order')}
+                    className="gap-2"
+                  >
+                    Create Order
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
                 </div>
               )}
 
               {user && myOrders.length > 0 && filteredOrders.length === 0 && !loadingMyOrders && (
-                <div className="mb-6 p-4 border border-dashed rounded-lg text-center text-sm text-muted-foreground">
-                  <Inbox className="h-8 w-8 mx-auto mb-2" />
-                  <p>No active orders found. All your orders are completed.</p>
+                <div className="p-8 border-2 border-dashed rounded-lg text-center bg-muted/30">
+                  <CheckCircle2 className="h-12 w-12 mx-auto mb-3 text-green-500" />
+                  <p className="text-base font-medium mb-1">All orders completed!</p>
+                  <p className="text-sm text-muted-foreground mb-4">All your active orders have been completed.</p>
                   <Button
                     variant="outline"
-                    size="sm"
                     onClick={() => router.push('/my-orders')}
-                    className="mt-3 flex items-center gap-2"
+                    className="gap-2"
                   >
                     View All Orders
                     <ArrowRight className="h-4 w-4" />
@@ -357,11 +399,15 @@ export default function OrderStatusPage() {
                 </div>
               )}
 
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-base font-semibold">
-                    {user ? 'Search for Another Order' : 'Search Order'}
-                  </Label>
+              {/* Search Form Section */}
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Search className="h-5 w-5 text-primary" />
+                    <Label className="text-base font-semibold">
+                      {user ? 'Search for Another Order' : 'Search Order'}
+                    </Label>
+                  </div>
                   {!user && (
                     <TooltipProvider>
                       <Tooltip>
@@ -377,40 +423,55 @@ export default function OrderStatusPage() {
                     </TooltipProvider>
                   )}
                 </div>
-                <form onSubmit={handleSearch} className="flex flex-col gap-3">
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="w-full grid gap-1.5">
-                      <Label htmlFor="orderId">Order ID</Label>
-                       <div className="relative">
-                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <form onSubmit={handleSearch} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="orderId" className="text-sm font-medium">Order ID</Label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="orderId"
                           placeholder="e.g., RKR001"
                           value={orderId}
                           onChange={(e) => setOrderId(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 h-11"
                           disabled={loading}
                         />
-                       </div>
+                      </div>
                     </div>
-                     <div className="w-full grid gap-1.5">
-                      <Label htmlFor="name">Customer Name</Label>
-                       <div className="relative">
-                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-sm font-medium">Customer Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="name"
                           placeholder="Enter the name on the order"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 h-11"
                           disabled={loading}
                         />
-                       </div>
+                      </div>
                     </div>
-                </div>
-                <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? 'Searching...' : 'Check Status'}
-                </Button>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="w-full h-11 text-base font-semibold"
+                    size="lg"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Searching...
+                      </>
+                    ) : (
+                      <>
+                        <Search className="mr-2 h-4 w-4" />
+                        Check Status
+                      </>
+                    )}
+                  </Button>
                 </form>
               </div>
 
@@ -418,90 +479,106 @@ export default function OrderStatusPage() {
               {(selectedOrder || (searchAttempted && searchedOrder)) && (() => {
                 const currentOrder = selectedOrder || searchedOrder!;
                 return (
-                  <>
+                  <div className="pt-6 border-t space-y-4">
                     <OrderStatusTracker order={currentOrder} />
-                    {user && currentOrder.userId === user.id && (
-                      <CancelOrderButton
-                        orderId={currentOrder.id}
-                        orderStatus={currentOrder.status}
-                        onCancelSuccess={async () => {
-                          // Refresh orders after cancellation
-                          setLoadingMyOrders(true);
-                          try {
-                            const { data, error } = await fetchMyOrders();
-                            if (!error && data) {
-                              const mapped: Order[] = data.map((o: any) => ({
-                                id: o.id,
-                                userId: o.customer_id,
-                                customerName: o.customer_name,
-                                contactNumber: o.contact_number,
-                                load: o.loads,
-                                weight: o.weight,
-                                status: o.status,
-                                total: o.total,
-                                orderDate: new Date(o.created_at),
-                                isPaid: o.is_paid,
-                                balance: typeof o.balance === 'number' ? o.balance : (o.balance ? parseFloat(o.balance) : (o.is_paid ? 0 : o.total)),
-                                deliveryOption: o.delivery_option ?? undefined,
-                                servicePackage: o.service_package,
-                                distance: o.distance ?? 0,
-                                statusHistory: (o.order_status_history ?? []).map((sh: any) => ({
-                                  status: sh.status,
-                                  timestamp: new Date(sh.created_at),
-                                })),
-                                orderType: o.order_type || 'customer',
-                                assignedEmployeeId: o.assigned_employee_id ?? null,
-                              }));
-                              setMyOrders(mapped);
-                              setSelectedOrder(null);
-                            } else if (error) {
-                              console.error('Error refreshing orders after cancellation:', error);
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {user && currentOrder.userId === user.id && (
+                        <CancelOrderButton
+                          orderId={currentOrder.id}
+                          orderStatus={currentOrder.status}
+                          onCancelSuccess={async () => {
+                            // Refresh orders after cancellation
+                            setLoadingMyOrders(true);
+                            try {
+                              const { data, error } = await fetchMyOrders();
+                              if (!error && data) {
+                                const mapped: Order[] = data.map((o: any) => ({
+                                  id: o.id,
+                                  userId: o.customer_id,
+                                  customerName: o.customer_name,
+                                  contactNumber: o.contact_number,
+                                  load: o.loads,
+                                  weight: o.weight,
+                                  status: o.status,
+                                  total: o.total,
+                                  orderDate: new Date(o.created_at),
+                                  isPaid: o.is_paid,
+                                  balance: typeof o.balance === 'number' ? o.balance : (o.balance ? parseFloat(o.balance) : (o.is_paid ? 0 : o.total)),
+                                  deliveryOption: o.delivery_option ?? undefined,
+                                  servicePackage: o.service_package,
+                                  distance: o.distance ?? 0,
+                                  statusHistory: (o.order_status_history ?? []).map((sh: any) => ({
+                                    status: sh.status,
+                                    timestamp: new Date(sh.created_at),
+                                  })),
+                                  orderType: o.order_type || 'customer',
+                                  assignedEmployeeId: o.assigned_employee_id ?? null,
+                                }));
+                                setMyOrders(mapped);
+                                setSelectedOrder(null);
+                              } else if (error) {
+                                console.error('Error refreshing orders after cancellation:', error);
+                              }
+                            } catch (error) {
+                              console.error('Unexpected error refreshing orders:', error);
+                            } finally {
+                              setLoadingMyOrders(false);
                             }
-                          } catch (error) {
-                            console.error('Unexpected error refreshing orders:', error);
-                          } finally {
-                            setLoadingMyOrders(false);
-                          }
-                        }}
-                      />
-                    )}
-                    <div className="mt-4">
-                      <RateRKRLaundrySection orderId={currentOrder.id} />
+                          }}
+                        />
+                      )}
+                      <div className="flex-1">
+                        <RateRKRLaundrySection orderId={currentOrder.id} />
+                      </div>
                     </div>
-                  </>
+                  </div>
                 );
               })()}
               
               {searchAttempted && !searchedOrder && !selectedOrder && (
-                <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground border rounded-lg bg-card p-8">
-                    <AlertTriangle className="h-12 w-12 mb-2 text-destructive" />
-                    <h3 className="text-lg font-semibold">Order Not Found</h3>
-                    <p>No order was found with the provided details. Please check the ID and name, then try again.</p>
+                <div className="p-8 border-2 border-dashed rounded-lg text-center bg-muted/30">
+                  <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-destructive" />
+                  <h3 className="text-lg font-semibold mb-2">Order Not Found</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    No order was found with the provided details. Please check the ID and name, then try again.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setOrderId('');
+                      setName('');
+                      setSearchAttempted(false);
+                    }}
+                  >
+                    Try Again
+                  </Button>
                 </div>
               )}
 
               {!user && !searchAttempted && !searchedOrder && (
-                <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground border-2 border-dashed rounded-lg bg-transparent p-8">
-                    <Inbox className="h-12 w-12 mb-2" />
-                    <p className="mb-2">Your order status will appear here.</p>
-                    <p className="text-xs">Create an account to save and view your order history.</p>
-                    <div className="flex gap-2 mt-4">
-                      <Link href="/register">
-                        <Button variant="outline" size="sm">
-                          Sign Up
-                        </Button>
-                      </Link>
-                      <Link href="/login">
-                        <Button size="sm">
-                          Log In
-                        </Button>
-                      </Link>
-                    </div>
+                <div className="p-8 border-2 border-dashed rounded-lg text-center bg-muted/30">
+                  <Package className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+                  <p className="text-base font-medium mb-1">Your order status will appear here</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Create an account to save and view your order history.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                    <Link href="/register">
+                      <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                        Sign Up
+                      </Button>
+                    </Link>
+                    <Link href="/login">
+                      <Button size="sm" className="w-full sm:w-auto">
+                        Log In
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
       <AppFooter />
