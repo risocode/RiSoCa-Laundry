@@ -116,6 +116,15 @@ export default function RootLayout({
                   window.adsbygoogle = window.adsbygoogle || [];
                   
                   // Pages with minimal content that should not show ads
+                  // This includes:
+                  // - All admin and employee pages (navigation/management interfaces)
+                  // - Authentication pages (login, register, password reset)
+                  // - Form pages (select-location)
+                  // - User account pages (profile, delete-account, my-orders)
+                  // - Legal pages (privacy-policy, terms-and-conditions)
+                  // - Pages that might be empty (customer-ratings)
+                  // - Download/app installation pages
+                  // Note: /create-order and /order-status now have sufficient content for ads
                   const minimalContentPages = [
                     '/select-location',
                     '/download-app',
@@ -128,11 +137,21 @@ export default function RootLayout({
                     '/reset-password',
                     '/profile',
                     '/delete-account',
+                    '/my-orders',
+                    '/customer-ratings',
+                    '/rating/',
+                    '/privacy-policy',
+                    '/terms-and-conditions',
                   ];
                   
                   // Check if current page should have ads
                   const path = window.location.pathname;
-                  const shouldShowAds = !minimalContentPages.some(page => path.startsWith(page));
+                  
+                  // Exclude if path starts with any minimal content page
+                  // Also exclude all admin and employee sub-pages
+                  const shouldShowAds = !minimalContentPages.some(page => path.startsWith(page)) &&
+                                        !path.startsWith('/admin/') &&
+                                        !path.startsWith('/employee/');
                   
                   if (shouldShowAds) {
                     window.adsbygoogle.push({
