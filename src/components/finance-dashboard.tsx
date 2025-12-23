@@ -273,127 +273,151 @@ export function FinanceDashboard() {
   }
 
   return (
-    <div className="space-y-6 transition-all duration-300">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">₱{totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              From {paidOrders.length} paid order{paidOrders.length !== 1 ? 's' : ''}
-            </p>
-          </CardContent>
-        </Card>
+    <div className="space-y-8 transition-all duration-300">
+      {/* Financial Summary Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Financial Summary</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-green-200 dark:border-green-800">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">₱{totalRevenue.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                From {paidOrders.length} paid order{paidOrders.length !== 1 ? 's' : ''}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expenses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">₱{regularExpenses.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {filteredData.expenses.length} expense{filteredData.expenses.length !== 1 ? 's' : ''}
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="border-red-200 dark:border-red-800">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Expenses</CardTitle>
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">₱{regularExpenses.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {filteredData.expenses.length} expense{filteredData.expenses.length !== 1 ? 's' : ''}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Employee Salary</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">₱{employeeSalaries.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {filteredData.salaryPayments.length} payment{filteredData.salaryPayments.length !== 1 ? 's' : ''}
-            </p>
-          </CardContent>
-        </Card>
+          <Card className="border-orange-200 dark:border-orange-800">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Employee Salary</CardTitle>
+              <Wallet className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">₱{employeeSalaries.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {filteredData.salaryPayments.length} payment{filteredData.salaryPayments.length !== 1 ? 's' : ''}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Income</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ₱{netIncome.toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {netIncome >= 0 ? 'Profit' : 'Loss'}
-            </p>
-          </CardContent>
-        </Card>
+          <Card className={`${netIncome >= 0 ? 'border-green-200 dark:border-green-800' : 'border-red-200 dark:border-red-800'}`}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Net Income</CardTitle>
+              <TrendingUp className={`h-4 w-4 ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ₱{netIncome.toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {netIncome >= 0 ? 'Profit' : 'Loss'}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Days of Operation</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{totalDaysOfOperation}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {businessStartDate ? `Since ${format(businessStartDate, 'MMM d, yyyy')}` : 'No data'}
-            </p>
-          </CardContent>
-        </Card>
+      {/* Business Operations Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Package className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Business Operations</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Days of Operation</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{totalDaysOfOperation}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {businessStartDate ? `Since ${format(businessStartDate, 'MMM d, yyyy')}` : 'No data'}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Loads</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{totalLoads}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              All-time total
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Loads</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{totalLoads}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                All-time total
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Weight</CardTitle>
-            <Scale className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{totalWeight.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              kg total weight
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Weight</CardTitle>
+              <Scale className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{totalWeight.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                kg total weight
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{totalUsers}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Registered customers
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{totalOrders}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                All-time orders
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{totalOrders}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              All-time orders
-            </p>
-          </CardContent>
-        </Card>
+      {/* User Metrics Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Users className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">User Metrics</h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{totalUsers}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Registered customers
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Charts */}

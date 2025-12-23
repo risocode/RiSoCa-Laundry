@@ -34,6 +34,7 @@ import {
   Zap,
   ShoppingBag,
   Gift,
+  Share2,
 } from 'lucide-react';
 
 import { AppHeader } from '@/components/app-header';
@@ -65,6 +66,7 @@ const adminGridItems = [
   { href: '/admin/expenses', label: 'Expenses', icon: CreditCard },
   { href: '/admin/electricity', label: 'Electricity', icon: Zap },
   { href: '/admin/finance', label: 'Finance', icon: TrendingUp },
+  { href: '/admin/finance/distribution', label: 'Income Distribution', icon: Share2 },
   { href: '/admin/promo', label: 'Promo', icon: Gift },
 ];
 
