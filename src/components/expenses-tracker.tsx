@@ -75,6 +75,9 @@ export function ExpensesTracker() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [bulkReimbursing, setBulkReimbursing] = useState(false);
   const [pendingSummary, setPendingSummary] = useState<{ Racky: number; Karaya: number; Richard: number; total: number } | null>(null);
+  const [reimburseDialogOpen, setReimburseDialogOpen] = useState(false);
+  const [personToReimburse, setPersonToReimburse] = useState<'Racky' | 'Karaya' | 'Richard' | null>(null);
+  const [personExpensesToReimburse, setPersonExpensesToReimburse] = useState<any[]>([]);
 
   const { register, handleSubmit, reset, formState: { errors }, setValue, watch } = useForm<z.infer<typeof expenseSchema>>({
     resolver: zodResolver(expenseSchema),
@@ -165,25 +168,37 @@ export function ExpensesTracker() {
       return;
     }
     
-    const personTotal = personPendingExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const confirmed = window.confirm(
-      `Are you sure you want to reimburse all ${personPendingExpenses.length} pending expense(s) for ${person} totaling ₱${personTotal.toFixed(2)}?\n\nThis will transfer all ${person}'s pending expenses to RKR.`
-    );
-    if (!confirmed) return;
+    // Open dialog with expense details
+    setPersonToReimburse(person);
+    setPersonExpensesToReimburse(personPendingExpenses);
+    setReimburseDialogOpen(true);
+  };
+
+  const confirmReimbursement = async () => {
+    if (!personToReimburse || personExpensesToReimburse.length === 0 || !user?.id) {
+      return;
+    }
 
     setBulkReimbursing(true);
-    const expenseIds = personPendingExpenses.map(e => e.id);
+    const expenseIds = personExpensesToReimburse.map(e => e.id);
+    const personTotal = personExpensesToReimburse.reduce((sum, e) => sum + (e.amount || 0), 0);
+    
     const { error } = await bulkReimburseExpenses(expenseIds, user.id);
     if (error) {
       toast({ variant: 'destructive', title: 'Reimbursement failed', description: error.message });
       setBulkReimbursing(false);
       return;
     }
+    
     toast({ 
-      title: `${person}'s Expenses Reimbursed`, 
+      title: `${personToReimburse}'s Expenses Reimbursed`, 
       description: `${expenseIds.length} expense(s) totaling ₱${personTotal.toFixed(2)} have been transferred to RKR.` 
     });
+    
     setBulkReimbursing(false);
+    setReimburseDialogOpen(false);
+    setPersonToReimburse(null);
+    setPersonExpensesToReimburse([]);
     load();
     loadPendingSummary();
   };
@@ -640,6 +655,125 @@ export function ExpensesTracker() {
               )}
             </CardContent>
         </Card>
+
+        {/* Reimbursement Confirmation Dialog */}
+        <Dialog open={reimburseDialogOpen} onOpenChange={setReimburseDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <CheckCircle2 className="h-5 w-5 text-orange-600" />
+                Confirm Reimbursement for {personToReimburse}
+              </DialogTitle>
+              <DialogDescription>
+                Review the expenses that will be reimbursed. All expenses will be transferred to RKR.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {personExpensesToReimburse.length > 0 && (
+              <div className="space-y-4 py-4">
+                {/* Summary Header */}
+                <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-orange-900 dark:text-orange-100">
+                      Total Expenses: {personExpensesToReimburse.length}
+                    </span>
+                    <span className="text-lg font-bold text-orange-700 dark:text-orange-300">
+                      ₱{personExpensesToReimburse.reduce((sum, e) => sum + (e.amount || 0), 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                    All expenses will be transferred to RKR and counted as business expenses.
+                  </p>
+                </div>
+
+                {/* Expenses List */}
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-muted px-4 py-2 border-b">
+                    <h3 className="text-sm font-semibold">Expense Details</h3>
+                  </div>
+                  <div className="max-h-[300px] overflow-y-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-muted">
+                        <TableRow>
+                          <TableHead className="w-12">#</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {personExpensesToReimburse.map((expense, index) => (
+                          <TableRow key={expense.id}>
+                            <TableCell className="text-xs text-muted-foreground">{index + 1}</TableCell>
+                            <TableCell className="text-xs">
+                              {format(new Date(expense.incurred_on ?? expense.created_at), 'MMM d, yyyy')}
+                            </TableCell>
+                            <TableCell className="font-medium">{expense.title}</TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {expense.category || '—'}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              ₱{Number(expense.amount).toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+
+                {/* Total Summary */}
+                <div className="bg-primary/5 border-2 border-primary/20 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground">Total Reimbursement Amount</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {personExpensesToReimburse.length} expense{personExpensesToReimburse.length !== 1 ? 's' : ''} for {personToReimburse}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-primary">
+                        ₱{personExpensesToReimburse.reduce((sum, e) => sum + (e.amount || 0), 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setReimburseDialogOpen(false);
+                  setPersonToReimburse(null);
+                  setPersonExpensesToReimburse([]);
+                }}
+                disabled={bulkReimbursing}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={confirmReimbursement}
+                disabled={bulkReimbursing}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                {bulkReimbursing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Confirm Reimbursement
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
     </div>
   );
