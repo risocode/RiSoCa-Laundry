@@ -113,39 +113,35 @@ export default function RootLayout({
               (function() {
                 if (typeof window === 'undefined') return;
                 
-                // Check if this script has already run by checking DOM
-                var scriptId = 'adsense-init';
-                if (document.getElementById(scriptId) && document.getElementById(scriptId).dataset.executed === 'true') {
+                // CRITICAL: Set flag IMMEDIATELY before any other operations
+                if (window.__adsbygoogle_page_level_initialized) {
                   return;
                 }
-                
-                // Mark as executed immediately
-                var scriptEl = document.getElementById(scriptId);
-                if (scriptEl) {
-                  scriptEl.dataset.executed = 'true';
-                }
-                
-                // Also use window flag as backup
-                if (window.__adsbygoogle_page_level_initialized) return;
                 window.__adsbygoogle_page_level_initialized = true;
                 
                 // Initialize adsbygoogle array if it doesn't exist
                 window.adsbygoogle = window.adsbygoogle || [];
                 
-                // Check if enable_page_level_ads has already been pushed
-                var hasPageLevelAds = false;
-                try {
-                  for (var i = 0; i < window.adsbygoogle.length; i++) {
-                    if (window.adsbygoogle[i] && window.adsbygoogle[i].enable_page_level_ads === true) {
-                      hasPageLevelAds = true;
-                      break;
-                    }
+                // Helper function to check if page level ads already exist
+                function hasPageLevelAds() {
+                  if (!window.adsbygoogle || !Array.isArray(window.adsbygoogle)) {
+                    return false;
                   }
-                } catch (e) {
-                  // Array might not be accessible yet
+                  try {
+                    for (var i = 0; i < window.adsbygoogle.length; i++) {
+                      var item = window.adsbygoogle[i];
+                      if (item && typeof item === 'object' && item.enable_page_level_ads === true) {
+                        return true;
+                      }
+                    }
+                  } catch (e) {
+                    return false;
+                  }
+                  return false;
                 }
                 
-                if (hasPageLevelAds) {
+                // Check immediately if already pushed - if so, we're done
+                if (hasPageLevelAds()) {
                   return;
                 }
                 
@@ -182,37 +178,58 @@ export default function RootLayout({
                   shouldShowAds = false;
                 }
                 
-                if (shouldShowAds) {
-                  // Wait for adsbygoogle script to load, then push
-                  function initAds() {
-                    try {
-                      if (!window.adsbygoogle) {
-                        window.adsbygoogle = [];
-                      }
-                      
-                      // Final check before pushing
-                      var alreadyPushed = false;
-                      for (var k = 0; k < window.adsbygoogle.length; k++) {
-                        if (window.adsbygoogle[k] && window.adsbygoogle[k].enable_page_level_ads === true) {
-                          alreadyPushed = true;
-                          break;
-                        }
-                      }
-                      
-                      if (!alreadyPushed) {
-                        window.adsbygoogle.push({
-                          google_ad_client: "ca-pub-1036864152624333",
-                          enable_page_level_ads: true
-                        });
-                      }
-                    } catch (e) {
-                      console.warn('AdSense initialization error:', e);
-                    }
+                if (!shouldShowAds) {
+                  return;
+                }
+                
+                // Single function to push - will only execute once due to flag
+                function pushPageLevelAdsOnce() {
+                  // Double-check flag and state
+                  if (window.__adsbygoogle_push_executed) {
+                    return;
                   }
                   
-                  // Try immediately, then retry after a short delay if needed
-                  initAds();
-                  setTimeout(initAds, 200);
+                  // Check if already pushed
+                  if (hasPageLevelAds()) {
+                    window.__adsbygoogle_push_executed = true;
+                    return;
+                  }
+                  
+                  // Mark as executed BEFORE pushing
+                  window.__adsbygoogle_push_executed = true;
+                  
+                  try {
+                    window.adsbygoogle.push({
+                      google_ad_client: "ca-pub-1036864152624333",
+                      enable_page_level_ads: true
+                    });
+                  } catch (e) {
+                    // Error already logged by AdSense, just prevent further attempts
+                  }
+                }
+                
+                // Execute once when script is ready
+                if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
+                  pushPageLevelAdsOnce();
+                } else {
+                  // Wait for script to load, but only try once
+                  var triedOnce = false;
+                  var checkInterval = setInterval(function() {
+                    if (triedOnce) {
+                      clearInterval(checkInterval);
+                      return;
+                    }
+                    if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
+                      triedOnce = true;
+                      clearInterval(checkInterval);
+                      pushPageLevelAdsOnce();
+                    }
+                  }, 100);
+                  
+                  // Timeout after 3 seconds
+                  setTimeout(function() {
+                    clearInterval(checkInterval);
+                  }, 3000);
                 }
               })();
             `,
