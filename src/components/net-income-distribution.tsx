@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { Loader2, TrendingUp, TrendingDown, Users, PieChart as PieChartIcon, DollarSign, Share2, CheckCircle2, CheckSquare, Square } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, Users, PieChart as PieChartIcon, DollarSign, Share2, CheckCircle2, CheckSquare, Square, Calendar, FileText, Download, RefreshCw, AlertCircle, Info } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import { fetchExpenses } from '@/lib/api/expenses';
 import { useAuthSession } from '@/hooks/use-auth-session';
@@ -36,6 +36,8 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  LineChart,
+  Line,
 } from 'recharts';
 
 type OrderData = {
@@ -89,6 +91,8 @@ export function NetIncomeDistribution() {
   const [claimingDistribution, setClaimingDistribution] = useState(false);
   const [claimDialogOpen, setClaimDialogOpen] = useState(false);
   const [ownerToClaim, setOwnerToClaim] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -501,6 +505,32 @@ export function NetIncomeDistribution() {
     await fetchDistributions();
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+    toast({ title: 'Data Refreshed', description: 'Distribution data has been updated.' });
+  };
+
+  // Calculate summary statistics
+  const summaryStats = useMemo(() => {
+    const totalClaimed = existingDistributions.filter(d => d.is_claimed).length;
+    const totalUnclaimed = existingDistributions.filter(d => !d.is_claimed).length;
+    const totalClaimedAmount = existingDistributions
+      .filter(d => d.is_claimed)
+      .reduce((sum, d) => sum + (d.net_share || 0), 0);
+    const totalUnclaimedAmount = existingDistributions
+      .filter(d => !d.is_claimed)
+      .reduce((sum, d) => sum + (d.net_share || 0), 0);
+
+    return {
+      totalClaimed,
+      totalUnclaimed,
+      totalClaimedAmount,
+      totalUnclaimedAmount,
+    };
+  }, [existingDistributions]);
+
   useEffect(() => {
     if (distributionPeriod) {
       fetchDistributions();
@@ -518,6 +548,25 @@ export function NetIncomeDistribution() {
 
   return (
     <div className="space-y-6 transition-all duration-300">
+      {/* Header with Refresh Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Income Distribution Overview</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage and track net income distribution among owners
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
       {/* Period Selector & Owner Selection */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
@@ -534,16 +583,20 @@ export function NetIncomeDistribution() {
                 <button
                   key={period}
                   onClick={() => setDistributionPeriod(period)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     distributionPeriod === period
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted hover:bg-muted/80'
+                      ? 'bg-primary text-primary-foreground shadow-md scale-105'
+                      : 'bg-muted hover:bg-muted/80 hover:scale-105'
                   }`}
                 >
                   {period === 'monthly' ? 'This Month' : period === 'yearly' ? 'This Year' : 'All Time'}
                 </button>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1">
+              <Info className="h-3 w-3" />
+              Select a period to view distribution calculations for that timeframe
+            </p>
           </CardContent>
         </Card>
 
@@ -596,28 +649,33 @@ export function NetIncomeDistribution() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-background">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               ₱{distributionData.totalRevenue.toFixed(2)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
               {distributionData.period}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-red-200 dark:border-red-800 bg-gradient-to-br from-red-50 to-white dark:from-red-950/20 dark:to-background">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+            <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
               ₱{distributionData.totalExpenses.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -626,13 +684,15 @@ export function NetIncomeDistribution() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={`${distributionData.netIncome >= 0 ? 'border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-white dark:from-green-950/20' : 'border-red-200 dark:border-red-800 bg-gradient-to-br from-red-50 to-white dark:from-red-950/20'} dark:to-background`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Net Income</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <div className={`h-10 w-10 rounded-full ${distributionData.netIncome >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'} flex items-center justify-center`}>
+              <TrendingUp className={`h-5 w-5 ${distributionData.netIncome >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${distributionData.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-2xl font-bold ${distributionData.netIncome >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
               ₱{distributionData.netIncome.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -641,10 +701,12 @@ export function NetIncomeDistribution() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-white dark:from-primary/10 dark:to-background">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Per Owner Share</CardTitle>
-            <Share2 className="h-4 w-4 text-muted-foreground" />
+            <div className="h-10 w-10 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+              <Share2 className="h-5 w-5 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">
@@ -657,39 +719,132 @@ export function NetIncomeDistribution() {
         </Card>
       </div>
 
+      {/* Claim Status Summary */}
+      {existingDistributions.length > 0 && (
+        <Card className="border-blue-200 dark:border-blue-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-blue-600" />
+              Distribution Status Summary
+            </CardTitle>
+            <CardDescription>Overview of claimed and unclaimed distributions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-900 dark:text-green-100">Claimed</span>
+                </div>
+                <div className="text-2xl font-bold text-green-600">{summaryStats.totalClaimed}</div>
+                <div className="text-xs text-green-700 dark:text-green-300 mt-1">
+                  ₱{summaryStats.totalClaimedAmount.toFixed(2)}
+                </div>
+              </div>
+              <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <span className="text-sm font-medium text-orange-900 dark:text-orange-100">Unclaimed</span>
+                </div>
+                <div className="text-2xl font-bold text-orange-600">{summaryStats.totalUnclaimed}</div>
+                <div className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                  ₱{summaryStats.totalUnclaimedAmount.toFixed(2)}
+                </div>
+              </div>
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Records</span>
+                </div>
+                <div className="text-2xl font-bold text-blue-600">{existingDistributions.length}</div>
+                <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                  All periods
+                </div>
+              </div>
+              <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm font-medium text-purple-900 dark:text-purple-100">Total Distributed</span>
+                </div>
+                <div className="text-2xl font-bold text-purple-600">
+                  ₱{(summaryStats.totalClaimedAmount + summaryStats.totalUnclaimedAmount).toFixed(2)}
+                </div>
+                <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                  Combined amount
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Distribution Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Pie Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Distribution Share</CardTitle>
-            <CardDescription>Equal distribution among owners</CardDescription>
+            <CardDescription>Equal distribution among selected owners</CardDescription>
           </CardHeader>
           <CardContent>
             {distributionData.distribution.filter(d => d.isSelected && d.share > 0).length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={distributionData.distribution.filter(d => d.isSelected && d.share > 0)}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percentage }) => `${name} ${percentage.toFixed(1)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="share"
-                  >
-                    {distributionData.distribution.filter(d => d.isSelected && d.share > 0).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => `₱${value.toFixed(2)}`} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="space-y-4">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={distributionData.distribution.filter(d => d.isSelected && d.share > 0)}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percentage, value }) => `${name}\n${percentage.toFixed(1)}%\n₱${value.toFixed(2)}`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="share"
+                      animationBegin={0}
+                      animationDuration={800}
+                    >
+                      {distributionData.distribution.filter(d => d.isSelected && d.share > 0).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.color} strokeWidth={2} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number, name: string, props: any) => [
+                        `₱${value.toFixed(2)}`,
+                        `${props.payload.name} (${props.payload.percentage.toFixed(2)}%)`
+                      ]}
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Legend 
+                      formatter={(value, entry: any) => (
+                        <span style={{ color: entry.color }}>
+                          {value} - ₱{entry.payload.share.toFixed(2)}
+                        </span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+                  {distributionData.distribution.filter(d => d.isSelected && d.share > 0).map((owner) => (
+                    <div key={owner.name} className="flex items-center gap-2 text-sm">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: owner.color }}
+                      />
+                      <span className="font-medium">{owner.name}:</span>
+                      <span className="text-muted-foreground">₱{owner.share.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                No owners selected for distribution
+              <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+                <AlertCircle className="h-12 w-12 mb-2 opacity-50" />
+                <p>No owners selected for distribution</p>
+                <p className="text-xs mt-1">Select owners above to see distribution breakdown</p>
               </div>
             )}
           </CardContent>
@@ -699,22 +854,22 @@ export function NetIncomeDistribution() {
         <Card>
           <CardHeader>
             <CardTitle>Owner Distribution Details</CardTitle>
-            <CardDescription>Breakdown per owner with personal expenses</CardDescription>
+            <CardDescription>Breakdown per owner with personal expenses and claim status</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {distributionData.distribution.map((owner, index) => (
                 <div
                   key={owner.name}
-                  className={`border rounded-lg p-4 space-y-2 ${
-                    !owner.isSelected ? 'opacity-50' : ''
+                  className={`border rounded-lg p-5 space-y-3 transition-all ${
+                    !owner.isSelected ? 'opacity-50 bg-muted/30' : owner.isClaimed ? 'bg-green-50/50 dark:bg-green-950/10 border-green-200 dark:border-green-800' : 'bg-card hover:shadow-md'
                   }`}
                   style={{ borderLeftColor: owner.color, borderLeftWidth: '4px' }}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <div
-                        className="w-4 h-4 rounded-full"
+                        className="w-5 h-5 rounded-full shadow-sm"
                         style={{ backgroundColor: owner.color }}
                       />
                       <span className="font-semibold text-lg">{owner.name}</span>
@@ -722,43 +877,46 @@ export function NetIncomeDistribution() {
                         <Badge variant="outline" className="ml-2">Excluded</Badge>
                       )}
                       {owner.isClaimed && (
-                        <Badge variant="default" className="ml-2 bg-green-600">
+                        <Badge variant="default" className="ml-2 bg-green-600 hover:bg-green-700">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           Claimed
                         </Badge>
                       )}
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      {owner.isSelected ? `${owner.percentage.toFixed(2)}%` : '0%'}
-                    </span>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold text-muted-foreground">
+                        {owner.isSelected ? `${owner.percentage.toFixed(2)}%` : '0%'}
+                      </span>
+                      <div className="text-xs text-muted-foreground">Share</div>
+                    </div>
                   </div>
                   {owner.isSelected && (
                     <>
-                      <div className="space-y-1 text-sm">
-                        <div className="flex justify-between">
+                      <div className="space-y-2 text-sm bg-muted/50 dark:bg-muted/20 p-3 rounded-lg">
+                        <div className="flex justify-between items-center">
                           <span className="text-muted-foreground">Gross Share:</span>
-                          <span className="font-medium">₱{owner.share.toFixed(2)}</span>
+                          <span className="font-semibold text-base">₱{owner.share.toFixed(2)}</span>
                         </div>
                         {owner.personalExpenses > 0 && (
-                          <div className="flex justify-between text-orange-600">
+                          <div className="flex justify-between items-center text-orange-600 dark:text-orange-400">
                             <span>Personal Expenses:</span>
-                            <span className="font-medium">-₱{owner.personalExpenses.toFixed(2)}</span>
+                            <span className="font-semibold">-₱{owner.personalExpenses.toFixed(2)}</span>
                           </div>
                         )}
-                        <div className="flex justify-between pt-2 border-t font-semibold">
+                        <div className="flex justify-between items-center pt-2 border-t border-border font-bold text-base">
                           <span>Net Share:</span>
-                          <span className={owner.netShare >= 0 ? 'text-green-600' : 'text-red-600'}>
+                          <span className={owner.netShare >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                             ₱{owner.netShare.toFixed(2)}
                           </span>
                         </div>
                       </div>
                       {!owner.isClaimed && owner.netShare > 0 && (
-                        <div className="pt-2 border-t">
+                        <div className="pt-2">
                           <Button
                             size="sm"
                             onClick={() => handleClaimDistribution(owner.name)}
-                            className="w-full"
-                            variant="outline"
+                            className="w-full bg-primary hover:bg-primary/90"
+                            variant="default"
                           >
                             <CheckCircle2 className="h-4 w-4 mr-2" />
                             Claim Distribution
@@ -766,8 +924,9 @@ export function NetIncomeDistribution() {
                         </div>
                       )}
                       {owner.isClaimed && owner.claimedAt && (
-                        <div className="pt-2 border-t text-xs text-muted-foreground">
-                          Claimed on {format(new Date(owner.claimedAt), 'PPP')}
+                        <div className="pt-2 border-t flex items-center gap-2 text-xs text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>Claimed on {format(new Date(owner.claimedAt), 'PPP p')}</span>
                         </div>
                       )}
                     </>
@@ -782,24 +941,53 @@ export function NetIncomeDistribution() {
       {/* Time Series Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Distribution Over Time</CardTitle>
-          <CardDescription>
-            Net income distribution by {distributionPeriod === 'monthly' ? 'month' : distributionPeriod === 'yearly' ? 'year' : 'month'}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Distribution Over Time</CardTitle>
+              <CardDescription>
+                Net income distribution by {distributionPeriod === 'monthly' ? 'month' : distributionPeriod === 'yearly' ? 'year' : 'month'}
+              </CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              {showHistory ? 'Hide' : 'Show'} History
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {timeSeriesData.length > 0 ? (
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={timeSeriesData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="period" />
-                <YAxis />
-                <Tooltip formatter={(value: number) => `₱${value.toFixed(2)}`} />
+                <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                <XAxis 
+                  dataKey="period" 
+                  tick={{ fontSize: 12 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => `₱${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip 
+                  formatter={(value: number) => `₱${value.toFixed(2)}`}
+                  contentStyle={{ 
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px'
+                  }}
+                />
                 <Legend />
-                <Bar dataKey="revenue" fill="#22c55e" name="Revenue" />
-                <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
-                <Bar dataKey="netIncome" fill="#3b82f6" name="Net Income" />
-                <Bar dataKey="distribution" fill="#8b5cf6" name="Per Owner Share" />
+                <Bar dataKey="revenue" fill="#22c55e" name="Revenue" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expenses" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="netIncome" fill="#3b82f6" name="Net Income" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="distribution" fill="#8b5cf6" name="Per Owner Share" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -809,6 +997,87 @@ export function NetIncomeDistribution() {
           )}
         </CardContent>
       </Card>
+
+      {/* Distribution History Table */}
+      {showHistory && existingDistributions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Distribution History
+            </CardTitle>
+            <CardDescription>Complete history of all distribution records</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-3 text-sm font-semibold">Period</th>
+                    <th className="text-left p-3 text-sm font-semibold">Owner</th>
+                    <th className="text-right p-3 text-sm font-semibold">Gross Share</th>
+                    <th className="text-right p-3 text-sm font-semibold">Personal Expenses</th>
+                    <th className="text-right p-3 text-sm font-semibold">Net Share</th>
+                    <th className="text-center p-3 text-sm font-semibold">Status</th>
+                    <th className="text-left p-3 text-sm font-semibold">Claimed Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {existingDistributions
+                    .sort((a, b) => new Date(b.period_start).getTime() - new Date(a.period_start).getTime())
+                    .map((dist) => (
+                      <tr key={dist.id} className="border-b hover:bg-muted/50 transition-colors">
+                        <td className="p-3 text-sm">
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {format(new Date(dist.period_start), 'MMM d, yyyy')} - {format(new Date(dist.period_end), 'MMM d, yyyy')}
+                            </span>
+                            <span className="text-xs text-muted-foreground capitalize">{dist.period_type}</span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: COLORS[OWNERS.indexOf(dist.owner_name as typeof OWNERS[number])] || '#888' }}
+                            />
+                            <span className="font-medium">{dist.owner_name}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-right text-sm font-medium">
+                          ₱{dist.share_amount.toFixed(2)}
+                        </td>
+                        <td className="p-3 text-right text-sm text-orange-600">
+                          {dist.personal_expenses > 0 ? `-₱${dist.personal_expenses.toFixed(2)}` : '₱0.00'}
+                        </td>
+                        <td className="p-3 text-right text-sm font-semibold">
+                          <span className={dist.net_share >= 0 ? 'text-green-600' : 'text-red-600'}>
+                            ₱{dist.net_share.toFixed(2)}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center">
+                          {dist.is_claimed ? (
+                            <Badge variant="default" className="bg-green-600">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Claimed
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-orange-300 text-orange-700">
+                              Pending
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="p-3 text-sm text-muted-foreground">
+                          {dist.claimed_at ? format(new Date(dist.claimed_at), 'MMM d, yyyy') : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Claim Distribution Dialog */}
       <Dialog open={claimDialogOpen} onOpenChange={setClaimDialogOpen}>
