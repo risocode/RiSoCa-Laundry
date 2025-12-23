@@ -109,51 +109,65 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if (typeof window !== 'undefined') {
+              (function() {
+                if (typeof window === 'undefined') return;
+                
                 // Check if we've already initialized page-level ads
-                if (!window.__adsbygoogle_page_level_initialized) {
-                  // Initialize adsbygoogle array if it doesn't exist
-                  window.adsbygoogle = window.adsbygoogle || [];
-                  
-                  // Pages with minimal content that should not show ads
-                  // This includes:
-                  // - All admin and employee pages (navigation/management interfaces)
-                  // - Authentication pages (login, register, password reset)
-                  // - Form pages (select-location)
-                  // - User account pages (profile, delete-account, my-orders)
-                  // - Legal pages (privacy-policy, terms-and-conditions)
-                  // - Pages that might be empty (customer-ratings)
-                  // - Download/app installation pages
-                  // Note: /create-order and /order-status now have sufficient content for ads
-                  const minimalContentPages = [
-                    '/select-location',
-                    '/download-app',
-                    '/branches',
-                    '/contact-us',
-                    '/admin',
-                    '/employee',
-                    '/login',
-                    '/register',
-                    '/reset-password',
-                    '/profile',
-                    '/delete-account',
-                    '/my-orders',
-                    '/customer-ratings',
-                    '/rating/',
-                    '/privacy-policy',
-                    '/terms-and-conditions',
-                  ];
-                  
-                  // Check if current page should have ads
-                  const path = window.location.pathname;
-                  
-                  // Exclude if path starts with any minimal content page
-                  // Also exclude all admin and employee sub-pages
-                  const shouldShowAds = !minimalContentPages.some(page => path.startsWith(page)) &&
-                                        !path.startsWith('/admin/') &&
-                                        !path.startsWith('/employee/');
-                  
-                  if (shouldShowAds) {
+                if (window.__adsbygoogle_page_level_initialized) return;
+                
+                // Initialize adsbygoogle array if it doesn't exist
+                window.adsbygoogle = window.adsbygoogle || [];
+                
+                // Check if enable_page_level_ads has already been pushed
+                const hasPageLevelAds = window.adsbygoogle.some(function(item) {
+                  return item && item.enable_page_level_ads === true;
+                });
+                
+                if (hasPageLevelAds) {
+                  window.__adsbygoogle_page_level_initialized = true;
+                  return;
+                }
+                
+                // Pages with minimal content that should not show ads
+                // This includes:
+                // - All admin and employee pages (navigation/management interfaces)
+                // - Authentication pages (login, register, password reset)
+                // - Form pages (select-location)
+                // - User account pages (profile, delete-account, my-orders)
+                // - Legal pages (privacy-policy, terms-and-conditions)
+                // - Pages that might be empty (customer-ratings)
+                // - Download/app installation pages
+                // Note: /create-order and /order-status now have sufficient content for ads
+                const minimalContentPages = [
+                  '/select-location',
+                  '/download-app',
+                  '/branches',
+                  '/contact-us',
+                  '/admin',
+                  '/employee',
+                  '/login',
+                  '/register',
+                  '/reset-password',
+                  '/profile',
+                  '/delete-account',
+                  '/my-orders',
+                  '/customer-ratings',
+                  '/rating/',
+                  '/privacy-policy',
+                  '/terms-and-conditions',
+                ];
+                
+                // Check if current page should have ads
+                const path = window.location.pathname;
+                
+                // Exclude if path starts with any minimal content page
+                // Also exclude all admin and employee sub-pages
+                const shouldShowAds = !minimalContentPages.some(page => path.startsWith(page)) &&
+                                      !path.startsWith('/admin/') &&
+                                      !path.startsWith('/employee/');
+                
+                if (shouldShowAds) {
+                  try {
                     window.adsbygoogle.push({
                       google_ad_client: "ca-pub-1036864152624333",
                       enable_page_level_ads: true
@@ -161,9 +175,14 @@ export default function RootLayout({
                     
                     // Mark as initialized to prevent duplicate calls
                     window.__adsbygoogle_page_level_initialized = true;
+                  } catch (e) {
+                    console.warn('AdSense initialization error:', e);
                   }
+                } else {
+                  // Mark as initialized even if we're not showing ads to prevent retries
+                  window.__adsbygoogle_page_level_initialized = true;
                 }
-              }
+              })();
             `,
           }}
         />
