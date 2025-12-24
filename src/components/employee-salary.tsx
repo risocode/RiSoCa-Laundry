@@ -27,13 +27,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Inbox, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import type { Order } from '@/components/order-list';
 import { format, startOfDay } from 'date-fns';
 import { supabase } from '@/lib/supabase-client';
@@ -670,41 +663,69 @@ export function EmployeeSalary() {
                             <TableCell className="text-center text-xs">{order.load}</TableCell>
                             <TableCell className="text-center text-xs">
                               {order.orderType === 'internal' ? (
-                                <Select
-                                  value={order.assignedEmployeeId || 'none'}
-                                  onValueChange={async (value) => {
-                                    const employeeId = value === 'none' ? null : value;
-                                    const { error } = await supabase
-                                      .from('orders')
-                                      .update({ assigned_employee_id: employeeId })
-                                      .eq('id', order.id);
-                                    if (error) {
-                                      toast({
-                                        variant: 'destructive',
-                                        title: 'Error',
-                                        description: 'Failed to update assignment.',
-                                      });
-                                    } else {
-                                      toast({
-                                        title: employeeId ? 'Employee assigned' : 'Assignment removed',
-                                        description: employeeId ? 'Internal order bonus added.' : 'Internal order bonus removed.',
-                                      });
-                                      fetchOrders();
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger className="h-7 w-[120px] text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">Unassigned</SelectItem>
-                                    {employees.map((emp) => (
-                                      <SelectItem key={emp.id} value={emp.id}>
-                                        {emp.first_name} {emp.last_name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <div className="flex flex-wrap items-center justify-center gap-1">
+                                  {(() => {
+                                    const assignedEmp = employees.find(e => e.id === order.assignedEmployeeId);
+                                    const handleAssign = async (employeeId: string | null) => {
+                                      const { error } = await supabase
+                                        .from('orders')
+                                        .update({ assigned_employee_id: employeeId })
+                                        .eq('id', order.id);
+                                      if (error) {
+                                        toast({
+                                          variant: 'destructive',
+                                          title: 'Error',
+                                          description: 'Failed to update assignment.',
+                                        });
+                                      } else {
+                                        toast({
+                                          title: employeeId ? 'Employee assigned' : 'Assignment removed',
+                                          description: employeeId ? 'Internal order bonus added.' : 'Internal order bonus removed.',
+                                        });
+                                        fetchOrders();
+                                      }
+                                    };
+                                    
+                                    return (
+                                      <>
+                                        {assignedEmp ? (
+                                          <Button
+                                            size="sm"
+                                            variant="default"
+                                            className="h-6 px-2 text-xs bg-green-600 hover:bg-green-700"
+                                            onClick={() => handleAssign(null)}
+                                          >
+                                            {assignedEmp.first_name} {assignedEmp.last_name} ×
+                                          </Button>
+                                        ) : (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-6 px-2 text-xs"
+                                            onClick={() => handleAssign(null)}
+                                            disabled
+                                          >
+                                            Unassigned
+                                          </Button>
+                                        )}
+                                        {employees.map((emp) => {
+                                          if (assignedEmp && emp.id === assignedEmp.id) return null;
+                                          return (
+                                            <Button
+                                              key={emp.id}
+                                              size="sm"
+                                              variant="outline"
+                                              className="h-6 px-2 text-xs"
+                                              onClick={() => handleAssign(emp.id)}
+                                            >
+                                              {emp.first_name} {emp.last_name}
+                                            </Button>
+                                          );
+                                        })}
+                                      </>
+                                    );
+                                  })()}
+                                </div>
                               ) : (
                                 (() => {
                                   const assignedEmp = employees.find(e => e.id === order.assignedEmployeeId);
