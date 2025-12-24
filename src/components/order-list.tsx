@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Edit, Save, X, Loader2, Package, User, Phone, Weight, Layers, DollarSign, CreditCard, CheckCircle2, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, Save, X, Loader2, Package, User, Phone, Weight, Layers, DollarSign, CreditCard, CheckCircle2, MoreVertical, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { PaymentDialog } from '@/components/payment-dialog';
 import {
     Accordion,
@@ -29,6 +29,7 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase-client';
 
 export type StatusHistory = {
   status: string;
@@ -54,6 +55,12 @@ export type Order = {
   branchId?: string | null;
   orderType?: 'customer' | 'internal';
   assignedEmployeeId?: string | null;
+};
+
+type Employee = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
 };
 
 type OrderListProps = {
@@ -113,7 +120,7 @@ const getPaymentBadgeInfo = (isPaid: boolean, isPartiallyPaid: boolean) => {
     }
 }
 
-function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: OrderListProps['onUpdateOrder'] }) {
+function OrderRow({ order, onUpdateOrder, employees }: { order: Order, onUpdateOrder: OrderListProps['onUpdateOrder'], employees: Employee[] }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editableOrder, setEditableOrder] = useState(order);
@@ -136,7 +143,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
         setEditableOrder(safeOrder);
     }, [order.id, order.balance, order.isPaid, order.total]);
 
-    const handleFieldChange = (field: keyof Order, value: string | number | boolean) => {
+    const handleFieldChange = (field: keyof Order, value: string | number | boolean | null) => {
         let newOrderState = { ...editableOrder };
 
         if (field === 'status' && typeof value === 'string' && value !== editableOrder.status) {
@@ -144,6 +151,11 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                 ...newOrderState,
                 status: value,
                 statusHistory: [...(editableOrder.statusHistory || []), { status: value, timestamp: new Date() }]
+            };
+        } else if (field === 'assignedEmployeeId') {
+            newOrderState = {
+                ...newOrderState,
+                assignedEmployeeId: value as string | null | undefined
             };
         } else {
             const numericFields = ['weight', 'load', 'total'];
@@ -365,6 +377,46 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                 )}
             </TableCell>
             <TableCell className="text-center">
+                {isEditing ? (
+                    <div className="relative w-full min-w-[140px] max-w-[180px] mx-auto">
+                        <Select
+                            value={editableOrder.assignedEmployeeId || 'none'}
+                            onValueChange={(value) => handleFieldChange('assignedEmployeeId', value === 'none' ? null : value)}
+                            disabled={isSaving}
+                        >
+                            <SelectTrigger className="w-full h-9 border-2 text-xs">
+                                <SelectValue placeholder="No employee" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">No employee</SelectItem>
+                                {employees.map((emp) => (
+                                    <SelectItem key={emp.id} value={emp.id}>
+                                        {emp.first_name || ''} {emp.last_name || ''}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                ) : (
+                    <div className="text-xs">
+                        {workingOrder.assignedEmployeeId ? (
+                            (() => {
+                                const assignedEmp = employees.find(e => e.id === workingOrder.assignedEmployeeId);
+                                return assignedEmp ? (
+                                    <Badge variant="outline" className="text-xs">
+                                        {assignedEmp.first_name || ''} {assignedEmp.last_name || ''}
+                                    </Badge>
+                                ) : (
+                                    <span className="text-muted-foreground">Unknown</span>
+                                );
+                            })()
+                        ) : (
+                            <span className="text-muted-foreground">Unassigned</span>
+                        )}
+                    </div>
+                )}
+            </TableCell>
+            <TableCell className="text-center">
                  {isEditing ? (
                     <div className="flex items-center justify-center gap-2">
                         <Button 
@@ -418,7 +470,7 @@ const Label = ({ children, ...props }: React.LabelHTMLAttributes<HTMLLabelElemen
     <label className="text-xs font-medium text-muted-foreground" {...props}>{children}</label>
 );
 
-function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: OrderListProps['onUpdateOrder'] }) {
+function OrderCard({ order, onUpdateOrder, employees }: { order: Order, onUpdateOrder: OrderListProps['onUpdateOrder'], employees: Employee[] }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editableOrder, setEditableOrder] = useState(order);
@@ -441,7 +493,7 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
         setEditableOrder(safeOrder);
     }, [order.id, order.balance, order.isPaid, order.total]);
 
-    const handleFieldChange = (field: keyof Order, value: string | number | boolean) => {
+    const handleFieldChange = (field: keyof Order, value: string | number | boolean | null) => {
         let newOrderState = { ...editableOrder };
 
         if (field === 'status' && typeof value === 'string' && value !== editableOrder.status) {
@@ -449,6 +501,11 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                 ...newOrderState,
                 status: value,
                 statusHistory: [...(editableOrder.statusHistory || []), { status: value, timestamp: new Date() }]
+            };
+        } else if (field === 'assignedEmployeeId') {
+            newOrderState = {
+                ...newOrderState,
+                assignedEmployeeId: value as string | null | undefined
             };
         } else {
             const numericFields = ['weight', 'load', 'total'];
@@ -726,6 +783,48 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                     </Badge>
                                 )}
                             </div>
+                            <div className="space-y-1.5">
+                                <Label className="flex items-center gap-2">
+                                    <Users className="h-3 w-3 text-muted-foreground" />
+                                    Employee
+                                </Label>
+                                {isEditing ? (
+                                    <Select
+                                        value={editableOrder.assignedEmployeeId || 'none'}
+                                        onValueChange={(value) => handleFieldChange('assignedEmployeeId', value === 'none' ? null : value)}
+                                        disabled={isSaving}
+                                    >
+                                        <SelectTrigger className="h-9 border-2">
+                                            <SelectValue placeholder="No employee" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">No employee</SelectItem>
+                                            {employees.map((emp) => (
+                                                <SelectItem key={emp.id} value={emp.id}>
+                                                    {emp.first_name || ''} {emp.last_name || ''}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <div className="text-sm">
+                                        {workingOrder.assignedEmployeeId ? (
+                                            (() => {
+                                                const assignedEmp = employees.find(e => e.id === workingOrder.assignedEmployeeId);
+                                                return assignedEmp ? (
+                                                    <Badge variant="outline" className="text-xs">
+                                                        {assignedEmp.first_name || ''} {assignedEmp.last_name || ''}
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-muted-foreground">Unknown</span>
+                                                );
+                                            })()
+                                        ) : (
+                                            <span className="text-muted-foreground">Unassigned</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="flex justify-end gap-2 pt-2 border-t">
                                 {isEditing ? (
@@ -787,7 +886,31 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
 
 export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const ordersPerPage = 10;
+
+  // Fetch employees on mount
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name')
+          .eq('role', 'employee')
+          .order('first_name', { ascending: true });
+
+        if (error) {
+          console.error("Failed to load employees", error);
+          return;
+        }
+        setEmployees(data || []);
+      } catch (error) {
+        console.error('Error fetching employees', error);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
 
   // Calculate pagination
   const totalPages = Math.ceil(orders.length / ordersPerPage);
@@ -850,7 +973,7 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
       {/* Mobile View - Card List */}
       <div className="md:hidden space-y-4">
         {paginatedOrders.map((order) => (
-          <OrderCard key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} />
+          <OrderCard key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} employees={employees} />
         ))}
         
         {/* Mobile Pagination */}
@@ -950,6 +1073,12 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
                   Status
                 </div>
               </TableHead>
+              <TableHead className="min-w-[140px] font-semibold text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  Employee
+                </div>
+              </TableHead>
               <TableHead className="min-w-[120px] font-semibold text-center">
                 <div className="flex items-center justify-center gap-2">
                   <MoreVertical className="h-4 w-4 text-primary" />
@@ -960,7 +1089,7 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
           </TableHeader>
           <TableBody>
             {paginatedOrders.map((order) => (
-              <OrderRow key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} />
+              <OrderRow key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} employees={employees} />
             ))}
           </TableBody>
         </Table>

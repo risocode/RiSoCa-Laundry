@@ -302,7 +302,11 @@ export function EmployeeSalary() {
     <Card className="w-full">
       <CardHeader className="p-4 sm:p-6">
         <CardTitle>Daily Salary Calculation</CardTitle>
-        <CardDescription>Salary is calculated at ₱{SALARY_PER_LOAD} per load for each day. All loads are paid immediately.</CardDescription>
+        <CardDescription>
+          Salary is calculated at ₱{SALARY_PER_LOAD} per load assigned to each employee. 
+          Only orders assigned to employees in the Orders page will generate salary. 
+          Unassigned orders do not generate salary.
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-2 sm:p-6">
         {loading ? (
@@ -350,11 +354,13 @@ export function EmployeeSalary() {
                            const payment = dailyPayments[dateKey]?.[emp.id];
                            const isPaid = payment?.is_paid ?? false;
                            
-                           // Calculate employee-specific salary
-                           // Base: equal share of customer order loads
-                           const customerOrders = orders.filter(o => o.orderType !== 'internal');
-                           const customerLoads = customerOrders.reduce((sum, o) => sum + o.load, 0);
-                           const baseSalaryPerEmployee = employees.length > 0 ? (customerLoads * SALARY_PER_LOAD) / employees.length : 0;
+                           // Calculate employee-specific salary based on assigned loads only
+                           // Customer orders assigned to this employee
+                           const customerOrdersForEmployee = orders.filter(
+                             o => o.orderType !== 'internal' && o.assignedEmployeeId === emp.id
+                           );
+                           const customerLoadsForEmployee = customerOrdersForEmployee.reduce((sum, o) => sum + o.load, 0);
+                           const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
                            
                            // Bonus: +30 for each internal order assigned to this employee
                            const internalOrdersForEmployee = orders.filter(
@@ -362,7 +368,8 @@ export function EmployeeSalary() {
                            );
                            const internalBonus = internalOrdersForEmployee.length * 30;
                            
-                           const employeeSalary = baseSalaryPerEmployee + internalBonus;
+                           // Total salary = only loads assigned to this employee + internal bonuses
+                           const employeeSalary = customerSalary + internalBonus;
                            const paymentKey = `${emp.id}-${dateKey}`;
                            
                            return (
@@ -371,9 +378,19 @@ export function EmployeeSalary() {
                                  <span className="text-sm font-medium">
                                    {emp.first_name || ''} {emp.last_name || ''}
                                  </span>
-                                 <span className="text-xs text-muted-foreground">
-                                   ₱{employeeSalary.toFixed(2)}
-                                 </span>
+                                 <div className="flex flex-col gap-0.5 mt-1">
+                                   <span className="text-xs text-muted-foreground">
+                                     {customerLoadsForEmployee} load{customerLoadsForEmployee !== 1 ? 's' : ''} × ₱{SALARY_PER_LOAD} = ₱{customerSalary.toFixed(2)}
+                                   </span>
+                                   {internalBonus > 0 && (
+                                     <span className="text-xs text-green-600">
+                                       + {internalOrdersForEmployee.length} internal order{internalOrdersForEmployee.length !== 1 ? 's' : ''} (₱{internalBonus.toFixed(2)})
+                                     </span>
+                                   )}
+                                   <span className="text-xs font-semibold text-primary mt-0.5">
+                                     Total: ₱{employeeSalary.toFixed(2)}
+                                   </span>
+                                 </div>
                                </div>
                                <Button
                                  size="sm"
