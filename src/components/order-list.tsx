@@ -544,11 +544,26 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                       </Badge>
                                     )}
                                 </div>
-                                <Badge className={cn(
-                                    getStatusColor(workingOrder.status),
-                                    "hover:" + getStatusColor(workingOrder.status),
-                                    "text-white text-xs font-semibold shadow-sm"
-                                )}>
+                                <Badge 
+                                    className={cn(
+                                        getStatusColor(workingOrder.status),
+                                        "text-white text-xs font-semibold shadow-sm cursor-pointer",
+                                        "hover:opacity-90 hover:scale-105 hover:shadow-md transition-all active:scale-95"
+                                    )}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsStatusDialogOpen(true);
+                                    }}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setIsStatusDialogOpen(true);
+                                        }
+                                    }}
+                                >
                                     {workingOrder.status}
                                 </Badge>
                             </div>
