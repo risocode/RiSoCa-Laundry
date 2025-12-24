@@ -301,7 +301,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                             : "hover:border-primary hover:text-primary"
                         )}
                       >
-                        Employee 1
+                        {employee1.first_name || ''} {employee1.last_name || ''}
                       </Button>
                     )}
                     {employee2 && (
@@ -318,7 +318,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                             : "hover:border-primary hover:text-primary"
                         )}
                       >
-                        Employee 2
+                        {employee2.first_name || ''} {employee2.last_name || ''}
                       </Button>
                     )}
                     {employee1 && employee2 && (
@@ -345,9 +345,6 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             {form.formState.errors.assigned_employee_id && (
               <p className="text-xs text-destructive pt-1">{form.formState.errors.assigned_employee_id.message}</p>
             )}
-            <p className="text-xs text-muted-foreground">
-              Select how the load will be assigned. "BOTH" divides the load equally between both employees.
-            </p>
           </div>
 
           <Separator className="my-4" />
