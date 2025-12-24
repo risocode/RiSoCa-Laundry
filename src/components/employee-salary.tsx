@@ -106,7 +106,7 @@ export function EmployeeSalary() {
     fetchEmployees();
   }, []);
 
-  // Fetch all daily payments when orders are loaded
+  // Fetch all daily payments when orders are loaded and auto-save calculated salaries
   useEffect(() => {
     if (orders.length === 0 || employees.length === 0) return;
     
@@ -117,12 +117,103 @@ export function EmployeeSalary() {
       uniqueDates.add(dateKey);
     });
     
-    // Fetch payments for all dates
-    const paymentPromises = Array.from(uniqueDates).map(dateStr => fetchDailyPayments(dateStr));
-    Promise.all(paymentPromises).catch(error => {
+    // Fetch existing payments for all dates first
+    const fetchPromises = Array.from(uniqueDates).map(dateStr => fetchDailyPayments(dateStr));
+    Promise.all(fetchPromises).then(() => {
+      // After fetching, auto-save calculated salaries for each day
+      autoSaveDailySalaries(Array.from(uniqueDates), orders, employees);
+    }).catch(error => {
       console.error('Error fetching daily payments:', error);
     });
   }, [orders, employees]);
+
+  // Auto-save calculated daily salaries to database
+  const autoSaveDailySalaries = async (dateStrings: string[], currentOrders: Order[], currentEmployees: Employee[]) => {
+    if (currentEmployees.length === 0 || currentOrders.length === 0) return;
+
+    const myraEmployee = currentEmployees.find(e => 
+      e.first_name?.toUpperCase() === 'MYRA' || 
+      e.first_name?.toUpperCase() === 'MYRA GAMMAL'
+    );
+
+    const savePromises: Promise<void>[] = [];
+
+    dateStrings.forEach(dateStr => {
+      const dayOrders = currentOrders.filter(order => {
+        const orderDateKey = format(startOfDay(new Date(order.orderDate)), 'yyyy-MM-dd');
+        return orderDateKey === dateStr;
+      });
+
+      currentEmployees.forEach(emp => {
+        const isMyra = myraEmployee?.id === emp.id;
+        
+        // Calculate employee-specific salary
+        const customerOrdersForEmployee = dayOrders.filter(
+          o => o.orderType !== 'internal' && o.assignedEmployeeId === emp.id
+        );
+        
+        const bothOrders = currentEmployees.length === 2
+          ? dayOrders.filter(o => o.orderType !== 'internal' && !o.assignedEmployeeId)
+          : [];
+        const bothLoadsForEmployee = bothOrders.length > 0 
+          ? bothOrders.reduce((sum, o) => sum + o.load, 0) / currentEmployees.length
+          : 0;
+        
+        const unassignedCustomerOrders = isMyra && currentEmployees.length === 1
+          ? dayOrders.filter(o => o.orderType !== 'internal' && !o.assignedEmployeeId)
+          : [];
+        
+        const allCustomerOrdersForEmployee = [...customerOrdersForEmployee, ...unassignedCustomerOrders];
+        const customerLoadsForEmployee = allCustomerOrdersForEmployee.reduce((sum, o) => sum + o.load, 0) + bothLoadsForEmployee;
+        const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
+        
+        const internalOrdersForEmployee = dayOrders.filter(
+          o => o.orderType === 'internal' && o.assignedEmployeeId === emp.id
+        );
+        const internalBonus = internalOrdersForEmployee.length * 30;
+        
+        const calculatedSalary = customerSalary + internalBonus;
+
+        // Only save if employee has loads or internal orders
+        if (calculatedSalary > 0) {
+          const existingPayment = dailyPayments[dateStr]?.[emp.id];
+          
+          // Only auto-save if no record exists
+          // If record exists, it means it was manually edited or marked as paid, so don't overwrite
+          if (!existingPayment) {
+            savePromises.push(
+              supabase
+                .from('daily_salary_payments')
+                .upsert({
+                  employee_id: emp.id,
+                  date: dateStr,
+                  amount: calculatedSalary,
+                  is_paid: false,
+                  updated_at: new Date().toISOString(),
+                }, {
+                  onConflict: 'employee_id,date',
+                })
+                .then(({ error }) => {
+                  if (error) {
+                    console.error(`Failed to auto-save salary for ${emp.id} on ${dateStr}:`, error);
+                  }
+                })
+            );
+          }
+        }
+      });
+    });
+
+    // Wait for all saves to complete, then refresh payments
+    if (savePromises.length > 0) {
+      Promise.all(savePromises).then(() => {
+        // Refresh payments for all dates
+        dateStrings.forEach(dateStr => fetchDailyPayments(dateStr));
+      }).catch(error => {
+        console.error('Error auto-saving daily salaries:', error);
+      });
+    }
+  };
 
   const fetchEmployees = async () => {
     try {
