@@ -15,10 +15,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Order } from './order-list';
-import { Loader2, Layers } from 'lucide-react';
+import { Loader2, Layers, Users } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { Separator } from './ui/separator';
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { supabase } from '@/lib/supabase-client';
 
 const manualOrderSchema = z.object({
   customerName: z.string().min(2, 'Name is required.'),
@@ -29,6 +37,7 @@ const manualOrderSchema = z.object({
   ),
   total: z.coerce.number().min(0, 'Price must be 0 or greater.'),
   isPaid: z.boolean().optional(),
+  assigned_employee_id: z.string().optional(),
 });
 
 type ManualOrderFormValues = z.infer<typeof manualOrderSchema>;
@@ -39,8 +48,17 @@ type ManualOrderDialogProps = {
   onAddOrder: (order: Omit<Order, 'id' | 'userId'>) => Promise<void>;
 };
 
+type Employee = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+};
+
 export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  
   const form = useForm<ManualOrderFormValues>({
     resolver: zodResolver(manualOrderSchema),
     defaultValues: {
@@ -49,6 +67,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
       weight: undefined,
       total: undefined,
       isPaid: undefined,
+      assigned_employee_id: undefined,
     },
     mode: 'onChange',
   });
@@ -82,7 +101,34 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
     } else {
         form.setValue('total', undefined);
     }
-  }, [loads, form])
+  }, [loads, form]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchEmployees();
+    }
+  }, [isOpen]);
+
+  const fetchEmployees = async () => {
+    setLoadingEmployees(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .eq('role', 'employee')
+        .order('first_name', { ascending: true });
+
+      if (error) {
+        console.error("Failed to load employees", error);
+        return;
+      }
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error fetching employees', error);
+    } finally {
+      setLoadingEmployees(false);
+    }
+  };
 
   const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = parseFloat(e.target.value);
@@ -112,6 +158,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
       distance: 0,
       orderDate: new Date(),
       statusHistory: [{ status: initialStatus, timestamp: new Date() }],
+      assignedEmployeeId: data.assigned_employee_id || null,
     };
     await onAddOrder(newOrder);
     setIsSaving(false);
@@ -220,6 +267,36 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             )}
           </div>
           
+          <div className="form-group">
+            <Controller
+              name="assigned_employee_id"
+              control={form.control}
+              render={({ field }) => (
+                <Select
+                  value={field.value || 'none'}
+                  onValueChange={(value) => field.onChange(value === 'none' ? undefined : value)}
+                  disabled={isSaving || loadingEmployees}
+                >
+                  <SelectTrigger className="form-input text-center">
+                    <SelectValue placeholder="Select Employee (Optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No employee</SelectItem>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.first_name || ''} {emp.last_name || ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <Label className="form-label flex items-center gap-2">
+              <Users className="h-3 w-3" />
+              Assign Employee (Optional)
+            </Label>
+          </div>
+
           <div className="space-y-2 text-center">
             <Label>Payment Status</Label>
             <div className="flex justify-center gap-2">
