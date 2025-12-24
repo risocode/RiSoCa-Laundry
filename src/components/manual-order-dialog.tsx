@@ -267,7 +267,11 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             )}
           </div>
           
-          <div className="form-group">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              Assign Employee (Optional)
+            </Label>
             <Controller
               name="assigned_employee_id"
               control={form.control}
@@ -277,7 +281,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                   onValueChange={(value) => field.onChange(value === 'none' ? undefined : value)}
                   disabled={isSaving || loadingEmployees}
                 >
-                  <SelectTrigger className="form-input text-center">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select Employee (Optional)" />
                   </SelectTrigger>
                   <SelectContent>
@@ -291,10 +295,6 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                 </Select>
               )}
             />
-            <Label className="form-label flex items-center gap-2">
-              <Users className="h-3 w-3" />
-              Assign Employee (Optional)
-            </Label>
           </div>
 
           <div className="space-y-2 text-center">
