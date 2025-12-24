@@ -361,7 +361,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     <Badge 
                         className={cn(
                             `${getStatusColor(workingOrder.status)} text-white shadow-sm font-semibold px-3 py-1.5 cursor-pointer`,
-                            "hover:opacity-90 transition-opacity"
+                            "hover:opacity-90 hover:scale-105 hover:shadow-md transition-all active:scale-95"
                         )}
                         onClick={() => setIsStatusDialogOpen(true)}
                         role="button"
@@ -748,8 +748,8 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                     <Badge 
                                         className={cn(
                                             getStatusColor(workingOrder.status),
-                                            "hover:" + getStatusColor(workingOrder.status),
-                                            "text-white text-xs font-semibold shadow-sm px-3 py-1.5 cursor-pointer hover:opacity-90 transition-opacity"
+                                            "text-white text-xs font-semibold shadow-sm px-3 py-1.5 cursor-pointer",
+                                            "hover:opacity-90 hover:scale-105 hover:shadow-md transition-all active:scale-95"
                                         )}
                                         onClick={(e) => {
                                             e.preventDefault();
