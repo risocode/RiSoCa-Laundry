@@ -258,6 +258,74 @@ export function EmployeeSalary() {
     })
     .sort((a, b) => b.date.getTime() - a.date.getTime());
 
+  const handleAssignOldOrdersToMyra = async () => {
+    // Find MYRA employee
+    const myraEmployee = employees.find(e => 
+      e.first_name?.toUpperCase() === 'MYRA' || 
+      e.first_name?.toUpperCase().includes('MYRA')
+    );
+
+    if (!myraEmployee) {
+      toast({
+        variant: 'destructive',
+        title: 'MYRA not found',
+        description: 'Could not find MYRA employee. Please ensure MYRA is registered as an employee.',
+      });
+      return;
+    }
+
+    setAssigningOldOrders(true);
+    try {
+      // Find all unassigned customer orders
+      const { data: unassignedOrders, error: fetchError } = await supabase
+        .from('orders')
+        .select('id')
+        .is('assigned_employee_id', null)
+        .or('order_type.is.null,order_type.eq.customer');
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (!unassignedOrders || unassignedOrders.length === 0) {
+        toast({
+          title: 'No unassigned orders',
+          description: 'All orders are already assigned.',
+        });
+        setAssigningOldOrders(false);
+        return;
+      }
+
+      // Update all unassigned orders to MYRA
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({ assigned_employee_id: myraEmployee.id })
+        .is('assigned_employee_id', null)
+        .or('order_type.is.null,order_type.eq.customer');
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      toast({
+        title: 'Old orders assigned',
+        description: `${unassignedOrders.length} unassigned order(s) have been assigned to ${myraEmployee.first_name} ${myraEmployee.last_name}.`,
+      });
+
+      // Refresh orders
+      await fetchOrders();
+    } catch (error: any) {
+      console.error('Failed to assign old orders:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Assignment failed',
+        description: error.message || 'Failed to assign old orders to MYRA.',
+      });
+    } finally {
+      setAssigningOldOrders(false);
+    }
+  };
+
   const handleTogglePayment = async (employeeId: string, date: Date, currentStatus: boolean, amount: number) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     const paymentKey = `${employeeId}-${dateStr}`;
@@ -301,12 +369,44 @@ export function EmployeeSalary() {
   return (
     <Card className="w-full">
       <CardHeader className="p-4 sm:p-6">
-        <CardTitle>Daily Salary Calculation</CardTitle>
-        <CardDescription>
-          Salary is calculated at ₱{SALARY_PER_LOAD} per load assigned to each employee. 
-          Only orders assigned to employees in the Orders page will generate salary. 
-          Unassigned orders do not generate salary.
-        </CardDescription>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex-1">
+            <CardTitle>Daily Salary Calculation</CardTitle>
+            <CardDescription>
+              Salary is calculated at ₱{SALARY_PER_LOAD} per load assigned to each employee. 
+              Old unassigned orders are automatically counted for MYRA (the original employee).
+            </CardDescription>
+          </div>
+          {(() => {
+            const hasUnassignedOrders = orders.some(
+              o => o.orderType !== 'internal' && !o.assignedEmployeeId
+            );
+            const myraEmployee = employees.find(e => 
+              e.first_name?.toUpperCase() === 'MYRA' || 
+              e.first_name?.toUpperCase().includes('MYRA')
+            );
+            return hasUnassignedOrders && myraEmployee ? (
+              <Button
+                onClick={handleAssignOldOrdersToMyra}
+                disabled={assigningOldOrders}
+                variant="outline"
+                size="sm"
+                className="whitespace-nowrap"
+              >
+                {assigningOldOrders ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Assigning...
+                  </>
+                ) : (
+                  <>
+                    Assign Old Orders to {myraEmployee.first_name}
+                  </>
+                )}
+              </Button>
+            ) : null;
+          })()}
+        </div>
       </CardHeader>
       <CardContent className="p-2 sm:p-6">
         {loading ? (
@@ -354,12 +454,28 @@ export function EmployeeSalary() {
                            const payment = dailyPayments[dateKey]?.[emp.id];
                            const isPaid = payment?.is_paid ?? false;
                            
+                           // Find MYRA (the original employee) - check by first name
+                           const myraEmployee = employees.find(e => 
+                             e.first_name?.toUpperCase() === 'MYRA' || 
+                             e.first_name?.toUpperCase() === 'MYRA GAMMAL'
+                           );
+                           const isMyra = myraEmployee?.id === emp.id;
+                           
                            // Calculate employee-specific salary based on assigned loads only
                            // Customer orders assigned to this employee
                            const customerOrdersForEmployee = orders.filter(
                              o => o.orderType !== 'internal' && o.assignedEmployeeId === emp.id
                            );
-                           const customerLoadsForEmployee = customerOrdersForEmployee.reduce((sum, o) => sum + o.load, 0);
+                           
+                           // For MYRA: also include unassigned customer orders (old records)
+                           const unassignedCustomerOrders = isMyra 
+                             ? orders.filter(
+                                 o => o.orderType !== 'internal' && !o.assignedEmployeeId
+                               )
+                             : [];
+                           
+                           const allCustomerOrdersForEmployee = [...customerOrdersForEmployee, ...unassignedCustomerOrders];
+                           const customerLoadsForEmployee = allCustomerOrdersForEmployee.reduce((sum, o) => sum + o.load, 0);
                            const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
                            
                            // Bonus: +30 for each internal order assigned to this employee
@@ -381,6 +497,11 @@ export function EmployeeSalary() {
                                  <div className="flex flex-col gap-0.5 mt-1">
                                    <span className="text-xs text-muted-foreground">
                                      {customerLoadsForEmployee} load{customerLoadsForEmployee !== 1 ? 's' : ''} × ₱{SALARY_PER_LOAD} = ₱{customerSalary.toFixed(2)}
+                                     {isMyra && unassignedCustomerOrders.length > 0 && (
+                                       <span className="text-orange-600 ml-1">
+                                         ({unassignedCustomerOrders.length} unassigned)
+                                       </span>
+                                     )}
                                    </span>
                                    {internalBonus > 0 && (
                                      <span className="text-xs text-green-600">
