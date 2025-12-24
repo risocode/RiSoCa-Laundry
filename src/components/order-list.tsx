@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Edit, Save, X, Loader2, Package, User, Phone, Weight, Layers, DollarSign, CreditCard, CheckCircle2, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PaymentDialog } from '@/components/payment-dialog';
+import { StatusDialog } from '@/components/status-dialog';
 import {
     Accordion,
     AccordionContent,
@@ -118,6 +119,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
     const [isSaving, setIsSaving] = useState(false);
     const [editableOrder, setEditableOrder] = useState(order);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+    const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
     // SAFETY CHECK: If balance is undefined but order is not paid, set balance to total
     // This handles cases where the mapping function fails or old code is running
@@ -356,34 +358,23 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         </Select>
                     </div>
                 ) : (
-                    <Select
-                        value={workingOrder.status}
-                        onValueChange={async (value) => {
-                            if (value !== workingOrder.status) {
-                                const updatedOrder = {
-                                    ...workingOrder,
-                                    status: value,
-                                    statusHistory: [...(workingOrder.statusHistory || []), { status: value, timestamp: new Date() }]
-                                };
-                                await onUpdateOrder(updatedOrder);
+                    <Badge 
+                        className={cn(
+                            `${getStatusColor(workingOrder.status)} text-white shadow-sm font-semibold px-3 py-1.5 cursor-pointer`,
+                            "hover:opacity-90 transition-opacity"
+                        )}
+                        onClick={() => setIsStatusDialogOpen(true)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setIsStatusDialogOpen(true);
                             }
                         }}
-                        disabled={isSaving}
                     >
-                        <SelectTrigger className="h-auto p-0 border-0 bg-transparent hover:bg-transparent focus:ring-0">
-                            <Badge className={cn(
-                                `${getStatusColor(workingOrder.status)} text-white shadow-sm font-semibold px-3 py-1.5 cursor-pointer`,
-                                "hover:opacity-90 transition-opacity"
-                            )}>
-                                {workingOrder.status}
-                            </Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                            {statusOptions.map((status) => (
-                                <SelectItem key={status} value={status}>{status}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        {workingOrder.status}
+                    </Badge>
                 )}
             </TableCell>
             <TableCell className="text-center">
@@ -431,6 +422,20 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
             currentBalance={displayBalance}
             orderId={workingOrder.id}
         />
+        <StatusDialog
+            isOpen={isStatusDialogOpen}
+            onClose={() => setIsStatusDialogOpen(false)}
+            onConfirm={async (newStatus) => {
+                const updatedOrder = {
+                    ...workingOrder,
+                    status: newStatus,
+                    statusHistory: [...(workingOrder.statusHistory || []), { status: newStatus, timestamp: new Date() }]
+                };
+                await onUpdateOrder(updatedOrder);
+            }}
+            currentStatus={workingOrder.status}
+            orderId={workingOrder.id}
+        />
         </>
     );
 }
@@ -445,6 +450,7 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     const [isSaving, setIsSaving] = useState(false);
     const [editableOrder, setEditableOrder] = useState(order);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+    const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
     // SAFETY CHECK: If balance is undefined but order is not paid, set balance to total
     // This handles cases where the mapping function fails or old code is running
@@ -739,35 +745,24 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                         </SelectContent>
                                     </Select>
                                 ) : (
-                                    <Select
-                                        value={workingOrder.status}
-                                        onValueChange={async (value) => {
-                                            if (value !== workingOrder.status) {
-                                                const updatedOrder = {
-                                                    ...workingOrder,
-                                                    status: value,
-                                                    statusHistory: [...(workingOrder.statusHistory || []), { status: value, timestamp: new Date() }]
-                                                };
-                                                await onUpdateOrder(updatedOrder);
+                                    <Badge 
+                                        className={cn(
+                                            getStatusColor(workingOrder.status),
+                                            "hover:" + getStatusColor(workingOrder.status),
+                                            "text-white text-xs font-semibold shadow-sm px-3 py-1.5 cursor-pointer"
+                                        )}
+                                        onClick={() => setIsStatusDialogOpen(true)}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                setIsStatusDialogOpen(true);
                                             }
                                         }}
-                                        disabled={isSaving}
                                     >
-                                        <SelectTrigger className="h-auto p-0 border-0 bg-transparent hover:bg-transparent focus:ring-0 w-auto">
-                                            <Badge className={cn(
-                                                getStatusColor(workingOrder.status),
-                                                "hover:" + getStatusColor(workingOrder.status),
-                                                "text-white text-xs font-semibold shadow-sm px-3 py-1.5 cursor-pointer"
-                                            )}>
-                                                {workingOrder.status}
-                                            </Badge>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {statusOptions.map((status) => (
-                                                <SelectItem key={status} value={status}>{status}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        {workingOrder.status}
+                                    </Badge>
                                 )}
                             </div>
 
@@ -823,6 +818,20 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
             onConfirm={handlePayment}
             orderTotal={workingOrder.total}
             currentBalance={displayBalance}
+            orderId={workingOrder.id}
+        />
+        <StatusDialog
+            isOpen={isStatusDialogOpen}
+            onClose={() => setIsStatusDialogOpen(false)}
+            onConfirm={async (newStatus) => {
+                const updatedOrder = {
+                    ...workingOrder,
+                    status: newStatus,
+                    statusHistory: [...(workingOrder.statusHistory || []), { status: newStatus, timestamp: new Date() }]
+                };
+                await onUpdateOrder(updatedOrder);
+            }}
+            currentStatus={workingOrder.status}
             orderId={workingOrder.id}
         />
         </>
