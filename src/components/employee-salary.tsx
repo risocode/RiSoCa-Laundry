@@ -27,6 +27,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Inbox, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { Order } from '@/components/order-list';
 import { format, startOfDay } from 'date-fns';
 import { supabase } from '@/lib/supabase-client';
@@ -444,6 +451,107 @@ export function EmployeeSalary() {
                     </div>
                 </AccordionTrigger>
                 <AccordionContent>
+                   {/* Internal Orders Management Section */}
+                   {orders.some(o => o.orderType === 'internal') && (
+                     <div className="mb-4 p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                       <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                         <span>Internal Orders</span>
+                         <Badge variant="outline" className="text-xs">
+                           {orders.filter(o => o.orderType === 'internal').length} order{orders.filter(o => o.orderType === 'internal').length !== 1 ? 's' : ''}
+                         </Badge>
+                       </h4>
+                       <div className="space-y-2">
+                         {orders
+                           .filter(o => o.orderType === 'internal')
+                           .map((order) => {
+                             const assignedEmployee = employees.find(e => e.id === order.assignedEmployeeId);
+                             return (
+                               <div key={order.id} className="flex items-center justify-between p-2 bg-background rounded border text-xs">
+                                 <div className="flex items-center gap-2">
+                                   <span className="font-medium">{order.id}</span>
+                                   <span className="text-muted-foreground">
+                                     {order.customerName} - {order.load} load{order.load !== 1 ? 's' : ''}
+                                   </span>
+                                 </div>
+                                 <div className="flex items-center gap-2">
+                                   {assignedEmployee ? (
+                                     <>
+                                       <Badge variant="outline" className="text-xs">
+                                         {assignedEmployee.first_name} {assignedEmployee.last_name} (+₱30)
+                                       </Badge>
+                                       <Button
+                                         size="sm"
+                                         variant="ghost"
+                                         onClick={async () => {
+                                           const { error } = await supabase
+                                             .from('orders')
+                                             .update({ assigned_employee_id: null })
+                                             .eq('id', order.id);
+                                           if (error) {
+                                             toast({
+                                               variant: 'destructive',
+                                               title: 'Error',
+                                               description: 'Failed to remove assignment.',
+                                             });
+                                           } else {
+                                             toast({
+                                               title: 'Assignment removed',
+                                               description: 'Internal order bonus removed.',
+                                             });
+                                             fetchOrders();
+                                           }
+                                         }}
+                                         className="h-6 px-2 text-xs text-red-600 hover:text-red-700"
+                                       >
+                                         Remove
+                                       </Button>
+                                     </>
+                                   ) : (
+                                     <>
+                                       <span className="text-muted-foreground">Unassigned</span>
+                                       <Select
+                                         value=""
+                                         onValueChange={async (employeeId) => {
+                                           const { error } = await supabase
+                                             .from('orders')
+                                             .update({ assigned_employee_id: employeeId })
+                                             .eq('id', order.id);
+                                           if (error) {
+                                             toast({
+                                               variant: 'destructive',
+                                               title: 'Error',
+                                               description: 'Failed to assign employee.',
+                                             });
+                                           } else {
+                                             toast({
+                                               title: 'Employee assigned',
+                                               description: 'Internal order bonus added.',
+                                             });
+                                             fetchOrders();
+                                           }
+                                         }}
+                                       >
+                                         <SelectTrigger className="h-6 w-[140px] text-xs">
+                                           <SelectValue placeholder="Assign..." />
+                                         </SelectTrigger>
+                                         <SelectContent>
+                                           {employees.map((emp) => (
+                                             <SelectItem key={emp.id} value={emp.id}>
+                                               {emp.first_name} {emp.last_name}
+                                             </SelectItem>
+                                           ))}
+                                         </SelectContent>
+                                       </Select>
+                                     </>
+                                   )}
+                                 </div>
+                               </div>
+                             );
+                           })}
+                       </div>
+                     </div>
+                   )}
+                   
                    {/* Employee Payment Status Section */}
                    {employees.length > 0 && (
                      <div className="mb-4 p-4 border rounded-lg bg-muted/50">
@@ -623,6 +731,8 @@ export function EmployeeSalary() {
                             <TableCell className="text-right text-xs">
                               {order.orderType === 'internal' && order.assignedEmployeeId ? (
                                 <span className="text-green-600 font-semibold">₱30.00</span>
+                              ) : order.orderType === 'internal' ? (
+                                <span className="text-muted-foreground">₱0.00 (unassigned)</span>
                               ) : (
                                 `₱${(order.load * SALARY_PER_LOAD).toFixed(2)}`
                               )}
