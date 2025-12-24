@@ -451,107 +451,6 @@ export function EmployeeSalary() {
                     </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                   {/* Internal Orders Management Section */}
-                   {orders.some(o => o.orderType === 'internal') && (
-                     <div className="mb-4 p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                       <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                         <span>Internal Orders</span>
-                         <Badge variant="outline" className="text-xs">
-                           {orders.filter(o => o.orderType === 'internal').length} order{orders.filter(o => o.orderType === 'internal').length !== 1 ? 's' : ''}
-                         </Badge>
-                       </h4>
-                       <div className="space-y-2">
-                         {orders
-                           .filter(o => o.orderType === 'internal')
-                           .map((order) => {
-                             const assignedEmployee = employees.find(e => e.id === order.assignedEmployeeId);
-                             return (
-                               <div key={order.id} className="flex items-center justify-between p-2 bg-background rounded border text-xs">
-                                 <div className="flex items-center gap-2">
-                                   <span className="font-medium">{order.id}</span>
-                                   <span className="text-muted-foreground">
-                                     {order.customerName} - {order.load} load{order.load !== 1 ? 's' : ''}
-                                   </span>
-                                 </div>
-                                 <div className="flex items-center gap-2">
-                                   {assignedEmployee ? (
-                                     <>
-                                       <Badge variant="outline" className="text-xs">
-                                         {assignedEmployee.first_name} {assignedEmployee.last_name} (+₱30)
-                                       </Badge>
-                                       <Button
-                                         size="sm"
-                                         variant="ghost"
-                                         onClick={async () => {
-                                           const { error } = await supabase
-                                             .from('orders')
-                                             .update({ assigned_employee_id: null })
-                                             .eq('id', order.id);
-                                           if (error) {
-                                             toast({
-                                               variant: 'destructive',
-                                               title: 'Error',
-                                               description: 'Failed to remove assignment.',
-                                             });
-                                           } else {
-                                             toast({
-                                               title: 'Assignment removed',
-                                               description: 'Internal order bonus removed.',
-                                             });
-                                             fetchOrders();
-                                           }
-                                         }}
-                                         className="h-6 px-2 text-xs text-red-600 hover:text-red-700"
-                                       >
-                                         Remove
-                                       </Button>
-                                     </>
-                                   ) : (
-                                     <>
-                                       <span className="text-muted-foreground">Unassigned</span>
-                                       <Select
-                                         value=""
-                                         onValueChange={async (employeeId) => {
-                                           const { error } = await supabase
-                                             .from('orders')
-                                             .update({ assigned_employee_id: employeeId })
-                                             .eq('id', order.id);
-                                           if (error) {
-                                             toast({
-                                               variant: 'destructive',
-                                               title: 'Error',
-                                               description: 'Failed to assign employee.',
-                                             });
-                                           } else {
-                                             toast({
-                                               title: 'Employee assigned',
-                                               description: 'Internal order bonus added.',
-                                             });
-                                             fetchOrders();
-                                           }
-                                         }}
-                                       >
-                                         <SelectTrigger className="h-6 w-[140px] text-xs">
-                                           <SelectValue placeholder="Assign..." />
-                                         </SelectTrigger>
-                                         <SelectContent>
-                                           {employees.map((emp) => (
-                                             <SelectItem key={emp.id} value={emp.id}>
-                                               {emp.first_name} {emp.last_name}
-                                             </SelectItem>
-                                           ))}
-                                         </SelectContent>
-                                       </Select>
-                                     </>
-                                   )}
-                                 </div>
-                               </div>
-                             );
-                           })}
-                       </div>
-                     </div>
-                   )}
-                   
                    {/* Employee Payment Status Section */}
                    {employees.length > 0 && (
                      <div className="mb-4 p-4 border rounded-lg bg-muted/50">
@@ -648,6 +547,7 @@ export function EmployeeSalary() {
                             <TableHead>Date</TableHead>
                             <TableHead>Customer</TableHead>
                             <TableHead className="text-center">Loads</TableHead>
+                            <TableHead className="text-center">Employee</TableHead>
                             <TableHead className="text-right">Salary Earned</TableHead>
                         </TableRow>
                         </TableHeader>
@@ -728,11 +628,59 @@ export function EmployeeSalary() {
                               </div>
                             </TableCell>
                             <TableCell className="text-center text-xs">{order.load}</TableCell>
+                            <TableCell className="text-center text-xs">
+                              {order.orderType === 'internal' ? (
+                                <Select
+                                  value={order.assignedEmployeeId || 'none'}
+                                  onValueChange={async (value) => {
+                                    const employeeId = value === 'none' ? null : value;
+                                    const { error } = await supabase
+                                      .from('orders')
+                                      .update({ assigned_employee_id: employeeId })
+                                      .eq('id', order.id);
+                                    if (error) {
+                                      toast({
+                                        variant: 'destructive',
+                                        title: 'Error',
+                                        description: 'Failed to update assignment.',
+                                      });
+                                    } else {
+                                      toast({
+                                        title: employeeId ? 'Employee assigned' : 'Assignment removed',
+                                        description: employeeId ? 'Internal order bonus added.' : 'Internal order bonus removed.',
+                                      });
+                                      fetchOrders();
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="h-7 w-[120px] text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">Unassigned</SelectItem>
+                                    {employees.map((emp) => (
+                                      <SelectItem key={emp.id} value={emp.id}>
+                                        {emp.first_name} {emp.last_name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                (() => {
+                                  const assignedEmp = employees.find(e => e.id === order.assignedEmployeeId);
+                                  return assignedEmp ? (
+                                    <span className="text-xs">{assignedEmp.first_name} {assignedEmp.last_name}</span>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">Unassigned</span>
+                                  );
+                                })()
+                              )}
+                            </TableCell>
                             <TableCell className="text-right text-xs">
                               {order.orderType === 'internal' && order.assignedEmployeeId ? (
                                 <span className="text-green-600 font-semibold">₱30.00</span>
                               ) : order.orderType === 'internal' ? (
-                                <span className="text-muted-foreground">₱0.00 (unassigned)</span>
+                                <span className="text-muted-foreground">₱0.00</span>
                               ) : (
                                 `₱${(order.load * SALARY_PER_LOAD).toFixed(2)}`
                               )}
@@ -742,7 +690,7 @@ export function EmployeeSalary() {
                         </TableBody>
                          <TableFooter>
                             <TableRow>
-                                <TableCell colSpan={3} className="font-bold text-xs">Total</TableCell>
+                                <TableCell colSpan={4} className="font-bold text-xs">Total</TableCell>
                                 <TableCell className="text-center font-bold text-xs">{totalLoads}</TableCell>
                                 <TableCell className="text-right font-bold text-xs">₱{totalSalary.toFixed(2)}</TableCell>
                             </TableRow>
