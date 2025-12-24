@@ -429,20 +429,60 @@ export function EmployeeSalary() {
                     <div className="flex justify-between w-full pr-4 text-left">
                         <div className="flex flex-col gap-1">
                           <span className="font-semibold">{format(date, 'PPP')}</span>
-                          {employees.length > 0 && (
-                            <div className="flex gap-2 text-xs text-muted-foreground">
-                              {employees.map((emp) => {
-                                const dateKey = format(date, 'yyyy-MM-dd');
-                                const payment = dailyPayments[dateKey]?.[emp.id];
-                                const isPaid = payment?.is_paid ?? false;
-                                return (
-                                  <span key={emp.id} className={isPaid ? 'text-green-600' : 'text-orange-600'}>
-                                    {emp.first_name || 'Employee'}: {isPaid ? 'Paid' : 'Unpaid'}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          )}
+                          {employees.length > 0 && (() => {
+                            // Find MYRA (the original employee)
+                            const myraEmployee = employees.find(e => 
+                              e.first_name?.toUpperCase() === 'MYRA' || 
+                              e.first_name?.toUpperCase().includes('MYRA')
+                            );
+                            
+                            // Calculate which employees have loads for this day
+                            const employeesWithLoads = employees.filter((emp) => {
+                              const isMyra = myraEmployee?.id === emp.id;
+                              
+                              // Customer orders assigned to this employee
+                              const customerOrdersForEmployee = orders.filter(
+                                o => o.orderType !== 'internal' && o.assignedEmployeeId === emp.id
+                              );
+                              
+                              // For MYRA: also include unassigned customer orders (old records)
+                              const unassignedCustomerOrders = isMyra 
+                                ? orders.filter(
+                                    o => o.orderType !== 'internal' && !o.assignedEmployeeId
+                                  )
+                                : [];
+                              
+                              const allCustomerOrdersForEmployee = [...customerOrdersForEmployee, ...unassignedCustomerOrders];
+                              const customerLoadsForEmployee = allCustomerOrdersForEmployee.reduce((sum, o) => sum + o.load, 0);
+                              
+                              // Internal orders assigned to this employee
+                              const internalOrdersForEmployee = orders.filter(
+                                o => o.orderType === 'internal' && o.assignedEmployeeId === emp.id
+                              );
+                              
+                              // Employee has loads if they have customer loads or internal orders
+                              return customerLoadsForEmployee > 0 || internalOrdersForEmployee.length > 0;
+                            });
+                            
+                            // Only show employees who have loads
+                            if (employeesWithLoads.length > 0) {
+                              return (
+                                <div className="flex gap-2 text-xs text-muted-foreground">
+                                  {employeesWithLoads.map((emp) => {
+                                    const dateKey = format(date, 'yyyy-MM-dd');
+                                    const payment = dailyPayments[dateKey]?.[emp.id];
+                                    const isPaid = payment?.is_paid ?? false;
+                                    return (
+                                      <span key={emp.id} className={isPaid ? 'text-green-600' : 'text-orange-600'}>
+                                        {emp.first_name || 'Employee'}: {isPaid ? 'Paid' : 'Unpaid'}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </div>
                         <div className="flex gap-4 text-sm text-right">
                            <span>Loads: <span className="font-bold">{totalLoads}</span></span>
