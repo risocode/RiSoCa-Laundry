@@ -356,12 +356,34 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         </Select>
                     </div>
                 ) : (
-                   <Badge className={cn(
-                       `${getStatusColor(workingOrder.status)} text-white shadow-sm font-semibold px-3 py-1.5`,
-                       "hover:opacity-90 transition-opacity"
-                   )}>
-                       {workingOrder.status}
-                    </Badge>
+                    <Select
+                        value={workingOrder.status}
+                        onValueChange={async (value) => {
+                            if (value !== workingOrder.status) {
+                                const updatedOrder = {
+                                    ...workingOrder,
+                                    status: value,
+                                    statusHistory: [...(workingOrder.statusHistory || []), { status: value, timestamp: new Date() }]
+                                };
+                                await onUpdateOrder(updatedOrder);
+                            }
+                        }}
+                        disabled={isSaving}
+                    >
+                        <SelectTrigger className="h-auto p-0 border-0 bg-transparent hover:bg-transparent focus:ring-0">
+                            <Badge className={cn(
+                                `${getStatusColor(workingOrder.status)} text-white shadow-sm font-semibold px-3 py-1.5 cursor-pointer`,
+                                "hover:opacity-90 transition-opacity"
+                            )}>
+                                {workingOrder.status}
+                            </Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {statusOptions.map((status) => (
+                                <SelectItem key={status} value={status}>{status}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 )}
             </TableCell>
             <TableCell className="text-center">
@@ -717,13 +739,35 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                         </SelectContent>
                                     </Select>
                                 ) : (
-                                    <Badge className={cn(
-                                        getStatusColor(workingOrder.status),
-                                        "hover:" + getStatusColor(workingOrder.status),
-                                        "text-white text-xs font-semibold shadow-sm px-3 py-1.5"
-                                    )}>
-                                        {workingOrder.status}
-                                    </Badge>
+                                    <Select
+                                        value={workingOrder.status}
+                                        onValueChange={async (value) => {
+                                            if (value !== workingOrder.status) {
+                                                const updatedOrder = {
+                                                    ...workingOrder,
+                                                    status: value,
+                                                    statusHistory: [...(workingOrder.statusHistory || []), { status: value, timestamp: new Date() }]
+                                                };
+                                                await onUpdateOrder(updatedOrder);
+                                            }
+                                        }}
+                                        disabled={isSaving}
+                                    >
+                                        <SelectTrigger className="h-auto p-0 border-0 bg-transparent hover:bg-transparent focus:ring-0 w-auto">
+                                            <Badge className={cn(
+                                                getStatusColor(workingOrder.status),
+                                                "hover:" + getStatusColor(workingOrder.status),
+                                                "text-white text-xs font-semibold shadow-sm px-3 py-1.5 cursor-pointer"
+                                            )}>
+                                                {workingOrder.status}
+                                            </Badge>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {statusOptions.map((status) => (
+                                                <SelectItem key={status} value={status}>{status}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 )}
                             </div>
 
