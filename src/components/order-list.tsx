@@ -20,7 +20,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Edit, Save, X, Loader2, Package, User, Phone, Weight, Layers, DollarSign, CreditCard, CheckCircle2, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit, Save, X, Loader2, Package, User, Phone, Weight, Layers, DollarSign, CreditCard, CheckCircle2, MoreVertical, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { supabase } from '@/lib/supabase-client';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { StatusDialog } from '@/components/status-dialog';
 import {
@@ -114,12 +115,19 @@ const getPaymentBadgeInfo = (isPaid: boolean, isPartiallyPaid: boolean) => {
     }
 }
 
+type Employee = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+};
+
 function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: OrderListProps['onUpdateOrder'] }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editableOrder, setEditableOrder] = useState(order);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+    const [employees, setEmployees] = useState<Employee[]>([]);
 
     // SAFETY CHECK: If balance is undefined but order is not paid, set balance to total
     // This handles cases where the mapping function fails or old code is running
@@ -227,15 +235,34 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
             </TableCell>
             <TableCell>
                 {isEditing ? (
-                    <Input 
-                        type="tel" 
-                        value={editableOrder.contactNumber} 
-                        onChange={e => handleFieldChange('contactNumber', e.target.value)} 
-                        className="h-9 w-full min-w-[130px] max-w-[180px] border-2" 
+                    <Select
+                        value={editableOrder.assignedEmployeeId || ''}
+                        onValueChange={(value) => handleFieldChange('assignedEmployeeId', value === 'none' ? null : value)}
                         disabled={isSaving}
-                    />
+                    >
+                        <SelectTrigger className="h-9 w-full min-w-[140px] max-w-[200px] border-2">
+                            <SelectValue placeholder="Select employee" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">No Employee</SelectItem>
+                            {employees.map((emp) => (
+                                <SelectItem key={emp.id} value={emp.id}>
+                                    {emp.first_name || ''} {emp.last_name || ''}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 ) : (
-                    <span className="text-muted-foreground">{workingOrder.contactNumber || 'N/A'}</span>
+                    (() => {
+                        const assignedEmp = employees.find(e => e.id === workingOrder.assignedEmployeeId);
+                        return assignedEmp ? (
+                            <span className="font-medium">
+                                {assignedEmp.first_name || ''} {assignedEmp.last_name || ''}
+                            </span>
+                        ) : (
+                            <span className="text-muted-foreground">Unassigned</span>
+                        );
+                    })()
                 )}
             </TableCell>
             <TableCell className="text-center">
@@ -451,6 +478,7 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     const [editableOrder, setEditableOrder] = useState(order);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+    const [employees, setEmployees] = useState<Employee[]>([]);
 
     // SAFETY CHECK: If balance is undefined but order is not paid, set balance to total
     // This handles cases where the mapping function fails or old code is running
@@ -468,6 +496,28 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     useEffect(() => {
         setEditableOrder(safeOrder);
     }, [order.id, order.balance, order.isPaid, order.total]);
+
+    // Fetch employees for employee selection
+    useEffect(() => {
+        const fetchEmployees = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('id, first_name, last_name')
+                    .eq('role', 'employee')
+                    .order('first_name', { ascending: true });
+
+                if (error) {
+                    console.error("Failed to load employees", error);
+                    return;
+                }
+                setEmployees(data || []);
+            } catch (error) {
+                console.error('Error fetching employees', error);
+            }
+        };
+        fetchEmployees();
+    }, []);
 
     const handleFieldChange = (field: keyof Order, value: string | number | boolean | null) => {
         let newOrderState = { ...editableOrder };
@@ -632,18 +682,40 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor={`contact-number-mob-${order.id}`} className="flex items-center gap-2">
-                                        <Phone className="h-3 w-3 text-muted-foreground" />
-                                        Contact Number
+                                    <Label htmlFor={`employee-mob-${order.id}`} className="flex items-center gap-2">
+                                        <Users className="h-3 w-3 text-muted-foreground" />
+                                        Employee
                                     </Label>
-                                    <Input 
-                                        id={`contact-number-mob-${order.id}`} 
-                                        type="tel" 
-                                        value={editableOrder.contactNumber} 
-                                        onChange={e => handleFieldChange('contactNumber', e.target.value)} 
-                                        className="h-9 border-2" 
-                                        disabled={!isEditing || isSaving} 
-                                    />
+                                    {isEditing ? (
+                                        <Select
+                                            value={editableOrder.assignedEmployeeId || ''}
+                                            onValueChange={(value) => handleFieldChange('assignedEmployeeId', value === 'none' ? null : value)}
+                                            disabled={isSaving}
+                                        >
+                                            <SelectTrigger className="h-9 border-2">
+                                                <SelectValue placeholder="Select employee" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">No Employee</SelectItem>
+                                                {employees.map((emp) => (
+                                                    <SelectItem key={emp.id} value={emp.id}>
+                                                        {emp.first_name || ''} {emp.last_name || ''}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        (() => {
+                                            const assignedEmp = employees.find(e => e.id === workingOrder.assignedEmployeeId);
+                                            return assignedEmp ? (
+                                                <span className="font-medium">
+                                                    {assignedEmp.first_name || ''} {assignedEmp.last_name || ''}
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground">Unassigned</span>
+                                            );
+                                        })()
+                                    )}
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
@@ -997,8 +1069,8 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
               </TableHead>
               <TableHead className="min-w-[140px] font-semibold">
                 <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-primary" />
-                  Contact
+                  <Users className="h-4 w-4 text-primary" />
+                  Employee
                 </div>
               </TableHead>
               <TableHead className="min-w-[110px] font-semibold text-center">

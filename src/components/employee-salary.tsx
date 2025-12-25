@@ -230,22 +230,37 @@ export function EmployeeSalary() {
           // If record exists, it means it was manually edited or marked as paid, so don't overwrite
           if (!existingPayment) {
             savePromises.push(
-              supabase
-                .from('daily_salary_payments')
-                .upsert({
-                  employee_id: emp.id,
-                  date: dateStr,
-                  amount: calculatedSalary,
-                  is_paid: false,
-                  updated_at: new Date().toISOString(),
-                }, {
-                  onConflict: 'employee_id,date',
-                })
-                .then(({ error }) => {
-                  if (error) {
-                    console.error(`Failed to auto-save salary for ${emp.id} on ${dateStr}:`, error);
+              (async () => {
+                try {
+                  // Check if record exists first
+                  const { data: existing, error: checkError } = await supabase
+                    .from('daily_salary_payments')
+                    .select('id')
+                    .eq('employee_id', emp.id)
+                    .eq('date', dateStr)
+                    .maybeSingle();
+
+                  // If no record exists (maybeSingle returns null when not found)
+                  if (!existing && !checkError) {
+                    // Insert new record
+                    const { error } = await supabase
+                      .from('daily_salary_payments')
+                      .insert({
+                        employee_id: emp.id,
+                        date: dateStr,
+                        amount: calculatedSalary,
+                        is_paid: false,
+                        updated_at: new Date().toISOString(),
+                      });
+
+                    if (error) {
+                      console.error(`Failed to auto-save salary for ${emp.id} on ${dateStr}:`, error);
+                    }
                   }
-                })
+                } catch (error: any) {
+                  console.error(`Error checking/inserting salary for ${emp.id} on ${dateStr}:`, error);
+                }
+              })()
             );
           }
         }
@@ -289,6 +304,11 @@ export function EmployeeSalary() {
 
       if (error) {
         console.error("Failed to load daily payments", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: `Failed to load payments: ${error.message}`,
+        });
         return;
       }
 
@@ -300,12 +320,19 @@ export function EmployeeSalary() {
         };
       });
 
-      setDailyPayments(prev => ({
-        ...prev,
-        [dateStr]: payments,
-      }));
-    } catch (error) {
+      // Use functional update to ensure state is properly merged
+      setDailyPayments(prev => {
+        const updated = { ...prev };
+        updated[dateStr] = payments;
+        return updated;
+      });
+    } catch (error: any) {
       console.error('Error fetching daily payments', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: `Failed to fetch payments: ${error.message || 'Unknown error'}`,
+      });
     }
   };
 
@@ -496,27 +523,65 @@ export function EmployeeSalary() {
     setUpdatingPayment(paymentKey);
 
     try {
-      const { error } = await supabase
+      // First, try to get existing record to check if it exists
+      const { data: existingData, error: fetchError } = await supabase
         .from('daily_salary_payments')
-        .upsert({
-          employee_id: employeeId,
-          date: dateStr,
-          amount: amount,
-          is_paid: currentStatus,
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'employee_id,date',
-        });
+        .select('id')
+        .eq('employee_id', employeeId)
+        .eq('date', dateStr)
+        .maybeSingle();
 
-      if (error) throw error;
+      let result;
+      if (existingData && !fetchError) {
+        // Update existing record
+        result = await supabase
+          .from('daily_salary_payments')
+          .update({
+            amount: amount,
+            is_paid: currentStatus,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('employee_id', employeeId)
+          .eq('date', dateStr);
+      } else {
+        // Insert new record
+        result = await supabase
+          .from('daily_salary_payments')
+          .insert({
+            employee_id: employeeId,
+            date: dateStr,
+            amount: amount,
+            is_paid: currentStatus,
+            updated_at: new Date().toISOString(),
+          });
+      }
+
+      if (result.error) {
+        console.error('Database error:', result.error);
+        throw result.error;
+      }
 
       toast({
         title: 'Amount Updated',
         description: `Payment amount has been updated to ₱${amount.toFixed(2)}.`,
       });
 
-      // Refresh payments for this date
+      // Refresh payments for this date and update local state immediately
       await fetchDailyPayments(dateStr);
+      
+      // Also update local state immediately for better UX
+      setDailyPayments(prev => {
+        const updated = { ...prev };
+        if (!updated[dateStr]) {
+          updated[dateStr] = {};
+        }
+        updated[dateStr][employeeId] = {
+          is_paid: currentStatus,
+          amount: amount,
+        };
+        return updated;
+      });
+      
       setEditingPaymentAmount(null);
       setEditingPaymentValue('');
     } catch (error: any) {
@@ -524,7 +589,7 @@ export function EmployeeSalary() {
       toast({
         variant: 'destructive',
         title: 'Update Failed',
-        description: error.message || 'Failed to update payment amount.',
+        description: error.message || 'Failed to update payment amount. Please try again.',
       });
     } finally {
       setUpdatingPayment(null);
@@ -538,33 +603,71 @@ export function EmployeeSalary() {
 
     try {
       const newStatus = !currentStatus;
-      const { error } = await supabase
+      
+      // First, try to get existing record
+      const { data: existingData, error: fetchError } = await supabase
         .from('daily_salary_payments')
-        .upsert({
-          employee_id: employeeId,
-          date: dateStr,
-          amount: amount,
-          is_paid: newStatus,
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'employee_id,date',
-        });
+        .select('id')
+        .eq('employee_id', employeeId)
+        .eq('date', dateStr)
+        .maybeSingle();
 
-      if (error) throw error;
+      let result;
+      if (existingData && !fetchError) {
+        // Update existing record
+        result = await supabase
+          .from('daily_salary_payments')
+          .update({
+            is_paid: newStatus,
+            amount: amount,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('employee_id', employeeId)
+          .eq('date', dateStr);
+      } else {
+        // Insert new record
+        result = await supabase
+          .from('daily_salary_payments')
+          .insert({
+            employee_id: employeeId,
+            date: dateStr,
+            amount: amount,
+            is_paid: newStatus,
+            updated_at: new Date().toISOString(),
+          });
+      }
+
+      if (result.error) {
+        console.error('Database error:', result.error);
+        throw result.error;
+      }
 
       toast({
         title: newStatus ? 'Marked as Paid' : 'Marked as Unpaid',
         description: `Employee salary for ${format(date, 'MMM dd, yyyy')} has been updated.`,
       });
 
-      // Refresh payments for this date
+      // Refresh payments for this date and update local state immediately
       await fetchDailyPayments(dateStr);
+      
+      // Also update local state immediately for better UX
+      setDailyPayments(prev => {
+        const updated = { ...prev };
+        if (!updated[dateStr]) {
+          updated[dateStr] = {};
+        }
+        updated[dateStr][employeeId] = {
+          is_paid: newStatus,
+          amount: amount,
+        };
+        return updated;
+      });
     } catch (error: any) {
       console.error('Failed to update payment status:', error);
       toast({
         variant: 'destructive',
         title: 'Update Failed',
-        description: error.message || 'Failed to update payment status.',
+        description: error.message || 'Failed to update payment status. Please try again.',
       });
     } finally {
       setUpdatingPayment(null);

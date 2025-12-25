@@ -30,7 +30,7 @@ const manualOrderSchema = z.object({
   ),
   total: z.coerce.number().min(0, 'Price must be 0 or greater.'),
   isPaid: z.boolean().optional(),
-  assigned_employee_id: z.string().min(1, 'Please select an employee assignment.'),
+  assigned_employee_id: z.string().optional(), // Made optional
 });
 
 type ManualOrderFormValues = z.infer<typeof manualOrderSchema>;
@@ -273,7 +273,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
           <div className="space-y-3">
             <Label className="flex items-center gap-2 text-sm font-medium">
               <Users className="h-4 w-4 text-primary" />
-              Assign Employee <span className="text-destructive">*</span>
+              Assign Employee (Optional)
             </Label>
             <Controller
               name="assigned_employee_id"
@@ -284,9 +284,25 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                 const isEmployee1 = field.value === employee1?.id;
                 const isEmployee2 = field.value === employee2?.id;
                 const isBoth = field.value === 'BOTH';
+                const isNone = !field.value || field.value === '';
                 
                 return (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <Button
+                      type="button"
+                      variant={isNone ? "default" : "outline"}
+                      size="lg"
+                      onClick={() => field.onChange(undefined)}
+                      disabled={isSaving || loadingEmployees}
+                      className={cn(
+                        "h-12 font-semibold transition-all",
+                        isNone 
+                          ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" 
+                          : "hover:border-primary hover:text-primary"
+                      )}
+                    >
+                      No Employee
+                    </Button>
                     {employee1 && (
                       <Button
                         type="button"
@@ -342,9 +358,6 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                 );
               }}
             />
-            {form.formState.errors.assigned_employee_id && (
-              <p className="text-xs text-destructive pt-1">{form.formState.errors.assigned_employee_id.message}</p>
-            )}
           </div>
 
           <Separator className="my-4" />
@@ -394,8 +407,8 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             </Button>
             <Button 
               type="submit" 
-              disabled={isSaving || isPaid === undefined || !!form.formState.errors.weight || !form.watch('assigned_employee_id')}
-              className="w-full sm:w-auto"
+              disabled={isSaving || isPaid === undefined || !!form.formState.errors.weight}
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md"
             >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Add Order
