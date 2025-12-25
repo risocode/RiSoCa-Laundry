@@ -317,7 +317,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                             : "hover:border-primary hover:text-primary"
                         )}
                       >
-                        {employee1.first_name || ''} {employee1.last_name || ''}
+                        {employee1.first_name || 'Employee'}
                       </Button>
                     )}
                     {employee2 && (
@@ -334,7 +334,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
                             : "hover:border-primary hover:text-primary"
                         )}
                       >
-                        {employee2.first_name || ''} {employee2.last_name || ''}
+                        {employee2.first_name || 'Employee'}
                       </Button>
                     )}
                     {employee1 && employee2 && (
