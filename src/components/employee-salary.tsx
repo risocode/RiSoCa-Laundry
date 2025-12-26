@@ -203,21 +203,25 @@ export function EmployeeSalary() {
           if (order.orderType === 'internal') return; // Skip internal orders here
           
           // Check if order has multiple employees assigned
-          if (order.assignedEmployeeIds && order.assignedEmployeeIds.length > 0) {
+          if (order.assignedEmployeeIds && Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length > 0) {
             // Order has multiple employees - divide load equally
             if (order.assignedEmployeeIds.includes(emp.id)) {
-              customerLoadsForEmployee += order.load / order.assignedEmployeeIds.length;
+              const dividedLoad = order.load / order.assignedEmployeeIds.length;
+              customerLoadsForEmployee += dividedLoad;
             }
           } else if (order.assignedEmployeeId === emp.id) {
             // Single employee assignment (backward compatibility)
             customerLoadsForEmployee += order.load;
-          } else if (!order.assignedEmployeeId && !order.assignedEmployeeIds) {
+          } else if (!order.assignedEmployeeId && (!order.assignedEmployeeIds || (Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length === 0))) {
             // Unassigned order - assign to MYRA if she's the only employee (old records)
             if (isMyra && currentEmployees.length === 1) {
               customerLoadsForEmployee += order.load;
             }
           }
         });
+        
+        // Round to 2 decimal places to avoid floating point errors
+        customerLoadsForEmployee = Math.round(customerLoadsForEmployee * 100) / 100;
         
         const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
         
@@ -705,21 +709,25 @@ export function EmployeeSalary() {
           if (order.orderType === 'internal') return; // Skip internal orders here
           
           // Check if order has multiple employees assigned
-          if (order.assignedEmployeeIds && order.assignedEmployeeIds.length > 0) {
+          if (order.assignedEmployeeIds && Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length > 0) {
             // Order has multiple employees - divide load equally
             if (order.assignedEmployeeIds.includes(emp.id)) {
-              customerLoadsForEmployee += order.load / order.assignedEmployeeIds.length;
+              const dividedLoad = order.load / order.assignedEmployeeIds.length;
+              customerLoadsForEmployee += dividedLoad;
             }
           } else if (order.assignedEmployeeId === emp.id) {
             // Single employee assignment (backward compatibility)
             customerLoadsForEmployee += order.load;
-          } else if (!order.assignedEmployeeId && !order.assignedEmployeeIds) {
+          } else if (!order.assignedEmployeeId && (!order.assignedEmployeeIds || (Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length === 0))) {
             // Unassigned order - assign to MYRA if she's the only employee (old records)
             if (isMyra && currentEmployees.length === 1) {
               customerLoadsForEmployee += order.load;
             }
           }
         });
+        
+        // Round to 2 decimal places to avoid floating point errors
+        customerLoadsForEmployee = Math.round(customerLoadsForEmployee * 100) / 100;
         
         const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
         
@@ -810,21 +818,25 @@ export function EmployeeSalary() {
                                 if (order.orderType === 'internal') return; // Skip internal orders here
                                 
                                 // Check if order has multiple employees assigned
-                                if (order.assignedEmployeeIds && order.assignedEmployeeIds.length > 0) {
+                                if (order.assignedEmployeeIds && Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length > 0) {
                                   // Order has multiple employees - divide load equally
                                   if (order.assignedEmployeeIds.includes(emp.id)) {
-                                    customerLoadsForEmployee += order.load / order.assignedEmployeeIds.length;
+                                    const dividedLoad = order.load / order.assignedEmployeeIds.length;
+                                    customerLoadsForEmployee += dividedLoad;
                                   }
                                 } else if (order.assignedEmployeeId === emp.id) {
                                   // Single employee assignment (backward compatibility)
                                   customerLoadsForEmployee += order.load;
-                                } else if (!order.assignedEmployeeId && !order.assignedEmployeeIds) {
+                                } else if (!order.assignedEmployeeId && (!order.assignedEmployeeIds || (Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length === 0))) {
                                   // Unassigned order - assign to MYRA if she's the only employee (old records)
                                   if (isMyra && employees.length === 1) {
                                     customerLoadsForEmployee += order.load;
                                   }
                                 }
                               });
+                              
+                              // Round to 2 decimal places to avoid floating point errors
+                              customerLoadsForEmployee = Math.round(customerLoadsForEmployee * 100) / 100;
                               
                               // Internal orders assigned to this employee
                               const internalOrdersForEmployee = orders.filter(
@@ -894,21 +906,25 @@ export function EmployeeSalary() {
                              if (order.orderType === 'internal') return; // Skip internal orders here
                              
                              // Check if order has multiple employees assigned
-                             if (order.assignedEmployeeIds && order.assignedEmployeeIds.length > 0) {
+                             if (order.assignedEmployeeIds && Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length > 0) {
                                // Order has multiple employees - divide load equally
                                if (order.assignedEmployeeIds.includes(emp.id)) {
-                                 customerLoadsForEmployee += order.load / order.assignedEmployeeIds.length;
+                                 const dividedLoad = order.load / order.assignedEmployeeIds.length;
+                                 customerLoadsForEmployee += dividedLoad;
                                }
                              } else if (order.assignedEmployeeId === emp.id) {
                                // Single employee assignment (backward compatibility)
                                customerLoadsForEmployee += order.load;
-                             } else if (!order.assignedEmployeeId && !order.assignedEmployeeIds) {
+                             } else if (!order.assignedEmployeeId && (!order.assignedEmployeeIds || (Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length === 0))) {
                                // Unassigned order - assign to MYRA if she's the only employee (old records)
                                if (isMyra && employees.length === 1) {
                                  customerLoadsForEmployee += order.load;
                                }
                              }
                            });
+                           
+                           // Round to 2 decimal places to avoid floating point errors
+                           customerLoadsForEmployee = Math.round(customerLoadsForEmployee * 100) / 100;
                            
                            const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
                            
