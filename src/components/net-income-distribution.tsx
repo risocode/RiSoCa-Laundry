@@ -8,13 +8,14 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { Loader2, TrendingUp, TrendingDown, Users, PieChart as PieChartIcon, DollarSign, Share2, CheckCircle2, CheckSquare, Square, Calendar, FileText, Download, RefreshCw, AlertCircle, Info } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, Users, PieChart as PieChartIcon, DollarSign, Share2, CheckCircle2, CheckSquare, Square, Calendar, FileText, Download, RefreshCw, AlertCircle, Info, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase-client';
 import { fetchExpenses } from '@/lib/api/expenses';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -93,10 +94,18 @@ export function NetIncomeDistribution() {
   const [ownerToClaim, setOwnerToClaim] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [bankSavings, setBankSavings] = useState<number>(0);
+  const [editingBankSavings, setEditingBankSavings] = useState(false);
+  const [bankSavingsInput, setBankSavingsInput] = useState<string>('');
+  const [savingBankSavings, setSavingBankSavings] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    fetchBankSavings();
+  }, [distributionPeriod]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -189,6 +198,153 @@ export function NetIncomeDistribution() {
     }
   };
 
+  const fetchBankSavings = async () => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate = now;
+    let periodType: string;
+
+    if (distributionPeriod === 'monthly') {
+      startDate = startOfMonth(now);
+      endDate = endOfMonth(now);
+      periodType = 'monthly';
+    } else if (distributionPeriod === 'yearly') {
+      startDate = startOfYear(now);
+      endDate = endOfYear(now);
+      periodType = 'yearly';
+    } else {
+      // For 'all', set bank savings to 0 (not applicable for all time)
+      setBankSavings(0);
+      setBankSavingsInput('0');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('bank_savings')
+      .select('*')
+      .eq('period_type', periodType)
+      .eq('period_start', format(startDate, 'yyyy-MM-dd'))
+      .eq('period_end', format(endDate, 'yyyy-MM-dd'))
+      .maybeSingle();
+
+    if (!error && data) {
+      setBankSavings(data.amount || 0);
+      setBankSavingsInput((data.amount || 0).toString());
+    } else {
+      setBankSavings(0);
+      setBankSavingsInput('0');
+    }
+  };
+
+  const saveBankSavings = async () => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate = now;
+    let periodType: string;
+
+    if (distributionPeriod === 'monthly') {
+      startDate = startOfMonth(now);
+      endDate = endOfMonth(now);
+      periodType = 'monthly';
+    } else if (distributionPeriod === 'yearly') {
+      startDate = startOfYear(now);
+      endDate = endOfYear(now);
+      periodType = 'yearly';
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Cannot save bank savings',
+        description: 'Bank savings can only be set for monthly or yearly periods.',
+      });
+      return;
+    }
+
+    const amount = parseFloat(bankSavingsInput);
+    if (isNaN(amount) || amount < 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid amount',
+        description: 'Please enter a valid positive number.',
+      });
+      return;
+    }
+
+    setSavingBankSavings(true);
+
+    // Check if bank savings record exists for this period
+    const { data: existing, error: fetchError } = await supabase
+      .from('bank_savings')
+      .select('*')
+      .eq('period_type', periodType)
+      .eq('period_start', format(startDate, 'yyyy-MM-dd'))
+      .eq('period_end', format(endDate, 'yyyy-MM-dd'))
+      .maybeSingle();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to check existing bank savings.',
+      });
+      setSavingBankSavings(false);
+      return;
+    }
+
+    if (existing) {
+      // Update existing record
+      const { error: updateError } = await supabase
+        .from('bank_savings')
+        .update({
+          amount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id);
+
+      if (updateError) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to update bank savings.',
+        });
+      } else {
+        setBankSavings(amount);
+        setEditingBankSavings(false);
+        toast({
+          title: 'Bank Savings Updated',
+          description: `Bank savings for ${distributionPeriod === 'monthly' ? format(now, 'MMMM yyyy') : format(now, 'yyyy')} has been updated.`,
+        });
+      }
+    } else {
+      // Create new record
+      const { error: insertError } = await supabase
+        .from('bank_savings')
+        .insert({
+          period_start: format(startDate, 'yyyy-MM-dd'),
+          period_end: format(endDate, 'yyyy-MM-dd'),
+          period_type: periodType,
+          amount,
+          created_by: user?.id,
+        });
+
+      if (insertError) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to save bank savings.',
+        });
+      } else {
+        setBankSavings(amount);
+        setEditingBankSavings(false);
+        toast({
+          title: 'Bank Savings Saved',
+          description: `Bank savings for ${distributionPeriod === 'monthly' ? format(now, 'MMMM yyyy') : format(now, 'yyyy')} has been saved.`,
+        });
+      }
+    }
+
+    setSavingBankSavings(false);
+  };
+
   // Calculate net income distribution
   const distributionData = useMemo(() => {
     const now = new Date();
@@ -265,9 +421,9 @@ export function NetIncomeDistribution() {
     // But they will be reimbursed, so we need to account for them
     const totalPersonalExpenses = Object.values(ownerExpenses).reduce((sum, val) => sum + val, 0);
     
-    // Available for distribution = Net Income (which already excludes personal expenses)
-    // Personal expenses are pending reimbursement, so they're not part of RKR expenses
-    const availableForDistribution = netIncome;
+    // Available for distribution = Net Income - Bank Savings
+    // Bank savings is deducted from net income before distribution
+    const availableForDistribution = netIncome - bankSavings;
 
     // Equal distribution among selected owners
     const selectedCount = selectedOwners.size || 1;
@@ -310,7 +466,7 @@ export function NetIncomeDistribution() {
       startDate,
       endDate,
     };
-  }, [orders, expenses, salaryPayments, distributionPeriod, selectedOwners, existingDistributions]);
+  }, [orders, expenses, salaryPayments, distributionPeriod, selectedOwners, existingDistributions, bankSavings]);
 
   // Prepare chart data for distribution over time
   const timeSeriesData = useMemo(() => {
@@ -686,7 +842,7 @@ export function NetIncomeDistribution() {
 
         <Card className={`${distributionData.netIncome >= 0 ? 'border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-white dark:from-green-950/20' : 'border-red-200 dark:border-red-800 bg-gradient-to-br from-red-50 to-white dark:from-red-950/20'} dark:to-background`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Income</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Net Income</CardTitle>
             <div className={`h-10 w-10 rounded-full ${distributionData.netIncome >= 0 ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'} flex items-center justify-center`}>
               <TrendingUp className={`h-5 w-5 ${distributionData.netIncome >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
             </div>
@@ -696,7 +852,105 @@ export function NetIncomeDistribution() {
               ₱{distributionData.netIncome.toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Available for distribution
+              Revenue - Expenses
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Bank Savings</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {editingBankSavings ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={bankSavingsInput}
+                    onChange={(e) => setBankSavingsInput(e.target.value)}
+                    className="h-9 text-sm flex-1"
+                    placeholder="0.00"
+                    disabled={savingBankSavings || distributionPeriod === 'all'}
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={saveBankSavings}
+                    disabled={savingBankSavings || distributionPeriod === 'all'}
+                    className="h-9 w-9 p-0"
+                  >
+                    {savingBankSavings ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setEditingBankSavings(false);
+                      setBankSavingsInput(bankSavings.toString());
+                    }}
+                    disabled={savingBankSavings}
+                    className="h-9 w-9 p-0"
+                  >
+                    <X className="h-4 w-4 text-red-600" />
+                  </Button>
+                </div>
+                {distributionPeriod === 'all' && (
+                  <p className="text-xs text-muted-foreground">
+                    Bank savings can only be set for monthly or yearly periods.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  ₱{bankSavings.toFixed(2)}
+                </div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {distributionPeriod === 'all' ? 'Not applicable for all time' : 'Deducted from net income'}
+                  </p>
+                  {distributionPeriod !== 'all' && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditingBankSavings(true);
+                        setBankSavingsInput(bankSavings.toString());
+                      }}
+                      className="h-6 px-2 text-xs"
+                    >
+                      Edit
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-purple-200 dark:border-purple-800 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Available for Distribution</CardTitle>
+            <div className="h-10 w-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <Share2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              ₱{distributionData.availableForDistribution.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Net Income - Bank Savings
             </p>
           </CardContent>
         </Card>
@@ -705,7 +959,7 @@ export function NetIncomeDistribution() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Per Owner Share</CardTitle>
             <div className="h-10 w-10 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
-              <Share2 className="h-5 w-5 text-primary" />
+              <Users className="h-5 w-5 text-primary" />
             </div>
           </CardHeader>
           <CardContent>
