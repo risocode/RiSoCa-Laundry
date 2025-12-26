@@ -297,7 +297,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                             const assignedEmps = employees.filter(e => workingOrder.assignedEmployeeIds!.includes(e.id));
                             if (assignedEmps.length > 0) {
                                 return (
-                                    <div className="flex flex-wrap gap-1">
+                                    <div className="flex flex-col gap-1">
                                         {assignedEmps.map((emp) => (
                                             <span key={emp.id} className="font-medium text-xs">
                                                 {emp.first_name || ''}
@@ -777,7 +777,7 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                                 const assignedEmps = employees.filter(e => workingOrder.assignedEmployeeIds!.includes(e.id));
                                                 if (assignedEmps.length > 0) {
                                                     return (
-                                                        <div className="flex flex-wrap gap-1">
+                                                        <div className="flex flex-col gap-1">
                                                             {assignedEmps.map((emp) => (
                                                                 <span key={emp.id} className="font-medium text-xs">
                                                                     {emp.first_name || ''}
