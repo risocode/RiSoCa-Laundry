@@ -400,7 +400,14 @@ export function EmployeeSalary() {
 
   const dailySalaries: DailySalary[] = Object.entries(completedOrdersByDate)
     .map(([dateStr, orders]) => {
-        const totalLoads = orders.reduce((sum, o) => sum + o.load, 0);
+        // Only count customer orders that are assigned to employees (exclude internal and unassigned)
+        const assignedCustomerOrders = orders.filter(o => {
+          if (o.orderType === 'internal') return false; // Exclude internal orders
+          // Must have at least one employee assigned
+          return (o.assignedEmployeeIds && Array.isArray(o.assignedEmployeeIds) && o.assignedEmployeeIds.length > 0) ||
+                 o.assignedEmployeeId !== null;
+        });
+        const totalLoads = assignedCustomerOrders.reduce((sum, o) => sum + o.load, 0);
         // Calculate base salary from loads
         const baseSalary = totalLoads * SALARY_PER_LOAD;
         // Calculate internal order bonuses (+30 per assigned internal order)
@@ -920,6 +927,7 @@ export function EmployeeSalary() {
                            const employeeSalary = customerSalary + internalBonus;
                            const paymentKey = `${emp.id}-${dateKey}`;
                            const isEditingAmount = editingPaymentAmount === paymentKey;
+                           // Default to calculated salary, but use payment amount if it exists (for manual edits)
                            const currentAmount = payment?.amount ?? employeeSalary;
                            
                            return (
@@ -993,11 +1001,6 @@ export function EmployeeSalary() {
                                        <span className="text-sm font-semibold text-primary">
                                          ₱{currentAmount.toFixed(2)}
                                        </span>
-                                       {currentAmount !== employeeSalary && (
-                                         <span className="text-xs text-muted-foreground">
-                                           (adjusted)
-                                         </span>
-                                       )}
                                        <Button
                                          size="sm"
                                          variant="ghost"
