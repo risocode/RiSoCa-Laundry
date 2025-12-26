@@ -34,6 +34,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { format, startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, eachDayOfInterval, eachWeekOfInterval, eachYearOfInterval, subDays, subWeeks, subYears } from 'date-fns';
+import { cn } from '@/lib/utils';
 import {
   PieChart,
   Pie,
@@ -97,7 +98,7 @@ export function NetIncomeDistribution() {
   const [loading, setLoading] = useState(true);
   const [distributionPeriod, setDistributionPeriod] = useState<'monthly' | 'yearly' | 'all'>('monthly');
   const [bankSavingsHistory, setBankSavingsHistory] = useState<Array<{period_start: string, period_end: string, period_type: string, amount: number, created_at: string}>>([]);
-  const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set(OWNERS));
+  const [selectedOwners, setSelectedOwners] = useState<Set<string>>(new Set(['Karaya', 'Richard'])); // Racky disabled
   const [existingDistributions, setExistingDistributions] = useState<DistributionRecord[]>([]);
   const [claimingDistribution, setClaimingDistribution] = useState(false);
   const [claimDialogOpen, setClaimDialogOpen] = useState(false);
@@ -467,7 +468,9 @@ export function NetIncomeDistribution() {
     const distributionAmount = selectedCount > 0 ? availableForDistribution / selectedCount : 0;
 
     const distribution = OWNERS.map((owner, index) => {
-      const isSelected = selectedOwners.has(owner);
+      // Racky is disabled - exclude from distribution
+      const isDisabled = owner === 'Racky';
+      const isSelected = !isDisabled && selectedOwners.has(owner);
       const existingDist = existingDistributions.find(
         d => d.owner_name === owner && 
         d.period_type === (distributionPeriod === 'all' ? 'custom' : distributionPeriod)
@@ -481,6 +484,7 @@ export function NetIncomeDistribution() {
         netShare: isSelected ? (distributionAmount - ownerExpenses[owner]) : 0, // After deducting their personal expenses
         color: COLORS[index],
         isSelected,
+        isDisabled,
         isClaimed: existingDist?.is_claimed || false,
         claimedAt: existingDist?.claimed_at || null,
         distributionId: existingDist?.id || null,
@@ -585,6 +589,10 @@ export function NetIncomeDistribution() {
   }, [orders, expenses, salaryPayments, distributionPeriod]);
 
   const handleToggleOwner = (owner: string) => {
+    // Prevent Racky from being selected
+    if (owner === 'Racky') {
+      return;
+    }
     const newSelected = new Set(selectedOwners);
     if (newSelected.has(owner)) {
       newSelected.delete(owner);
@@ -774,25 +782,38 @@ export function NetIncomeDistribution() {
               {OWNERS.map((owner, index) => {
                 const isSelected = selectedOwners.has(owner);
                 const ownerData = distributionData.distribution.find(d => d.name === owner);
+                const isDisabled = owner === 'Racky';
                 return (
                   <div
                     key={owner}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => handleToggleOwner(owner)}
+                    className={cn(
+                      "flex items-center justify-between p-3 border rounded-lg transition-colors",
+                      isDisabled 
+                        ? "bg-muted/30 opacity-50 cursor-not-allowed" 
+                        : "hover:bg-muted/50 cursor-pointer"
+                    )}
+                    onClick={() => !isDisabled && handleToggleOwner(owner)}
                   >
                     <div className="flex items-center gap-3">
                       {isSelected ? (
-                        <CheckSquare className="h-5 w-5 text-primary" />
+                        <CheckSquare className={cn("h-5 w-5", isDisabled ? "text-muted-foreground" : "text-primary")} />
                       ) : (
                         <Square className="h-5 w-5 text-muted-foreground" />
                       )}
                       <div
-                        className="w-4 h-4 rounded-full"
+                        className={cn("w-4 h-4 rounded-full", isDisabled && "opacity-50")}
                         style={{ backgroundColor: COLORS[index] }}
                       />
-                      <span className="font-semibold">{owner}</span>
+                      <span className={cn("font-semibold", isDisabled && "text-muted-foreground line-through")}>
+                        {owner}
+                      </span>
+                      {isDisabled && (
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          Unavailable
+                        </Badge>
+                      )}
                     </div>
-                    {ownerData && ownerData.share > 0 && (
+                    {ownerData && ownerData.share > 0 && !isDisabled && (
                       <Badge variant={isSelected ? "default" : "outline"}>
                         {isSelected ? `₱${ownerData.share.toFixed(2)}` : 'Excluded'}
                       </Badge>
