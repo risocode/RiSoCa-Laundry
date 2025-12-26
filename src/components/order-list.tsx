@@ -55,7 +55,8 @@ export type Order = {
   statusHistory: StatusHistory[];
   branchId?: string | null;
   orderType?: 'customer' | 'internal';
-  assignedEmployeeId?: string | null;
+  assignedEmployeeId?: string | null; // For backward compatibility (single employee)
+  assignedEmployeeIds?: string[]; // Array of employee IDs (multiple employees)
 };
 
 type OrderListProps = {

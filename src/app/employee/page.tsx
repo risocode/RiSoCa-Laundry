@@ -59,6 +59,9 @@ export default function EmployeePage() {
         timestamp: new Date(sh.created_at),
       })) as StatusHistory[],
       branchId: o.branch_id ?? null,
+      orderType: o.order_type || 'customer',
+      assignedEmployeeId: o.assigned_employee_id ?? null,
+      assignedEmployeeIds: Array.isArray(o.assigned_employee_ids) ? o.assigned_employee_ids : (o.assigned_employee_ids ? [o.assigned_employee_ids] : undefined),
     };
   };
 
@@ -82,6 +85,9 @@ export default function EmployeePage() {
         service_package,
         distance,
         branch_id,
+        order_type,
+        assigned_employee_id,
+        assigned_employee_ids,
         order_status_history(*)
       `)
       .order('created_at', { ascending: false });
@@ -161,6 +167,9 @@ export default function EmployeePage() {
       status: initialStatus,
       total: newOrder.total,
       is_paid: newOrder.isPaid,
+      order_type: newOrder.orderType || 'customer',
+      assigned_employee_id: newOrder.assignedEmployeeId || null,
+      assigned_employee_ids: newOrder.assignedEmployeeIds || null,
     });
 
     if (error) {

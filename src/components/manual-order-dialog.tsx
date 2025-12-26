@@ -30,7 +30,7 @@ const manualOrderSchema = z.object({
   ),
   total: z.coerce.number().min(0, 'Price must be 0 or greater.'),
   isPaid: z.boolean().optional(),
-  assigned_employee_id: z.string().optional(), // Made optional
+  assigned_employee_ids: z.array(z.string()).optional(), // Array of employee IDs
 });
 
 type ManualOrderFormValues = z.infer<typeof manualOrderSchema>;
@@ -60,7 +60,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
       weight: undefined,
       total: undefined,
       isPaid: undefined,
-      assigned_employee_id: '',
+      assigned_employee_ids: [],
     },
     mode: 'onChange',
   });
@@ -139,6 +139,11 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
     setIsSaving(true);
     const initialStatus = 'Order Placed';
     
+    // Store multiple employee IDs as JSON array in assigned_employee_ids
+    // For backward compatibility, also set assigned_employee_id to first employee or null
+    const assignedEmployeeIds = data.assigned_employee_ids || [];
+    const firstEmployeeId = assignedEmployeeIds.length > 0 ? assignedEmployeeIds[0] : null;
+    
     const newOrder: Omit<Order, 'id' | 'userId'> = {
       customerName: data.customerName,
       contactNumber: data.contactNumber || 'N/A',
@@ -151,7 +156,8 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
       distance: 0,
       orderDate: new Date(),
       statusHistory: [{ status: initialStatus, timestamp: new Date() }],
-      assignedEmployeeId: data.assigned_employee_id === 'BOTH' ? null : (data.assigned_employee_id || null),
+      assignedEmployeeId: firstEmployeeId, // For backward compatibility
+      assignedEmployeeIds: assignedEmployeeIds.length > 0 ? assignedEmployeeIds : undefined, // New field for multiple employees
     };
     await onAddOrder(newOrder);
     setIsSaving(false);
@@ -276,84 +282,45 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
               Assign Employee (Optional)
             </Label>
             <Controller
-              name="assigned_employee_id"
+              name="assigned_employee_ids"
               control={form.control}
               render={({ field }) => {
-                const employee1 = employees[0];
-                const employee2 = employees[1];
-                const isEmployee1 = field.value === employee1?.id;
-                const isEmployee2 = field.value === employee2?.id;
-                const isBoth = field.value === 'BOTH';
-                const isNone = !field.value || field.value === '';
+                const selectedIds = field.value || [];
+                
+                const toggleEmployee = (employeeId: string) => {
+                  const currentIds = selectedIds;
+                  if (currentIds.includes(employeeId)) {
+                    // Remove employee
+                    field.onChange(currentIds.filter(id => id !== employeeId));
+                  } else {
+                    // Add employee
+                    field.onChange([...currentIds, employeeId]);
+                  }
+                };
                 
                 return (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <Button
-                      type="button"
-                      variant={isNone ? "default" : "outline"}
-                      size="lg"
-                      onClick={() => field.onChange(undefined)}
-                      disabled={isSaving || loadingEmployees}
-                      className={cn(
-                        "h-12 font-semibold transition-all",
-                        isNone 
-                          ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" 
-                          : "hover:border-primary hover:text-primary"
-                      )}
-                    >
-                      No Employee
-                    </Button>
-                    {employee1 && (
-                      <Button
-                        type="button"
-                        variant={isEmployee1 ? "default" : "outline"}
-                        size="lg"
-                        onClick={() => field.onChange(employee1.id)}
-                        disabled={isSaving || loadingEmployees}
-                        className={cn(
-                          "h-12 font-semibold transition-all",
-                          isEmployee1 
-                            ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" 
-                            : "hover:border-primary hover:text-primary"
-                        )}
-                      >
-                        {employee1.first_name || 'Employee'}
-                      </Button>
-                    )}
-                    {employee2 && (
-                      <Button
-                        type="button"
-                        variant={isEmployee2 ? "default" : "outline"}
-                        size="lg"
-                        onClick={() => field.onChange(employee2.id)}
-                        disabled={isSaving || loadingEmployees}
-                        className={cn(
-                          "h-12 font-semibold transition-all",
-                          isEmployee2 
-                            ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" 
-                            : "hover:border-primary hover:text-primary"
-                        )}
-                      >
-                        {employee2.first_name || 'Employee'}
-                      </Button>
-                    )}
-                    {employee1 && employee2 && (
-                      <Button
-                        type="button"
-                        variant={isBoth ? "default" : "outline"}
-                        size="lg"
-                        onClick={() => field.onChange('BOTH')}
-                        disabled={isSaving || loadingEmployees}
-                        className={cn(
-                          "h-12 font-semibold transition-all",
-                          isBoth 
-                            ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" 
-                            : "hover:border-primary hover:text-primary"
-                        )}
-                      >
-                        BOTH
-                      </Button>
-                    )}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {employees.map((employee) => {
+                      const isSelected = selectedIds.includes(employee.id);
+                      return (
+                        <Button
+                          key={employee.id}
+                          type="button"
+                          variant={isSelected ? "default" : "outline"}
+                          size="lg"
+                          onClick={() => toggleEmployee(employee.id)}
+                          disabled={isSaving || loadingEmployees}
+                          className={cn(
+                            "h-12 font-semibold transition-all",
+                            isSelected 
+                              ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" 
+                              : "hover:border-primary hover:text-primary"
+                          )}
+                        >
+                          {employee.first_name || 'Employee'}
+                        </Button>
+                      );
+                    })}
                   </div>
                 );
               }}
@@ -407,7 +374,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             </Button>
             <Button 
               type="submit" 
-              disabled={isSaving || isPaid === undefined || !!form.formState.errors.weight}
+              disabled={isSaving || isPaid === undefined || !!form.formState.errors.weight || !!form.formState.errors.assigned_employee_ids}
               className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md"
             >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

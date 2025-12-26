@@ -86,7 +86,7 @@ export function EmployeeSalary() {
     // Fetch all orders, we'll filter by status and is_paid in the component
     const { data, error } = await supabase
       .from('orders')
-      .select('*, order_type, assigned_employee_id');
+      .select('*, order_type, assigned_employee_id, assigned_employee_ids');
     if (error) {
       console.error("Failed to load orders", error);
       setLoading(false);
@@ -108,7 +108,8 @@ export function EmployeeSalary() {
       distance: o.distance ?? 0,
       statusHistory: [],
       orderType: o.order_type || 'customer',
-      assignedEmployeeId: o.assigned_employee_id ?? null,
+      assignedEmployeeId: o.assigned_employee_id ?? null, // For backward compatibility
+      assignedEmployeeIds: Array.isArray(o.assigned_employee_ids) ? o.assigned_employee_ids : (o.assigned_employee_ids ? [o.assigned_employee_ids] : undefined),
     }));
     setOrders(mapped);
     setLoading(false);
@@ -195,24 +196,29 @@ export function EmployeeSalary() {
       currentEmployees.forEach(emp => {
         const isMyra = myraEmployee?.id === emp.id;
         
-        // Calculate employee-specific salary
-        const customerOrdersForEmployee = dayOrders.filter(
-          o => o.orderType !== 'internal' && o.assignedEmployeeId === emp.id
-        );
+        // Calculate employee-specific salary, handling both single and multiple employee assignments
+        let customerLoadsForEmployee = 0;
         
-        const bothOrders = currentEmployees.length === 2
-          ? dayOrders.filter(o => o.orderType !== 'internal' && !o.assignedEmployeeId)
-          : [];
-        const bothLoadsForEmployee = bothOrders.length > 0 
-          ? bothOrders.reduce((sum, o) => sum + o.load, 0) / currentEmployees.length
-          : 0;
+        dayOrders.forEach(order => {
+          if (order.orderType === 'internal') return; // Skip internal orders here
+          
+          // Check if order has multiple employees assigned
+          if (order.assignedEmployeeIds && order.assignedEmployeeIds.length > 0) {
+            // Order has multiple employees - divide load equally
+            if (order.assignedEmployeeIds.includes(emp.id)) {
+              customerLoadsForEmployee += order.load / order.assignedEmployeeIds.length;
+            }
+          } else if (order.assignedEmployeeId === emp.id) {
+            // Single employee assignment (backward compatibility)
+            customerLoadsForEmployee += order.load;
+          } else if (!order.assignedEmployeeId && !order.assignedEmployeeIds) {
+            // Unassigned order - assign to MYRA if she's the only employee (old records)
+            if (isMyra && currentEmployees.length === 1) {
+              customerLoadsForEmployee += order.load;
+            }
+          }
+        });
         
-        const unassignedCustomerOrders = isMyra && currentEmployees.length === 1
-          ? dayOrders.filter(o => o.orderType !== 'internal' && !o.assignedEmployeeId)
-          : [];
-        
-        const allCustomerOrdersForEmployee = [...customerOrdersForEmployee, ...unassignedCustomerOrders];
-        const customerLoadsForEmployee = allCustomerOrdersForEmployee.reduce((sum, o) => sum + o.load, 0) + bothLoadsForEmployee;
         const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
         
         const internalOrdersForEmployee = dayOrders.filter(
@@ -692,23 +698,29 @@ export function EmployeeSalary() {
         );
         const isMyra = myraEmployee?.id === emp.id;
         
-        const customerOrdersForEmployee = dayOrders.filter(
-          o => o.orderType !== 'internal' && o.assignedEmployeeId === emp.id
-        );
+        // Calculate loads for this employee, handling both single and multiple employee assignments
+        let customerLoadsForEmployee = 0;
         
-        const bothOrders = employees.length === 2
-          ? dayOrders.filter(o => o.orderType !== 'internal' && !o.assignedEmployeeId)
-          : [];
-        const bothLoadsForEmployee = bothOrders.length > 0 
-          ? bothOrders.reduce((sum, o) => sum + o.load, 0) / employees.length
-          : 0;
+        dayOrders.forEach(order => {
+          if (order.orderType === 'internal') return; // Skip internal orders here
+          
+          // Check if order has multiple employees assigned
+          if (order.assignedEmployeeIds && order.assignedEmployeeIds.length > 0) {
+            // Order has multiple employees - divide load equally
+            if (order.assignedEmployeeIds.includes(emp.id)) {
+              customerLoadsForEmployee += order.load / order.assignedEmployeeIds.length;
+            }
+          } else if (order.assignedEmployeeId === emp.id) {
+            // Single employee assignment (backward compatibility)
+            customerLoadsForEmployee += order.load;
+          } else if (!order.assignedEmployeeId && !order.assignedEmployeeIds) {
+            // Unassigned order - assign to MYRA if she's the only employee (old records)
+            if (isMyra && currentEmployees.length === 1) {
+              customerLoadsForEmployee += order.load;
+            }
+          }
+        });
         
-        const unassignedCustomerOrders = isMyra && employees.length === 1
-          ? dayOrders.filter(o => o.orderType !== 'internal' && !o.assignedEmployeeId)
-          : [];
-        
-        const allCustomerOrdersForEmployee = [...customerOrdersForEmployee, ...unassignedCustomerOrders];
-        const customerLoadsForEmployee = allCustomerOrdersForEmployee.reduce((sum, o) => sum + o.load, 0) + bothLoadsForEmployee;
         const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
         
         const internalOrdersForEmployee = dayOrders.filter(
@@ -791,20 +803,28 @@ export function EmployeeSalary() {
                             const employeesWithLoads = employees.filter((emp) => {
                               const isMyra = myraEmployee?.id === emp.id;
                               
-                              // Customer orders assigned to this employee
-                              const customerOrdersForEmployee = orders.filter(
-                                o => o.orderType !== 'internal' && o.assignedEmployeeId === emp.id
-                              );
+                              // Calculate loads for this employee, handling both single and multiple employee assignments
+                              let customerLoadsForEmployee = 0;
                               
-                              // For MYRA: also include unassigned customer orders (old records)
-                              const unassignedCustomerOrders = isMyra 
-                                ? orders.filter(
-                                    o => o.orderType !== 'internal' && !o.assignedEmployeeId
-                                  )
-                                : [];
-                              
-                              const allCustomerOrdersForEmployee = [...customerOrdersForEmployee, ...unassignedCustomerOrders];
-                              const customerLoadsForEmployee = allCustomerOrdersForEmployee.reduce((sum, o) => sum + o.load, 0);
+                              orders.forEach(order => {
+                                if (order.orderType === 'internal') return; // Skip internal orders here
+                                
+                                // Check if order has multiple employees assigned
+                                if (order.assignedEmployeeIds && order.assignedEmployeeIds.length > 0) {
+                                  // Order has multiple employees - divide load equally
+                                  if (order.assignedEmployeeIds.includes(emp.id)) {
+                                    customerLoadsForEmployee += order.load / order.assignedEmployeeIds.length;
+                                  }
+                                } else if (order.assignedEmployeeId === emp.id) {
+                                  // Single employee assignment (backward compatibility)
+                                  customerLoadsForEmployee += order.load;
+                                } else if (!order.assignedEmployeeId && !order.assignedEmployeeIds) {
+                                  // Unassigned order - assign to MYRA if she's the only employee (old records)
+                                  if (isMyra && employees.length === 1) {
+                                    customerLoadsForEmployee += order.load;
+                                  }
+                                }
+                              });
                               
                               // Internal orders assigned to this employee
                               const internalOrdersForEmployee = orders.filter(
@@ -860,31 +880,29 @@ export function EmployeeSalary() {
                            const isMyra = myraEmployee?.id === emp.id;
                            
                            // Calculate employee-specific salary based on assigned loads only
-                           // Customer orders assigned to this employee
-                           const customerOrdersForEmployee = orders.filter(
-                             o => o.orderType !== 'internal' && o.assignedEmployeeId === emp.id
-                           );
+                           // Handle both single employee assignment (assignedEmployeeId) and multiple employees (assignedEmployeeIds)
+                           let customerLoadsForEmployee = 0;
                            
-                           // Orders assigned to BOTH (null assigned_employee_id) - split between both employees
-                           const bothOrders = employees.length === 2
-                             ? orders.filter(
-                                 o => o.orderType !== 'internal' && !o.assignedEmployeeId
-                               )
-                             : [];
-                           const bothLoadsForEmployee = bothOrders.length > 0 
-                             ? bothOrders.reduce((sum, o) => sum + o.load, 0) / employees.length
-                             : 0;
+                           orders.forEach(order => {
+                             if (order.orderType === 'internal') return; // Skip internal orders here
+                             
+                             // Check if order has multiple employees assigned
+                             if (order.assignedEmployeeIds && order.assignedEmployeeIds.length > 0) {
+                               // Order has multiple employees - divide load equally
+                               if (order.assignedEmployeeIds.includes(emp.id)) {
+                                 customerLoadsForEmployee += order.load / order.assignedEmployeeIds.length;
+                               }
+                             } else if (order.assignedEmployeeId === emp.id) {
+                               // Single employee assignment (backward compatibility)
+                               customerLoadsForEmployee += order.load;
+                             } else if (!order.assignedEmployeeId && !order.assignedEmployeeIds) {
+                               // Unassigned order - assign to MYRA if she's the only employee (old records)
+                               if (isMyra && employees.length === 1) {
+                                 customerLoadsForEmployee += order.load;
+                               }
+                             }
+                           });
                            
-                           // For MYRA: also include old unassigned customer orders (before BOTH feature)
-                           // Only if there's only 1 employee or if it's an old order pattern
-                           const unassignedCustomerOrders = isMyra && employees.length === 1
-                             ? orders.filter(
-                                 o => o.orderType !== 'internal' && !o.assignedEmployeeId
-                               )
-                             : [];
-                           
-                           const allCustomerOrdersForEmployee = [...customerOrdersForEmployee, ...unassignedCustomerOrders];
-                           const customerLoadsForEmployee = allCustomerOrdersForEmployee.reduce((sum, o) => sum + o.load, 0) + bothLoadsForEmployee;
                            const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
                            
                            // Bonus: +30 for each internal order assigned to this employee
