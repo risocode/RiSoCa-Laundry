@@ -125,7 +125,7 @@ export function OrdersPage() {
         assigned_employee_ids,
         order_status_history(*)
       `)
-      .order('id', { ascending: true });
+      .order('id', { ascending: false });
 
     if (error) {
       toast({ 
@@ -241,7 +241,7 @@ export function OrdersPage() {
       filtered = filtered.filter(o => o.orderDate >= monthStart);
     }
 
-    // Sort by order number (extract numeric part from order ID)
+    // Sort by order number (extract numeric part from order ID) - latest first
     filtered.sort((a, b) => {
       const getOrderNum = (id: string) => {
         const match = id.match(/\d+$/);
@@ -250,10 +250,10 @@ export function OrdersPage() {
       const numA = getOrderNum(a.id);
       const numB = getOrderNum(b.id);
       if (numA !== numB) {
-        return numA - numB;
+        return numB - numA; // Descending (latest first)
       }
-      // If no numeric part, sort alphabetically
-      return a.id.localeCompare(b.id);
+      // If no numeric part, sort alphabetically (descending)
+      return b.id.localeCompare(a.id);
     });
 
     return filtered;
@@ -304,8 +304,16 @@ export function OrdersPage() {
               description: 'The order may have been updated. Please refresh the page to see the latest status.' 
             });
           }
-          // For 406/coerce errors, just refresh silently - update likely succeeded
-          fetchOrders();
+          // For 406/coerce errors, update in place if we can find the order
+          setAllOrders(prevOrders => {
+            const orderIndex = prevOrders.findIndex(o => o.id === updatedOrder.id);
+            if (orderIndex !== -1) {
+              const newOrders = [...prevOrders];
+              newOrders[orderIndex] = updatedOrder;
+              return newOrders;
+            }
+            return prevOrders;
+          });
           return;
         }
         
@@ -317,6 +325,16 @@ export function OrdersPage() {
             ...updatedOrder,
             id: updatedOrderData.id
           };
+          // Update the order in place with new ID to maintain position
+          setAllOrders(prevOrders => {
+            const orderIndex = prevOrders.findIndex(o => o.id === updatedOrder.id);
+            if (orderIndex !== -1) {
+              const newOrders = [...prevOrders];
+              newOrders[orderIndex] = updatedOrder;
+              return newOrders;
+            }
+            return prevOrders;
+          });
         }
       }
 
@@ -356,11 +374,22 @@ export function OrdersPage() {
         return;
       }
       
+      // Update the order in place to maintain its position in the list
+      setAllOrders(prevOrders => {
+        const orderIndex = prevOrders.findIndex(o => o.id === updatedOrder.id || o.id === finalOrderId);
+        if (orderIndex !== -1) {
+          const newOrders = [...prevOrders];
+          newOrders[orderIndex] = updatedOrder;
+          return newOrders;
+        }
+        // If order not found, refresh all orders
+        return prevOrders;
+      });
+
       toast({
         title: 'Order Updated',
         description: `Order #${finalOrderId} has been updated successfully.`,
       });
-      fetchOrders(); // Refresh to get the updated order with new ID
     } catch (error: any) {
       console.error('Unexpected error updating order:', error);
       toast({ 
