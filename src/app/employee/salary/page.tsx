@@ -153,12 +153,13 @@ export default function EmployeeSalaryPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // Fetch all orders, we'll filter by status and is_paid in the component
+      // Fetch all orders - this page doesn't need assigned_employee_ids for salary calculation
       const { data, error } = await supabase
         .from('orders')
-        .select('*, order_type, assigned_employee_id, assigned_employee_ids');
+        .select('*, order_type, assigned_employee_id');
 
       if (error) {
+        console.error('Error fetching orders:', error);
         setOrders([]);
       } else {
         const mapped: Order[] = (data ?? []).map(o => ({
@@ -178,11 +179,11 @@ export default function EmployeeSalaryPage() {
           statusHistory: [],
           orderType: o.order_type || 'customer',
           assignedEmployeeId: o.assigned_employee_id ?? null,
-          assignedEmployeeIds: Array.isArray(o.assigned_employee_ids) ? o.assigned_employee_ids : (o.assigned_employee_ids ? [o.assigned_employee_ids] : undefined),
         }));
         setOrders(mapped);
       }
     } catch (error) {
+      console.error('Error in fetchOrders:', error);
       setOrders([]);
     } finally {
       setLoading(false);
