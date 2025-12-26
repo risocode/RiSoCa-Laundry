@@ -1248,9 +1248,15 @@ export function EmployeeSalary() {
                                 <span className="text-green-600 font-semibold">₱30.00</span>
                               ) : order.orderType === 'internal' ? (
                                 <span className="text-muted-foreground">₱0.00</span>
-                              ) : (
-                                `₱${(order.load * SALARY_PER_LOAD).toFixed(2)}`
-                              )}
+                              ) : (() => {
+                                // Check if order is assigned to any employee
+                                const hasAssignment = (order.assignedEmployeeIds && Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length > 0) ||
+                                                     order.assignedEmployeeId !== null;
+                                // If unassigned, show ₱0.00, otherwise calculate salary
+                                return hasAssignment 
+                                  ? `₱${(order.load * SALARY_PER_LOAD).toFixed(2)}`
+                                  : <span className="text-muted-foreground">₱0.00</span>;
+                              })()}
                             </TableCell>
                             </TableRow>
                         ))}
