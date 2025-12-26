@@ -105,8 +105,6 @@ export function NetIncomeDistribution() {
   const [refreshing, setRefreshing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [bankSavings, setBankSavings] = useState<number>(0);
-  const [editingBankSavings, setEditingBankSavings] = useState(false);
-  const [bankSavingsInput, setBankSavingsInput] = useState<string>('');
   const [savingBankSavings, setSavingBankSavings] = useState(false);
   const [showCustomTransfer, setShowCustomTransfer] = useState(false);
   const [customTransferAmount, setCustomTransferAmount] = useState<string>('');
@@ -244,7 +242,6 @@ export function NetIncomeDistribution() {
     } else {
       // For 'all', set bank savings to 0 (not applicable for all time)
       setBankSavings(0);
-      setBankSavingsInput('0');
       return;
     }
 
@@ -258,14 +255,12 @@ export function NetIncomeDistribution() {
 
     if (!error && data) {
       setBankSavings(data.amount || 0);
-      setBankSavingsInput((data.amount || 0).toString());
     } else {
       setBankSavings(0);
-      setBankSavingsInput('0');
     }
   };
 
-  const saveBankSavings = async () => {
+  const saveBankSavingsDeposit = async (depositAmount: number) => {
     const now = new Date();
     let startDate: Date;
     let endDate = now;
@@ -282,14 +277,13 @@ export function NetIncomeDistribution() {
     } else {
       toast({
         variant: 'destructive',
-        title: 'Cannot save bank savings',
-        description: 'Bank savings can only be set for monthly or yearly periods.',
+        title: 'Cannot deposit',
+        description: 'Bank savings can only be deposited for monthly or yearly periods.',
       });
       return;
     }
 
-    const amount = parseFloat(bankSavingsInput);
-    if (isNaN(amount) || amount < 0) {
+    if (isNaN(depositAmount) || depositAmount <= 0) {
       toast({
         variant: 'destructive',
         title: 'Invalid amount',
@@ -300,80 +294,91 @@ export function NetIncomeDistribution() {
 
     setSavingBankSavings(true);
 
-    // Check if bank savings record exists for this period
-    const { data: existing, error: fetchError } = await supabase
-      .from('bank_savings')
-      .select('*')
-      .eq('period_type', periodType)
-      .eq('period_start', format(startDate, 'yyyy-MM-dd'))
-      .eq('period_end', format(endDate, 'yyyy-MM-dd'))
-      .maybeSingle();
+    try {
+      // Check if bank savings record exists for this period
+      const { data: existing, error: fetchError } = await supabase
+        .from('bank_savings')
+        .select('*')
+        .eq('period_type', periodType)
+        .eq('period_start', format(startDate, 'yyyy-MM-dd'))
+        .eq('period_end', format(endDate, 'yyyy-MM-dd'))
+        .maybeSingle();
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching bank savings:', fetchError);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to check existing bank savings.',
+        });
+        setSavingBankSavings(false);
+        return;
+      }
+
+      if (existing) {
+        // Update existing record - add the deposit amount to existing amount
+        const newAmount = existing.amount + depositAmount;
+        const { error: updateError } = await supabase
+          .from('bank_savings')
+          .update({
+            amount: newAmount,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id);
+
+        if (updateError) {
+          console.error('Error updating bank savings:', updateError);
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: updateError.message || 'Failed to update bank savings.',
+          });
+        } else {
+          setBankSavings(newAmount);
+          fetchBankSavingsHistory(); // Refresh history
+          toast({
+            title: 'Deposit Successful',
+            description: `₱${depositAmount.toFixed(2)} deposited to bank savings for ${distributionPeriod === 'monthly' ? format(now, 'MMMM yyyy') : format(now, 'yyyy')}.`,
+          });
+        }
+      } else {
+        // Create new record with the deposit amount
+        const { error: insertError } = await supabase
+          .from('bank_savings')
+          .insert({
+            period_start: format(startDate, 'yyyy-MM-dd'),
+            period_end: format(endDate, 'yyyy-MM-dd'),
+            period_type: periodType,
+            amount: depositAmount,
+            created_by: user?.id,
+          });
+
+        if (insertError) {
+          console.error('Error inserting bank savings:', insertError);
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: insertError.message || 'Failed to save bank savings deposit.',
+          });
+        } else {
+          setBankSavings(depositAmount);
+          fetchBankSavingsHistory(); // Refresh history
+          toast({
+            title: 'Deposit Successful',
+            description: `₱${depositAmount.toFixed(2)} deposited to bank savings for ${distributionPeriod === 'monthly' ? format(now, 'MMMM yyyy') : format(now, 'yyyy')}.`,
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('Unexpected error saving bank savings:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to check existing bank savings.',
+        description: error.message || 'An unexpected error occurred.',
       });
+    } finally {
       setSavingBankSavings(false);
-      return;
     }
-
-    if (existing) {
-      // Update existing record
-      const { error: updateError } = await supabase
-        .from('bank_savings')
-        .update({
-          amount,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id);
-
-      if (updateError) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to update bank savings.',
-        });
-      } else {
-        setBankSavings(amount);
-        setEditingBankSavings(false);
-        fetchBankSavingsHistory(); // Refresh history
-        toast({
-          title: 'Bank Savings Updated',
-          description: `Bank savings for ${distributionPeriod === 'monthly' ? format(now, 'MMMM yyyy') : format(now, 'yyyy')} has been updated.`,
-        });
-      }
-    } else {
-      // Create new record
-      const { error: insertError } = await supabase
-        .from('bank_savings')
-        .insert({
-          period_start: format(startDate, 'yyyy-MM-dd'),
-          period_end: format(endDate, 'yyyy-MM-dd'),
-          period_type: periodType,
-          amount,
-          created_by: user?.id,
-        });
-
-      if (insertError) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to save bank savings.',
-        });
-      } else {
-        setBankSavings(amount);
-        setEditingBankSavings(false);
-        fetchBankSavingsHistory(); // Refresh history
-        toast({
-          title: 'Bank Savings Saved',
-          description: `Bank savings for ${distributionPeriod === 'monthly' ? format(now, 'MMMM yyyy') : format(now, 'yyyy')} has been saved.`,
-        });
-      }
-    }
-
-    setSavingBankSavings(false);
   };
 
   // Calculate net income distribution
@@ -865,76 +870,14 @@ export function NetIncomeDistribution() {
             </div>
           </CardHeader>
           <CardContent>
-            {editingBankSavings ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={bankSavingsInput}
-                    onChange={(e) => setBankSavingsInput(e.target.value)}
-                    className="h-9 text-sm flex-1"
-                    placeholder="0.00"
-                    disabled={savingBankSavings || distributionPeriod === 'all'}
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={saveBankSavings}
-                    disabled={savingBankSavings || distributionPeriod === 'all'}
-                    className="h-9 w-9 p-0"
-                  >
-                    {savingBankSavings ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setEditingBankSavings(false);
-                      setBankSavingsInput(bankSavings.toString());
-                    }}
-                    disabled={savingBankSavings}
-                    className="h-9 w-9 p-0"
-                  >
-                    <X className="h-4 w-4 text-red-600" />
-                  </Button>
-                </div>
-                {distributionPeriod === 'all' && (
-                  <p className="text-xs text-muted-foreground">
-                    Bank savings can only be set for monthly or yearly periods.
-                  </p>
-                )}
+            <div className="space-y-2">
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                ₱{bankSavings.toFixed(2)}
               </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  ₱{bankSavings.toFixed(2)}
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    {distributionPeriod === 'all' ? 'Not applicable for all time' : 'Deducted from net income'}
-                  </p>
-                  {distributionPeriod !== 'all' && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditingBankSavings(true);
-                        setBankSavingsInput(bankSavings.toString());
-                      }}
-                      className="h-6 px-2 text-xs"
-                    >
-                      Edit
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
+              <p className="text-xs text-muted-foreground">
+                Deducted from net income
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -971,7 +914,7 @@ export function NetIncomeDistribution() {
                       <Button
                         size="sm"
                         variant="default"
-                        onClick={() => {
+                        onClick={async () => {
                           if (distributionPeriod === 'all') {
                             toast({
                               variant: 'destructive',
@@ -982,11 +925,9 @@ export function NetIncomeDistribution() {
                           }
                           const amount = parseFloat(customTransferAmount);
                           if (!isNaN(amount) && amount > 0 && amount <= distributionData.availableForDistribution) {
-                            setBankSavingsInput((bankSavings + amount).toFixed(2));
-                            setEditingBankSavings(true);
+                            await saveBankSavingsDeposit(amount);
                             setShowCustomTransfer(false);
                             setCustomTransferAmount('');
-                            // After saving, history will be refreshed by saveBankSavings
                           } else {
                             toast({
                               variant: 'destructive',
@@ -998,7 +939,14 @@ export function NetIncomeDistribution() {
                         className="h-9 text-sm"
                         disabled={savingBankSavings || distributionPeriod === 'all'}
                       >
-                        Deposit
+                        {savingBankSavings ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Depositing...
+                          </>
+                        ) : (
+                          'Deposit'
+                        )}
                       </Button>
                       <Button
                         size="sm"
