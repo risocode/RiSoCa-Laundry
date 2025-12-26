@@ -36,16 +36,12 @@ import { useEmployees } from '@/hooks/use-employees';
 const SALARY_PER_LOAD = 30;
 
 // Filter orders by status - only count orders that are ready for salary calculation
-// Orders must be: "Ready for Pick Up", "Out for Delivery", "Delivered", "Success", or "Washing" (and beyond)
+// Employees must be paid for: "Ready for Pick Up", "Delivered", "Success"
 // Orders that are not in these statuses will be moved to the next day
 const ELIGIBLE_STATUSES = [
   'Ready for Pick Up',
-  'Out for Delivery',
   'Delivered',
   'Success',
-  'Washing',
-  'Drying',
-  'Folding',
 ];
 
 type DailySalary = {
