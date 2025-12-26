@@ -1060,7 +1060,21 @@ export function EmployeeSalary() {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {orders.map((order) => (
+                        {[...orders].sort((a, b) => {
+                          // Sort by order ID (order number)
+                          // Extract numeric part if exists (e.g., "RKR001" -> 1, "RKR002" -> 2)
+                          const getOrderNum = (id: string) => {
+                            const match = id.match(/\d+$/);
+                            return match ? parseInt(match[0], 10) : 0;
+                          };
+                          const numA = getOrderNum(a.id);
+                          const numB = getOrderNum(b.id);
+                          if (numA !== numB) {
+                            return numA - numB;
+                          }
+                          // If no numeric part, sort alphabetically
+                          return a.id.localeCompare(b.id);
+                        }).map((order) => (
                             <TableRow key={order.id} className="group">
                             <TableCell className="text-xs">{order.id}</TableCell>
                             <TableCell className="text-xs">
@@ -1203,6 +1217,22 @@ export function EmployeeSalary() {
                                 </div>
                               ) : (
                                 (() => {
+                                  // Check for multiple employees assigned
+                                  if (order.assignedEmployeeIds && order.assignedEmployeeIds.length > 0) {
+                                    const assignedEmps = employees.filter(e => order.assignedEmployeeIds!.includes(e.id));
+                                    if (assignedEmps.length > 0) {
+                                      return (
+                                        <div className="flex flex-wrap items-center justify-center gap-1">
+                                          {assignedEmps.map((emp) => (
+                                            <span key={emp.id} className="text-xs">
+                                              {emp.first_name} {emp.last_name}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      );
+                                    }
+                                  }
+                                  // Check for single employee assignment (backward compatibility)
                                   const assignedEmp = employees.find(e => e.id === order.assignedEmployeeId);
                                   return assignedEmp ? (
                                     <span className="text-xs">{assignedEmp.first_name} {assignedEmp.last_name}</span>

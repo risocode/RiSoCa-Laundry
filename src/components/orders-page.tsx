@@ -125,7 +125,7 @@ export function OrdersPage() {
         assigned_employee_ids,
         order_status_history(*)
       `)
-      .order('created_at', { ascending: false });
+      .order('id', { ascending: true });
 
     if (error) {
       toast({ 
@@ -240,6 +240,21 @@ export function OrdersPage() {
       const monthStart = startOfDay(subDays(new Date(), 30));
       filtered = filtered.filter(o => o.orderDate >= monthStart);
     }
+
+    // Sort by order number (extract numeric part from order ID)
+    filtered.sort((a, b) => {
+      const getOrderNum = (id: string) => {
+        const match = id.match(/\d+$/);
+        return match ? parseInt(match[0], 10) : 0;
+      };
+      const numA = getOrderNum(a.id);
+      const numB = getOrderNum(b.id);
+      if (numA !== numB) {
+        return numA - numB;
+      }
+      // If no numeric part, sort alphabetically
+      return a.id.localeCompare(b.id);
+    });
 
     return filtered;
   }, [allOrders, searchQuery, statusFilter, paymentFilter, dateFilter]);
