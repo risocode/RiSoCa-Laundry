@@ -229,48 +229,57 @@ export function EmployeeSalary() {
         
         const calculatedSalary = customerSalary + internalBonus;
 
-        // Only save if employee has loads or internal orders
-        if (calculatedSalary > 0) {
-          const existingPayment = dailyPayments[dateStr]?.[emp.id];
-          
-          // Only auto-save if no record exists
-          // If record exists, it means it was manually edited or marked as paid, so don't overwrite
-          if (!existingPayment) {
-            savePromises.push(
-              (async () => {
-                try {
-                  // Check if record exists first
-                  const { data: existing, error: checkError } = await supabase
-                    .from('daily_salary_payments')
-                    .select('id')
-                    .eq('employee_id', emp.id)
-                    .eq('date', dateStr)
-                    .maybeSingle();
+        // Always ensure payment record exists and matches calculated salary
+        // Payment should equal calculated by default, but can be manually edited
+        // This runs for all employees, even if calculatedSalary is 0
+        savePromises.push(
+          (async () => {
+            try {
+              // Check if record exists first
+              const { data: existing, error: checkError } = await supabase
+                .from('daily_salary_payments')
+                .select('id, amount')
+                .eq('employee_id', emp.id)
+                .eq('date', dateStr)
+                .maybeSingle();
 
-                  // If no record exists (maybeSingle returns null when not found)
-                  if (!existing && !checkError) {
-                    // Insert new record
-                    const { error } = await supabase
-                      .from('daily_salary_payments')
-                      .insert({
-                        employee_id: emp.id,
-                        date: dateStr,
-                        amount: calculatedSalary,
-                        is_paid: false,
-                        updated_at: new Date().toISOString(),
-                      });
+              // If no record exists (maybeSingle returns null when not found)
+              if (!existing && !checkError) {
+                // Insert new record with calculated salary
+                const { error } = await supabase
+                  .from('daily_salary_payments')
+                  .insert({
+                    employee_id: emp.id,
+                    date: dateStr,
+                    amount: calculatedSalary,
+                    is_paid: false,
+                    updated_at: new Date().toISOString(),
+                  });
 
-                    if (error) {
-                      console.error(`Failed to auto-save salary for ${emp.id} on ${dateStr}:`, error);
-                    }
-                  }
-                } catch (error: any) {
-                  console.error(`Error checking/inserting salary for ${emp.id} on ${dateStr}:`, error);
+                if (error) {
+                  console.error(`Failed to auto-save salary for ${emp.id} on ${dateStr}:`, error);
                 }
-              })()
-            );
-          }
-        }
+              } else if (existing && !checkError) {
+                // Record exists - update amount to match calculated salary
+                // This ensures payment always equals calculated unless manually edited
+                const { error } = await supabase
+                  .from('daily_salary_payments')
+                  .update({
+                    amount: calculatedSalary,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('employee_id', emp.id)
+                  .eq('date', dateStr);
+
+                if (error) {
+                  console.error(`Failed to update salary for ${emp.id} on ${dateStr}:`, error);
+                }
+              }
+            } catch (error: any) {
+              console.error(`Error checking/inserting salary for ${emp.id} on ${dateStr}:`, error);
+            }
+          })()
+        );
       });
     });
 
@@ -673,59 +682,62 @@ export function EmployeeSalary() {
     }
   };
 
-  // Helper function to calculate actual total salary from payment records (adjusted amounts)
+  // Helper function to calculate actual total salary from payment records or calculated amounts
   const calculateActualTotalSalary = (date: Date, dayOrders: Order[]) => {
     const dateKey = format(date, 'yyyy-MM-dd');
     let actualTotal = 0;
     
     employees.forEach(emp => {
       const payment = dailyPayments[dateKey]?.[emp.id];
+      
+      // Calculate the employee's salary based on their assigned orders
+      const myraEmployee = employees.find(e => 
+        e.first_name?.toUpperCase() === 'MYRA' || 
+        e.first_name?.toUpperCase() === 'MYRA GAMMAL'
+      );
+      const isMyra = myraEmployee?.id === emp.id;
+      
+      // Calculate loads for this employee, handling both single and multiple employee assignments
+      let customerLoadsForEmployee = 0;
+      
+      dayOrders.forEach(order => {
+        if (order.orderType === 'internal') return; // Skip internal orders here
+        
+        // Check if order has multiple employees assigned
+        if (order.assignedEmployeeIds && Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length > 0) {
+          // Order has multiple employees - divide load equally
+          if (order.assignedEmployeeIds.includes(emp.id)) {
+            const dividedLoad = order.load / order.assignedEmployeeIds.length;
+            customerLoadsForEmployee += dividedLoad;
+          }
+        } else if (order.assignedEmployeeId === emp.id) {
+          // Single employee assignment (backward compatibility)
+          customerLoadsForEmployee += order.load;
+        } else if (!order.assignedEmployeeId && (!order.assignedEmployeeIds || (Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length === 0))) {
+          // Unassigned order - assign to MYRA if she's the only employee (old records)
+          if (isMyra && employees.length === 1) {
+            customerLoadsForEmployee += order.load;
+          }
+        }
+      });
+      
+      // Round to 2 decimal places to avoid floating point errors
+      customerLoadsForEmployee = Math.round(customerLoadsForEmployee * 100) / 100;
+      
+      const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
+      
+      const internalOrdersForEmployee = dayOrders.filter(
+        o => o.orderType === 'internal' && o.assignedEmployeeId === emp.id
+      );
+      const internalBonus = internalOrdersForEmployee.length * 30;
+      
+      const calculatedSalary = customerSalary + internalBonus;
+      
+      // Use payment amount if it exists (manual override), otherwise use calculated
       if (payment) {
-        // Use adjusted amount from database
         actualTotal += payment.amount;
       } else {
-        // If no payment record exists, calculate it
-        const myraEmployee = employees.find(e => 
-          e.first_name?.toUpperCase() === 'MYRA' || 
-          e.first_name?.toUpperCase() === 'MYRA GAMMAL'
-        );
-        const isMyra = myraEmployee?.id === emp.id;
-        
-        // Calculate loads for this employee, handling both single and multiple employee assignments
-        let customerLoadsForEmployee = 0;
-        
-        dayOrders.forEach(order => {
-          if (order.orderType === 'internal') return; // Skip internal orders here
-          
-          // Check if order has multiple employees assigned
-          if (order.assignedEmployeeIds && Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length > 0) {
-            // Order has multiple employees - divide load equally
-            if (order.assignedEmployeeIds.includes(emp.id)) {
-              const dividedLoad = order.load / order.assignedEmployeeIds.length;
-              customerLoadsForEmployee += dividedLoad;
-            }
-          } else if (order.assignedEmployeeId === emp.id) {
-            // Single employee assignment (backward compatibility)
-            customerLoadsForEmployee += order.load;
-          } else if (!order.assignedEmployeeId && (!order.assignedEmployeeIds || (Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length === 0))) {
-            // Unassigned order - assign to MYRA if she's the only employee (old records)
-            if (isMyra && currentEmployees.length === 1) {
-              customerLoadsForEmployee += order.load;
-            }
-          }
-        });
-        
-        // Round to 2 decimal places to avoid floating point errors
-        customerLoadsForEmployee = Math.round(customerLoadsForEmployee * 100) / 100;
-        
-        const customerSalary = customerLoadsForEmployee * SALARY_PER_LOAD;
-        
-        const internalOrdersForEmployee = dayOrders.filter(
-          o => o.orderType === 'internal' && o.assignedEmployeeId === emp.id
-        );
-        const internalBonus = internalOrdersForEmployee.length * 30;
-        
-        actualTotal += customerSalary + internalBonus;
+        actualTotal += calculatedSalary;
       }
     });
     
