@@ -237,7 +237,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
           "hover:bg-muted/30 transition-colors border-b",
           isEditing && "bg-primary/5 border-primary/20"
         )}>
-            <TableCell className="font-semibold">
+            <TableCell className="font-semibold px-2">
               <div className="flex items-center gap-2">
                 <span className="text-primary font-bold">{workingOrder.id}</span>
                 {workingOrder.orderType === 'internal' && (
@@ -247,7 +247,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                 )}
               </div>
             </TableCell>
-            <TableCell className="text-center">
+            <TableCell className="text-center px-2">
                 {isEditing ? (
                     <Input 
                         type="date" 
@@ -263,20 +263,17 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     <span className="font-medium text-sm">{format(workingOrder.orderDate, 'MMM dd, yyyy')}</span>
                 )}
             </TableCell>
-            <TableCell>
-                <div className="space-y-1">
-                    {isEditing ? (
+            <TableCell className="px-2">
+                {isEditing ? (
+                    <div className="space-y-1.5">
                         <Input 
                             type="text" 
                             value={editableOrder.customerName} 
                             onChange={e => handleFieldChange('customerName', e.target.value)} 
                             className="h-9 w-full min-w-[120px] max-w-[200px] border-2" 
                             disabled={isSaving}
+                            placeholder="Customer Name"
                         />
-                    ) : (
-                        <span className="font-medium">{workingOrder.customerName}</span>
-                    )}
-                    {isEditing ? (
                         <Input 
                             type="text" 
                             placeholder="Contact Number"
@@ -285,17 +282,20 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                             className="h-8 w-full min-w-[120px] max-w-[200px] border-2 text-xs" 
                             disabled={isSaving}
                         />
-                    ) : (
-                        workingOrder.contactNumber && workingOrder.contactNumber !== 'N/A' && (
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-0.5">
+                        <span className="font-medium">{workingOrder.customerName}</span>
+                        {workingOrder.contactNumber && workingOrder.contactNumber !== 'N/A' && (
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Phone className="h-3 w-3" />
                                 <span>{workingOrder.contactNumber}</span>
                             </div>
-                        )
-                    )}
-                </div>
+                        )}
+                    </div>
+                )}
             </TableCell>
-            <TableCell>
+            <TableCell className="px-2">
                 {isEditing ? (
                     <div className="flex flex-wrap gap-1.5 min-w-[140px] max-w-[250px]">
                         {employees.map((emp) => {
@@ -364,7 +364,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     })()
                 )}
             </TableCell>
-            <TableCell className="text-center">
+            <TableCell className="text-center px-2">
                 {isEditing ? (
                     <Input 
                         type="number" 
@@ -379,7 +379,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     </Badge>
                 )}
             </TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-right px-2">
                 {isEditing ? (
                     <Input 
                         type="number" 
@@ -403,7 +403,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     </div>
                 )}
             </TableCell>
-             <TableCell className="text-center">
+             <TableCell className="text-center px-2">
                 {isEditing ? (
                     <Button
                         size="sm"
@@ -452,7 +452,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     })()
                 )}
             </TableCell>
-            <TableCell className="text-center">
+            <TableCell className="text-center px-2">
                 {isEditing ? (
                      <div className="relative w-full min-w-[140px] max-w-[200px] mx-auto">
                         <Select
@@ -490,7 +490,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     </Badge>
                 )}
             </TableCell>
-            <TableCell className="text-center">
+            <TableCell className="text-center px-2">
                  {isEditing ? (
                     <div className="flex items-center justify-center gap-2">
                         <Button 
@@ -1203,59 +1203,59 @@ export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
       </div>
 
       {/* Desktop View - Table */}
-      <div className="hidden md:block overflow-x-auto">
-        <Table>
+      <div className="hidden md:block overflow-x-auto -mx-6">
+        <Table className="w-full">
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="min-w-[120px] font-semibold">
+              <TableHead className="min-w-[120px] font-semibold px-2">
                 <div className="flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
                   ORDER #
                 </div>
               </TableHead>
-              <TableHead className="min-w-[120px] font-semibold text-center">
+              <TableHead className="min-w-[120px] font-semibold text-center px-2">
                 <div className="flex items-center justify-center gap-2">
                   <Calendar className="h-4 w-4 text-primary" />
                   Date
                 </div>
               </TableHead>
-              <TableHead className="min-w-[140px] font-semibold">
+              <TableHead className="min-w-[140px] font-semibold px-2">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-primary" />
                   Name
                 </div>
               </TableHead>
-              <TableHead className="min-w-[140px] font-semibold">
+              <TableHead className="min-w-[140px] font-semibold px-2">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-primary" />
                   Employee
                 </div>
               </TableHead>
-              <TableHead className="min-w-[90px] font-semibold text-center">
+              <TableHead className="min-w-[90px] font-semibold text-center px-2">
                 <div className="flex items-center justify-center gap-2">
                   <Layers className="h-4 w-4 text-primary" />
                   Load
                 </div>
               </TableHead>
-              <TableHead className="min-w-[130px] font-semibold text-right">
+              <TableHead className="min-w-[130px] font-semibold text-right px-2">
                 <div className="flex items-center justify-end gap-2">
                   <DollarSign className="h-4 w-4 text-primary" />
                   Total (₱)
                 </div>
               </TableHead>
-              <TableHead className="min-w-[110px] font-semibold text-center">
+              <TableHead className="min-w-[110px] font-semibold text-center px-2">
                 <div className="flex items-center justify-center gap-2">
                   <CreditCard className="h-4 w-4 text-primary" />
                   Payment
                 </div>
               </TableHead>
-              <TableHead className="min-w-[150px] font-semibold text-center">
+              <TableHead className="min-w-[150px] font-semibold text-center px-2">
                 <div className="flex items-center justify-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                   Status
                 </div>
               </TableHead>
-              <TableHead className="min-w-[120px] font-semibold text-center">
+              <TableHead className="min-w-[120px] font-semibold text-center px-2">
                 <div className="flex items-center justify-center gap-2">
                   <MoreVertical className="h-4 w-4 text-primary" />
                   Action
