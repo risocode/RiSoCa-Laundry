@@ -216,38 +216,44 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
           </div>
 
           {watchedLoads && watchedLoads > 0 && (
-            <div className="rounded-md border border-primary/20 bg-primary/5 p-2.5">
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-muted-foreground">Total:</span>
-                <span className="font-bold text-primary">₱{watchedLoads * 180} ({watchedLoads} load{watchedLoads > 1 ? 's' : ''}, {weight.toFixed(1)}kg)</span>
+            <div className="rounded-lg border-2 border-primary/30 bg-gradient-to-r from-primary/10 to-primary/5 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex-1">
+                  <div className="text-xs text-muted-foreground mb-1">Order Details</div>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="font-medium text-foreground">{watchedLoads} load{watchedLoads > 1 ? 's' : ''}</span>
+                    <span className="text-muted-foreground">•</span>
+                    <span className="font-medium text-foreground">{weight.toFixed(1)} kg</span>
+                  </div>
+                </div>
+                <div className="flex-1 text-right">
+                  <Label htmlFor="total" className="text-xs text-muted-foreground mb-1 block">
+                    Total Price
+                  </Label>
+                  <Controller
+                    name="total"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Input
+                        id="total"
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        disabled={isSaving}
+                        className="h-10 text-lg text-center text-green-600 dark:text-green-400 font-bold border-0 bg-transparent p-0 focus-visible:ring-0 focus-visible:ring-offset-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        placeholder="0"
+                      />
+                    )}
+                  />
+                </div>
               </div>
+              {form.formState.errors.total && (
+                <p className="text-xs text-destructive mt-1 text-center">{form.formState.errors.total.message}</p>
+              )}
             </div>
           )}
-
-          <div>
-            <Label htmlFor="total" className="text-xs font-medium mb-1 block text-center">
-              Total Price
-            </Label>
-            <Controller
-              name="total"
-              control={form.control}
-              render={({ field }) => (
-                <Input
-                  id="total"
-                  type="number"
-                  step="0.01"
-                  placeholder="Auto-calculated"
-                  {...field}
-                  value={field.value ?? ''}
-                  disabled={isSaving}
-                  className="h-9 text-sm text-center text-green-600 dark:text-green-400 font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              )}
-            />
-            {form.formState.errors.total && (
-              <p className="text-xs text-destructive mt-0.5 text-center">{form.formState.errors.total.message}</p>
-            )}
-          </div>
 
           <div>
             <Label className="text-xs font-medium mb-1.5 block">
