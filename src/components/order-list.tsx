@@ -277,7 +277,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                         <Input 
                             type="text" 
                             placeholder="Contact Number"
-                            value={editableOrder.contactNumber || ''} 
+                            value={editableOrder.contactNumber && editableOrder.contactNumber !== 'N/A' ? editableOrder.contactNumber : ''} 
                             onChange={e => handleFieldChange('contactNumber', e.target.value)} 
                             className="h-8 w-full min-w-[120px] max-w-[200px] border-2 text-xs" 
                             disabled={isSaving}
@@ -785,7 +785,7 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                     <Input 
                                         id={`contact-mob-${order.id}`} 
                                         type="text" 
-                                        value={editableOrder.contactNumber || ''} 
+                                        value={editableOrder.contactNumber && editableOrder.contactNumber !== 'N/A' ? editableOrder.contactNumber : ''} 
                                         onChange={e => handleFieldChange('contactNumber', e.target.value)} 
                                         className="h-9 border-2" 
                                         disabled={!isEditing || isSaving} 
