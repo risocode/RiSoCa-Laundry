@@ -26,10 +26,7 @@ import { format } from 'date-fns';
 const manualOrderSchema = z.object({
   customerName: z.string().min(2, 'Name is required.'),
   orderDate: z.string().min(1, 'Date is required.'),
-  weight: z.preprocess(
-    (val) => (String(val).trim() === '' ? undefined : Number(val)),
-    z.number({invalid_type_error: "Input Valid Weight"}).min(0.1, "Weight must be greater than 0.")
-  ),
+  loads: z.number().min(1, 'Please select number of loads.').max(10, 'Maximum 10 loads allowed.'),
   total: z.coerce.number().min(0, 'Price must be 0 or greater.'),
   isPaid: z.boolean().optional(),
   assigned_employee_ids: z.array(z.string()).optional(), // Array of employee IDs
@@ -58,7 +55,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
     defaultValues: {
       customerName: '',
       orderDate: format(new Date(), 'yyyy-MM-dd'), // Default to today's date
-      weight: undefined,
+      loads: undefined,
       total: undefined,
       isPaid: undefined,
       assigned_employee_ids: [],
@@ -66,50 +63,33 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
     mode: 'onChange',
   });
 
-  const watchedWeight = form.watch('weight');
+  const watchedLoads = form.watch('loads');
   const isPaid = form.watch('isPaid');
 
-  const { loads, distribution } = useMemo(() => {
-    let weight = watchedWeight || 0;
-    if (weight <= 0) {
-      return { loads: 0, distribution: [] };
-    }
+  // Calculate weight from loads (each load is 7.5 kg)
+  const weight = useMemo(() => {
+    if (!watchedLoads || watchedLoads <= 0) return 0;
+    return watchedLoads * 7.5;
+  }, [watchedLoads]);
 
-    const numLoads = Math.ceil(weight / 7.5);
+  // Calculate distribution for display
+  const distribution = useMemo(() => {
+    if (!watchedLoads || watchedLoads <= 0) return [];
     const dist: {load: number, weight: number}[] = [];
-
-    let remainingWeight = weight;
-    for (let i = 1; i <= numLoads; i++) {
-        const loadWeight = Math.min(remainingWeight, 7.5);
-        dist.push({ load: i, weight: loadWeight });
-        remainingWeight -= loadWeight;
+    for (let i = 1; i <= watchedLoads; i++) {
+      dist.push({ load: i, weight: 7.5 });
     }
-
-    return { loads: numLoads, distribution: dist };
-  }, [watchedWeight]);
+    return dist;
+  }, [watchedLoads]);
   
   useEffect(() => {
-    const calculatedPrice = loads * 180;
+    const calculatedPrice = watchedLoads ? watchedLoads * 180 : 0;
     if(calculatedPrice > 0){
         form.setValue('total', calculatedPrice);
     } else {
         form.setValue('total', undefined);
     }
-  }, [loads, form]);
-
-  // Employees are now fetched via useEmployees hook with caching
-
-  const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = parseFloat(e.target.value);
-    if (isNaN(value)) {
-        form.setValue('weight', undefined, { shouldValidate: true, shouldDirty: true });
-        return;
-    }
-    if (value > 75) {
-      value = 75;
-    }
-    form.setValue('weight', value, { shouldValidate: true, shouldDirty: true });
-  }
+  }, [watchedLoads, form]);
 
   const onSubmit = async (data: ManualOrderFormValues) => {
     setIsSaving(true);
@@ -126,8 +106,8 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
     const newOrder: Omit<Order, 'id' | 'userId'> = {
       customerName: data.customerName,
       contactNumber: 'N/A', // Contact will be added in the dashboard
-      load: loads,
-      weight: data.weight,
+      load: data.loads,
+      weight: weight, // Calculate weight from loads (loads * 7.5)
       status: initialStatus,
       total: data.total,
       isPaid: data.isPaid || false,
@@ -143,7 +123,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
     form.reset({
       customerName: '',
       orderDate: format(new Date(), 'yyyy-MM-dd'), // Reset to today's date
-      weight: undefined,
+      loads: undefined,
       total: undefined,
       isPaid: undefined,
       assigned_employee_ids: [],
@@ -180,7 +160,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             
             <div className="form-group">
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   id="orderDate"
                   type="date"
@@ -199,46 +179,61 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             </div>
             
             <div className="form-group">
+              <Label className="form-label mb-3 block">
+                Number of Loads <span className="text-destructive">*</span>
+              </Label>
               <Controller
-                name="weight"
+                name="loads"
                 control={form.control}
                 render={({ field }) => (
-                  <Input
-                    id="weight"
-                    type="number"
-                    step="0.1"
-                    placeholder=" "
-                    {...field}
-                    onChange={handleWeightChange}
-                    value={field.value ?? ''}
-                    disabled={isSaving}
-                    className="form-input text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
+                  <div className="grid grid-cols-5 gap-2">
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((loadNum) => {
+                      const isSelected = field.value === loadNum;
+                      return (
+                        <Button
+                          key={loadNum}
+                          type="button"
+                          variant={isSelected ? "default" : "outline"}
+                          onClick={() => {
+                            field.onChange(loadNum);
+                          }}
+                          disabled={isSaving}
+                          className={cn(
+                            "h-12 font-semibold transition-all",
+                            isSelected 
+                              ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md" 
+                              : "hover:border-primary hover:text-primary"
+                          )}
+                        >
+                          {loadNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 )}
               />
-              <Label htmlFor="weight" className="form-label">
-                Total Weight (kg) <span className="text-destructive">*</span>
-              </Label>
-              {form.formState.errors.weight && (
-                <p className="text-xs text-destructive pt-1">{form.formState.errors.weight.message}</p>
+              {form.formState.errors.loads && (
+                <p className="text-xs text-destructive pt-1">{form.formState.errors.loads.message}</p>
               )}
             </div>
           </div>
             
-          {distribution.length > 0 && (
+          {watchedLoads && watchedLoads > 0 && (
               <div className="space-y-3 rounded-lg bg-muted p-3">
                   <div className="flex justify-between items-center">
-                    <h4 className="text-sm font-medium flex items-center gap-2"><Layers className="h-4 w-4" />Calculated Loads</h4>
-                    <span className="text-lg font-bold text-primary">{loads}</span>
+                    <h4 className="text-sm font-medium flex items-center gap-2"><Layers className="h-4 w-4" />Order Summary</h4>
+                    <span className="text-lg font-bold text-primary">{watchedLoads} Load{watchedLoads > 1 ? 's' : ''}</span>
                   </div>
                   <Separator/>
                    <div className="text-xs text-muted-foreground grid grid-cols-2 gap-x-4 gap-y-1">
-                      {distribution.map(d => (
-                          <div key={d.load} className="flex justify-between">
-                            <span>Load {d.load}:</span>
-                            <span className="font-medium text-foreground">{d.weight.toFixed(1)} kg</span>
-                          </div>
-                      ))}
+                      <div className="flex justify-between">
+                        <span>Total Weight:</span>
+                        <span className="font-medium text-foreground">{weight.toFixed(1)} kg</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Price per Load:</span>
+                        <span className="font-medium text-foreground">₱180</span>
+                      </div>
                    </div>
               </div>
           )}
@@ -366,7 +361,7 @@ export function ManualOrderDialog({ isOpen, onClose, onAddOrder }: ManualOrderDi
             </Button>
             <Button 
               type="submit" 
-              disabled={isSaving || isPaid === undefined || !!form.formState.errors.weight || !!form.formState.errors.assigned_employee_ids}
+              disabled={isSaving || isPaid === undefined || !!form.formState.errors.loads || !!form.formState.errors.assigned_employee_ids}
               className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-md"
             >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
