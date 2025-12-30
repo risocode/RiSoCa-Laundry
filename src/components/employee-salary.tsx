@@ -259,20 +259,29 @@ export function EmployeeSalary() {
                   console.error(`Failed to auto-save salary for ${emp.id} on ${dateStr}:`, error);
                 }
               } else if (existing && !checkError) {
-                // Record exists - update amount to match calculated salary
-                // This ensures payment always equals calculated unless manually edited
-                const { error } = await supabase
-                  .from('daily_salary_payments')
-                  .update({
-                    amount: calculatedSalary,
-                    updated_at: new Date().toISOString(),
-                  })
-                  .eq('employee_id', emp.id)
-                  .eq('date', dateStr);
+                // Record exists - only update if amount matches calculated (meaning it hasn't been manually edited)
+                // If amount differs from calculated, it means it was manually edited, so don't overwrite it
+                const existingAmount = existing.amount || 0;
+                const calculatedRounded = Math.round(calculatedSalary * 100) / 100;
+                const existingRounded = Math.round(existingAmount * 100) / 100;
+                
+                // Only auto-update if the amount matches calculated (within 0.01 tolerance)
+                // This preserves manual edits
+                if (Math.abs(existingRounded - calculatedRounded) < 0.01) {
+                  const { error } = await supabase
+                    .from('daily_salary_payments')
+                    .update({
+                      amount: calculatedSalary,
+                      updated_at: new Date().toISOString(),
+                    })
+                    .eq('employee_id', emp.id)
+                    .eq('date', dateStr);
 
-                if (error) {
-                  console.error(`Failed to update salary for ${emp.id} on ${dateStr}:`, error);
+                  if (error) {
+                    console.error(`Failed to auto-save salary for ${emp.id} on ${dateStr}:`, error);
+                  }
                 }
+                // If amounts don't match, it's a manual edit - don't overwrite it
               }
             } catch (error: any) {
               console.error(`Error checking/inserting salary for ${emp.id} on ${dateStr}:`, error);
@@ -482,7 +491,8 @@ export function EmployeeSalary() {
             updated_at: new Date().toISOString(),
           })
           .eq('employee_id', employeeId)
-          .eq('date', dateStr);
+          .eq('date', dateStr)
+          .select();
       } else {
         // Insert new record
         result = await supabase
@@ -493,12 +503,26 @@ export function EmployeeSalary() {
             amount: amount,
             is_paid: currentStatus,
             updated_at: new Date().toISOString(),
-          });
+          })
+          .select();
       }
 
       if (result.error) {
         console.error('Database error:', result.error);
+        console.error('Error details:', {
+          employeeId,
+          dateStr,
+          amount,
+          existingData,
+          fetchError
+        });
         throw result.error;
+      }
+
+      // Verify the update/insert was successful
+      if (!result.data || (Array.isArray(result.data) && result.data.length === 0)) {
+        console.error('Update/insert returned no data');
+        throw new Error('Failed to save payment amount. No data returned from database.');
       }
 
       toast({
