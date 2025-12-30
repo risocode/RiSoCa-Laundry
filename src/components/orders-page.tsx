@@ -876,6 +876,7 @@ export function OrdersPage() {
             <OrderList 
               orders={filteredOrders} 
               onUpdateOrder={handleUpdateOrder}
+              enablePagination={datePreset === 'all' || (datePreset === 'custom' && fromDate && toDate)}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground py-12">

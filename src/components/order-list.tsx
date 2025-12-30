@@ -65,6 +65,7 @@ export type Order = {
 type OrderListProps = {
   orders: Order[];
   onUpdateOrder: (order: Order) => Promise<void>;
+  enablePagination?: boolean; // If false, show all orders without pagination
 };
 
 const statusOptions = [
@@ -1262,20 +1263,20 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
     );
 }
 
-export function OrderList({ orders, onUpdateOrder }: OrderListProps) {
+export function OrderList({ orders, onUpdateOrder, enablePagination = true }: OrderListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 10;
 
-  // Calculate pagination
-  const totalPages = Math.ceil(orders.length / ordersPerPage);
-  const startIndex = (currentPage - 1) * ordersPerPage;
-  const endIndex = startIndex + ordersPerPage;
-  const paginatedOrders = orders.slice(startIndex, endIndex);
+  // Calculate pagination - only if enabled
+  const totalPages = enablePagination ? Math.ceil(orders.length / ordersPerPage) : 1;
+  const startIndex = enablePagination ? (currentPage - 1) * ordersPerPage : 0;
+  const endIndex = enablePagination ? startIndex + ordersPerPage : orders.length;
+  const paginatedOrders = enablePagination ? orders.slice(startIndex, endIndex) : orders;
 
   // Reset to page 1 when orders change
   useEffect(() => {
     setCurrentPage(1);
-  }, [orders.length]);
+  }, [orders.length, enablePagination]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
