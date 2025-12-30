@@ -21,6 +21,7 @@ export type OrderInsert = {
   order_type?: 'customer' | 'internal';
   assigned_employee_id?: string | null; // For backward compatibility (single employee)
   assigned_employee_ids?: string[]; // Array of employee IDs (JSON array in database)
+  load_pieces?: number[] | null; // Array of piece counts per load (JSONB array in database)
   created_at?: string; // Optional custom creation date (ISO string)
 };
 

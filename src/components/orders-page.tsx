@@ -92,6 +92,9 @@ export function OrdersPage() {
       assignedEmployeeIds: Array.isArray(o.assigned_employee_ids) && o.assigned_employee_ids.length > 0 
         ? o.assigned_employee_ids 
         : undefined,
+      loadPieces: Array.isArray(o.load_pieces) && o.load_pieces.length > 0
+        ? o.load_pieces
+        : undefined,
     };
 
     // CRITICAL: Ensure balance is never undefined
@@ -126,6 +129,7 @@ export function OrdersPage() {
           order_type,
           assigned_employee_id,
           assigned_employee_ids,
+          load_pieces,
           order_status_history(*)
         `)
         .order('id', { ascending: false });
@@ -159,6 +163,7 @@ export function OrdersPage() {
               branch_id,
               order_type,
               assigned_employee_id,
+              load_pieces,
               order_status_history(*)
             `)
             .order('id', { ascending: false });
@@ -453,6 +458,18 @@ export function OrdersPage() {
         } else {
           patch.assigned_employee_id = null;
           patch.assigned_employee_ids = null;
+        }
+      }
+
+      // Include load_pieces if provided
+      if (updatedOrder.loadPieces !== undefined) {
+        // If loadPieces is provided, use it (can be array or undefined/null)
+        if (updatedOrder.loadPieces && updatedOrder.loadPieces.length > 0) {
+          // Filter out null values before saving
+          const cleanedPieces = updatedOrder.loadPieces.filter(p => p !== null && p !== undefined);
+          patch.load_pieces = cleanedPieces.length > 0 ? cleanedPieces : null;
+        } else {
+          patch.load_pieces = null;
         }
       }
 

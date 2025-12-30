@@ -59,6 +59,7 @@ export type Order = {
   orderType?: 'customer' | 'internal';
   assignedEmployeeId?: string | null; // For backward compatibility (single employee)
   assignedEmployeeIds?: string[]; // Array of employee IDs (multiple employees)
+  loadPieces?: number[]; // Array of piece counts per load [30, 25] means Load 1: 30 pcs, Load 2: 25 pcs
 };
 
 type OrderListProps = {
@@ -175,6 +176,16 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                 assignedEmployeeIds: value.length > 0 ? value : undefined,
                 // For backward compatibility, set assignedEmployeeId to first employee or null
                 assignedEmployeeId: value.length > 0 ? value[0] : null
+            };
+        } else if (field === 'loadPieces' && Array.isArray(value)) {
+            // Handle load pieces array
+            // Filter out null/undefined/empty values, but keep 0 if explicitly set
+            const cleanedPieces = value.map(p => p === null || p === undefined || p === '' ? null : Number(p));
+            // If all are null/empty, set to undefined
+            const hasAnyPieces = cleanedPieces.some(p => p !== null && p !== undefined);
+            newOrderState = {
+                ...newOrderState,
+                loadPieces: hasAnyPieces ? cleanedPieces : undefined
             };
         } else if (field === 'orderDate' && value instanceof Date) {
             // Handle date field
@@ -366,17 +377,86 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
             </TableCell>
             <TableCell className="text-center px-2">
                 {isEditing ? (
-                    <Input 
-                        type="number" 
-                        value={editableOrder.load} 
-                        onChange={e => handleFieldChange('load', e.target.value)} 
-                        className="h-9 w-full min-w-[60px] max-w-[100px] border-2 text-center" 
-                        disabled={isSaving}
-                    />
+                    <div className="space-y-2 min-w-[120px]">
+                        <Input 
+                            type="number" 
+                            value={editableOrder.load} 
+                            onChange={e => {
+                                const newLoad = Number(e.target.value) || 0;
+                                handleFieldChange('load', newLoad);
+                                // Adjust loadPieces array if load count changes
+                                if (newLoad !== editableOrder.load) {
+                                    const currentPieces = editableOrder.loadPieces || [];
+                                    if (newLoad > currentPieces.length) {
+                                        // Add empty slots for new loads
+                                        const newPieces = [...currentPieces, ...Array(newLoad - currentPieces.length).fill(null)];
+                                        handleFieldChange('loadPieces', newPieces);
+                                    } else if (newLoad < currentPieces.length) {
+                                        // Remove excess pieces
+                                        const newPieces = currentPieces.slice(0, newLoad);
+                                        handleFieldChange('loadPieces', newPieces);
+                                    }
+                                }
+                            }} 
+                            className="h-9 w-full border-2 text-center" 
+                            disabled={isSaving}
+                        />
+                        <div className="space-y-1.5 border rounded-md p-2 bg-muted/30">
+                            <div className="text-xs font-medium text-muted-foreground mb-1">Piece Count per Load</div>
+                            {Array.from({ length: editableOrder.load }, (_, i) => i + 1).map((loadNum) => {
+                                const currentPieces = editableOrder.loadPieces || [];
+                                const pieceValue = currentPieces[loadNum - 1] ?? '';
+                                return (
+                                    <div key={loadNum} className="flex items-center gap-1.5">
+                                        <span className="text-xs text-muted-foreground w-12 text-left">Load {loadNum}:</span>
+                                        <Input
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            placeholder="pcs"
+                                            value={pieceValue}
+                                            onChange={(e) => {
+                                                const newPieces = [...(editableOrder.loadPieces || [])];
+                                                // Ensure array is long enough
+                                                while (newPieces.length < editableOrder.load) {
+                                                    newPieces.push(null);
+                                                }
+                                                const numValue = e.target.value === '' ? null : Number(e.target.value);
+                                                newPieces[loadNum - 1] = numValue;
+                                                handleFieldChange('loadPieces', newPieces);
+                                            }}
+                                            className="h-7 text-xs border text-center flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            disabled={isSaving}
+                                        />
+                                        <span className="text-xs text-muted-foreground w-8">pcs</span>
+                                    </div>
+                                );
+                            })}
+                            {(() => {
+                                const pieces = editableOrder.loadPieces || [];
+                                const totalPieces = pieces.reduce((sum, p) => sum + (p || 0), 0);
+                                if (totalPieces > 0) {
+                                    return (
+                                        <div className="text-xs font-semibold text-primary mt-1.5 pt-1 border-t">
+                                            Total: {totalPieces} pcs
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            })()}
+                        </div>
+                    </div>
                 ) : (
-                    <Badge variant="outline" className="font-semibold">
-                        {workingOrder.load}
-                    </Badge>
+                    <div className="flex flex-col gap-0.5 items-center">
+                        <Badge variant="outline" className="font-semibold">
+                            {workingOrder.load} load{workingOrder.load > 1 ? 's' : ''}
+                        </Badge>
+                        {workingOrder.loadPieces && workingOrder.loadPieces.length > 0 && workingOrder.loadPieces.some(p => p !== null && p !== undefined) && (
+                            <div className="text-xs text-muted-foreground">
+                                ({workingOrder.loadPieces.filter(p => p !== null && p !== undefined).join(', ')} pcs)
+                            </div>
+                        )}
+                    </div>
                 )}
             </TableCell>
             <TableCell className="text-right px-2">
@@ -587,13 +667,15 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
             ...safeOrder,
             // Ensure assignedEmployeeIds is properly initialized
             assignedEmployeeIds: safeOrder.assignedEmployeeIds || 
-                (safeOrder.assignedEmployeeId ? [safeOrder.assignedEmployeeId] : undefined)
+                (safeOrder.assignedEmployeeId ? [safeOrder.assignedEmployeeId] : undefined),
+            // Ensure loadPieces is properly initialized as array
+            loadPieces: safeOrder.loadPieces || undefined
         });
-    }, [order.id, order.balance, order.isPaid, order.total, order.assignedEmployeeId, order.assignedEmployeeIds]);
+    }, [order.id, order.balance, order.isPaid, order.total, order.assignedEmployeeId, order.assignedEmployeeIds, order.loadPieces]);
 
     // Employees are now fetched via useEmployees hook with caching
 
-    const handleFieldChange = (field: keyof Order, value: string | number | boolean | null | string[] | Date) => {
+    const handleFieldChange = (field: keyof Order, value: string | number | boolean | null | string[] | Date | number[]) => {
         let newOrderState = { ...editableOrder };
 
         if (field === 'status' && typeof value === 'string' && value !== editableOrder.status) {
@@ -609,6 +691,16 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                 assignedEmployeeIds: value.length > 0 ? value : undefined,
                 // For backward compatibility, set assignedEmployeeId to first employee or null
                 assignedEmployeeId: value.length > 0 ? value[0] : null
+            };
+        } else if (field === 'loadPieces' && Array.isArray(value)) {
+            // Handle load pieces array
+            // Filter out null/undefined/empty values, but keep 0 if explicitly set
+            const cleanedPieces = value.map(p => p === null || p === undefined || p === '' ? null : Number(p));
+            // If all are null/empty, set to undefined
+            const hasAnyPieces = cleanedPieces.some(p => p !== null && p !== undefined);
+            newOrderState = {
+                ...newOrderState,
+                loadPieces: hasAnyPieces ? cleanedPieces : undefined
             };
         } else if (field === 'orderDate' && value instanceof Date) {
             // Handle date field
@@ -883,7 +975,87 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                         <Layers className="h-3 w-3 text-muted-foreground" />
                                         Load
                                     </Label>
-                                    <Input id={`load-mob-${order.id}`} type="number" value={editableOrder.load} onChange={e => handleFieldChange('load', e.target.value)} className="h-9 border-2" disabled={!isEditing || isSaving} />
+                                    {isEditing ? (
+                                        <div className="space-y-2">
+                                            <Input 
+                                                id={`load-mob-${order.id}`} 
+                                                type="number" 
+                                                value={editableOrder.load} 
+                                                onChange={e => {
+                                                    const newLoad = Number(e.target.value) || 0;
+                                                    handleFieldChange('load', newLoad);
+                                                    // Adjust loadPieces array if load count changes
+                                                    if (newLoad !== editableOrder.load) {
+                                                        const currentPieces = editableOrder.loadPieces || [];
+                                                        if (newLoad > currentPieces.length) {
+                                                            // Add empty slots for new loads
+                                                            const newPieces = [...currentPieces, ...Array(newLoad - currentPieces.length).fill(null)];
+                                                            handleFieldChange('loadPieces', newPieces);
+                                                        } else if (newLoad < currentPieces.length) {
+                                                            // Remove excess pieces
+                                                            const newPieces = currentPieces.slice(0, newLoad);
+                                                            handleFieldChange('loadPieces', newPieces);
+                                                        }
+                                                    }
+                                                }} 
+                                                className="h-9 border-2" 
+                                                disabled={isSaving} 
+                                            />
+                                            <div className="space-y-1.5 border rounded-md p-2 bg-muted/30">
+                                                <div className="text-xs font-medium text-muted-foreground mb-1">Piece Count per Load</div>
+                                                {Array.from({ length: editableOrder.load }, (_, i) => i + 1).map((loadNum) => {
+                                                    const currentPieces = editableOrder.loadPieces || [];
+                                                    const pieceValue = currentPieces[loadNum - 1] ?? '';
+                                                    return (
+                                                        <div key={loadNum} className="flex items-center gap-1.5">
+                                                            <span className="text-xs text-muted-foreground w-16 text-left">Load {loadNum}:</span>
+                                                            <Input
+                                                                type="number"
+                                                                min="1"
+                                                                step="1"
+                                                                placeholder="pcs"
+                                                                value={pieceValue}
+                                                                onChange={(e) => {
+                                                                    const newPieces = [...(editableOrder.loadPieces || [])];
+                                                                    // Ensure array is long enough
+                                                                    while (newPieces.length < editableOrder.load) {
+                                                                        newPieces.push(null);
+                                                                    }
+                                                                    const numValue = e.target.value === '' ? null : Number(e.target.value);
+                                                                    newPieces[loadNum - 1] = numValue;
+                                                                    handleFieldChange('loadPieces', newPieces);
+                                                                }}
+                                                                className="h-7 text-xs border text-center flex-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                disabled={isSaving}
+                                                            />
+                                                            <span className="text-xs text-muted-foreground w-10">pcs</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {(() => {
+                                                    const pieces = editableOrder.loadPieces || [];
+                                                    const totalPieces = pieces.reduce((sum, p) => sum + (p || 0), 0);
+                                                    if (totalPieces > 0) {
+                                                        return (
+                                                            <div className="text-xs font-semibold text-primary mt-1.5 pt-1 border-t">
+                                                                Total: {totalPieces} pcs
+                                                            </div>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="font-medium">{workingOrder.load} load{workingOrder.load > 1 ? 's' : ''}</span>
+                                            {workingOrder.loadPieces && workingOrder.loadPieces.length > 0 && workingOrder.loadPieces.some(p => p !== null && p !== undefined) && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    ({workingOrder.loadPieces.filter(p => p !== null && p !== undefined).join(', ')} pcs)
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 items-end">
