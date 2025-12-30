@@ -773,7 +773,7 @@ export function OrdersPage() {
                       setDateRange(undefined);
                       setIsDatePickerOpen(false);
                     }}
-                    className="h-8 text-xs"
+                    className="h-8 text-xs flex-shrink-0"
                   >
                     All Time
                   </Button>
@@ -786,7 +786,7 @@ export function OrdersPage() {
                       setDateRange(undefined);
                       setIsDatePickerOpen(false);
                     }}
-                    className="h-8 text-xs"
+                    className="h-8 text-xs flex-shrink-0"
                   >
                     Today
                   </Button>
@@ -801,32 +801,39 @@ export function OrdersPage() {
                         type="button"
                         variant={datePreset === 'custom' ? 'default' : 'outline'}
                         size="sm"
-                        className="h-8 text-xs"
+                        className="h-8 text-xs flex-shrink-0"
                       >
                         Date Picker
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="range"
-                        selected={dateRange}
-                        onSelect={(range) => {
-                          if (!range) {
-                            setDateRange(undefined);
-                            return;
-                          }
-                          
-                          // If user clicks the same date twice (from and to are the same), treat as single date
-                          if (range.from && range.to && isSameDay(range.from, range.to)) {
-                            setDateRange({ from: range.from, to: undefined });
-                          } else {
-                            setDateRange(range);
-                          }
-                        }}
-                        numberOfMonths={1}
-                        className="rounded-md border"
-                      />
-                      <div className="flex items-center justify-between p-3 border-t">
+                    <PopoverContent 
+                      className="w-auto p-0 max-w-[calc(100vw-2rem)] sm:max-w-none" 
+                      align="start"
+                      side="bottom"
+                      sideOffset={4}
+                    >
+                      <div className="p-1 sm:p-2">
+                        <Calendar
+                          mode="range"
+                          selected={dateRange}
+                          onSelect={(range) => {
+                            if (!range) {
+                              setDateRange(undefined);
+                              return;
+                            }
+                            
+                            // If user clicks the same date twice (from and to are the same), treat as single date
+                            if (range.from && range.to && isSameDay(range.from, range.to)) {
+                              setDateRange({ from: range.from, to: undefined });
+                            } else {
+                              setDateRange(range);
+                            }
+                          }}
+                          numberOfMonths={1}
+                          className="rounded-md"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-2 sm:p-3 border-t gap-2">
                         <Button
                           type="button"
                           variant="ghost"
@@ -835,7 +842,7 @@ export function OrdersPage() {
                             setDateRange(undefined);
                             setIsDatePickerOpen(false);
                           }}
-                          className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                          className="h-8 text-xs text-muted-foreground hover:text-destructive flex-1 sm:flex-initial"
                         >
                           Clear
                         </Button>
@@ -847,7 +854,7 @@ export function OrdersPage() {
                             const today = new Date();
                             setDateRange({ from: today, to: undefined });
                           }}
-                          className="h-8 text-xs"
+                          className="h-8 text-xs flex-1 sm:flex-initial"
                         >
                           Today
                         </Button>
@@ -857,26 +864,30 @@ export function OrdersPage() {
                 </div>
                 
                 {/* Date Selection Display */}
-                {datePreset === 'custom' && dateRange && (
+                {datePreset === 'custom' && dateRange && dateRange.from && (
                   <div className="flex items-center gap-2 text-sm">
-                    {dateRange.from && (
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary/10 border border-primary/20">
-                        <CalendarIcon className="h-3.5 w-3.5 text-primary" />
-                        <span className="font-medium text-primary">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-md bg-primary/10 border border-primary/20 w-full sm:w-auto">
+                      <CalendarIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 flex-1 min-w-0">
+                        <span className="font-medium text-primary text-xs sm:text-sm whitespace-nowrap">
                           {format(dateRange.from, 'MMM dd, yyyy')}
                         </span>
                         {dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? (
                           <>
-                            <span className="text-muted-foreground">to</span>
-                            <span className="font-medium text-primary">
+                            <span className="text-muted-foreground text-xs sm:text-sm">to</span>
+                            <span className="font-medium text-primary text-xs sm:text-sm whitespace-nowrap">
                               {format(dateRange.to, 'MMM dd, yyyy')}
                             </span>
-                            <Badge variant="outline" className="ml-1 text-xs bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-300">
-                              Range
-                            </Badge>
                           </>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
+                        {dateRange.to && !isSameDay(dateRange.from, dateRange.to) ? (
+                          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-300 flex-shrink-0">
+                            Range
+                          </Badge>
                         ) : (
-                          <Badge variant="outline" className="ml-1 text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-300">
+                          <Badge variant="outline" className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-300 flex-shrink-0">
                             Single Date
                           </Badge>
                         )}
@@ -889,12 +900,13 @@ export function OrdersPage() {
                             setDatePreset('all');
                             setIsDatePickerOpen(false);
                           }}
-                          className="h-5 w-5 p-0 ml-1 hover:bg-destructive/10 hover:text-destructive"
+                          className="h-6 w-6 sm:h-5 sm:w-5 p-0 hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
+                          aria-label="Clear date selection"
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-3.5 w-3.5 sm:h-3 sm:w-3" />
                         </Button>
                       </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>
