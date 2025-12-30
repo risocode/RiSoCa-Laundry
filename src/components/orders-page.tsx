@@ -48,7 +48,7 @@ export function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
-  const [datePreset, setDatePreset] = useState<string>('all'); // 'all', '7days', '30days', '90days', 'custom'
+  const [datePreset, setDatePreset] = useState<string>('all'); // 'all', 'today', 'custom'
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
 
@@ -315,24 +315,20 @@ export function OrdersPage() {
     // Date filter
     if (datePreset === 'all') {
       // Show all orders - no filtering
-    } else if (datePreset === '7days') {
-      const weekStart = startOfDay(subDays(new Date(), 7));
-      filtered = filtered.filter(o => o.orderDate >= weekStart);
-    } else if (datePreset === '30days') {
-      const monthStart = startOfDay(subDays(new Date(), 30));
-      filtered = filtered.filter(o => o.orderDate >= monthStart);
-    } else if (datePreset === '90days') {
-      const quarterStart = startOfDay(subDays(new Date(), 90));
-      filtered = filtered.filter(o => o.orderDate >= quarterStart);
+    } else if (datePreset === 'today') {
+      const today = startOfDay(new Date());
+      filtered = filtered.filter(o => startOfDay(o.orderDate).getTime() === today.getTime());
     } else if (datePreset === 'custom') {
-      // Custom date range
-      if (fromDate) {
+      // Date picker - can be single date or range
+      if (fromDate && !toDate) {
+        // Single date selected
+        const selectedDate = startOfDay(new Date(fromDate));
+        filtered = filtered.filter(o => startOfDay(o.orderDate).getTime() === selectedDate.getTime());
+      } else if (fromDate && toDate) {
+        // Date range selected
         const from = startOfDay(new Date(fromDate));
-        filtered = filtered.filter(o => o.orderDate >= from);
-      }
-      if (toDate) {
         const to = endOfDay(new Date(toDate));
-        filtered = filtered.filter(o => o.orderDate <= to);
+        filtered = filtered.filter(o => o.orderDate >= from && o.orderDate <= to);
       }
     }
 
@@ -762,7 +758,7 @@ export function OrdersPage() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  <span>Date Range</span>
+                  <span>Date Filter</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
@@ -780,42 +776,16 @@ export function OrdersPage() {
                   </Button>
                   <Button
                     type="button"
-                    variant={datePreset === '7days' ? 'default' : 'outline'}
+                    variant={datePreset === 'today' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
-                      setDatePreset('7days');
+                      setDatePreset('today');
                       setFromDate('');
                       setToDate('');
                     }}
                     className="h-8 text-xs"
                   >
-                    Last 7 Days
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={datePreset === '30days' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      setDatePreset('30days');
-                      setFromDate('');
-                      setToDate('');
-                    }}
-                    className="h-8 text-xs"
-                  >
-                    Last 30 Days
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={datePreset === '90days' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      setDatePreset('90days');
-                      setFromDate('');
-                      setToDate('');
-                    }}
-                    className="h-8 text-xs"
-                  >
-                    Last 90 Days
+                    Today
                   </Button>
                   <Button
                     type="button"
@@ -823,21 +793,15 @@ export function OrdersPage() {
                     size="sm"
                     onClick={() => {
                       setDatePreset('custom');
-                      if (!fromDate && !toDate) {
-                        // Set default to last 30 days if no dates selected
-                        const today = new Date();
-                        const thirtyDaysAgo = subDays(today, 30);
-                        setFromDate(format(thirtyDaysAgo, 'yyyy-MM-dd'));
-                        setToDate(format(today, 'yyyy-MM-dd'));
-                      }
+                      // Don't auto-populate dates, let user select
                     }}
                     className="h-8 text-xs"
                   >
-                    Custom Range
+                    Date Picker
                   </Button>
                 </div>
                 
-                {/* Custom Date Range Pickers */}
+                {/* Date Picker - Single Date or Range */}
                 {datePreset === 'custom' && (
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="relative flex-1 min-w-[140px]">
@@ -845,22 +809,46 @@ export function OrdersPage() {
                       <Input
                         type="date"
                         value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                        placeholder="From Date"
+                        onChange={(e) => {
+                          setFromDate(e.target.value);
+                          // If toDate is set and new fromDate is after toDate, clear toDate
+                          if (toDate && e.target.value && new Date(e.target.value) > new Date(toDate)) {
+                            setToDate('');
+                          }
+                        }}
+                        placeholder="Select Date"
                         className="pl-9 h-8 text-sm"
                       />
                     </div>
-                    <span className="text-muted-foreground text-sm">to</span>
-                    <div className="relative flex-1 min-w-[140px]">
-                      <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      <Input
-                        type="date"
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                        placeholder="To Date"
-                        className="pl-9 h-8 text-sm"
-                      />
-                    </div>
+                    {fromDate && (
+                      <>
+                        <span className="text-muted-foreground text-sm">to</span>
+                        <div className="relative flex-1 min-w-[140px]">
+                          <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          <Input
+                            type="date"
+                            value={toDate}
+                            onChange={(e) => setToDate(e.target.value)}
+                            min={fromDate} // Prevent selecting date before fromDate
+                            placeholder="End Date (Optional)"
+                            className="pl-9 h-8 text-sm"
+                          />
+                        </div>
+                        {toDate && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setToDate('');
+                            }}
+                            className="h-8 text-xs text-muted-foreground hover:text-destructive"
+                          >
+                            Clear Range
+                          </Button>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
