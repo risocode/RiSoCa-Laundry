@@ -246,16 +246,17 @@ export function NetIncomeDistribution() {
       return;
     }
 
+    // Sum all deposits for this period (since each deposit is a separate record)
     const { data, error } = await supabase
       .from('bank_savings')
-      .select('*')
+      .select('amount')
       .eq('period_type', periodType)
       .eq('period_start', format(startDate, 'yyyy-MM-dd'))
-      .eq('period_end', format(endDate, 'yyyy-MM-dd'))
-      .maybeSingle();
+      .eq('period_end', format(endDate, 'yyyy-MM-dd'));
 
-    if (!error && data) {
-      setBankSavings(data.amount || 0);
+    if (!error && data && data.length > 0) {
+      const totalAmount = data.reduce((sum, record) => sum + (record.amount || 0), 0);
+      setBankSavings(totalAmount);
     } else {
       setBankSavings(0);
     }
@@ -296,79 +297,56 @@ export function NetIncomeDistribution() {
     setSavingBankSavings(true);
 
     try {
-      // Check if bank savings record exists for this period
-      const { data: existing, error: fetchError } = await supabase
+      // Always create a new record for each deposit to maintain transaction history
+      // Each deposit should be a separate entry, even for the same period
+      const { error: insertError } = await supabase
         .from('bank_savings')
-        .select('*')
-        .eq('period_type', periodType)
-        .eq('period_start', format(startDate, 'yyyy-MM-dd'))
-        .eq('period_end', format(endDate, 'yyyy-MM-dd'))
-        .maybeSingle();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching bank savings:', fetchError);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to check existing bank savings.',
+        .insert({
+          period_start: format(startDate, 'yyyy-MM-dd'),
+          period_end: format(endDate, 'yyyy-MM-dd'),
+          period_type: periodType,
+          amount: depositAmount, // Store the deposit amount, not cumulative
+          created_by: user?.id,
         });
-        setSavingBankSavings(false);
-        return;
-      }
 
-      if (existing) {
-        // Update existing record - add the deposit amount to existing amount
-        const newAmount = existing.amount + depositAmount;
-        const { error: updateError } = await supabase
-          .from('bank_savings')
-          .update({
-            amount: newAmount,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existing.id);
-
-        if (updateError) {
-          console.error('Error updating bank savings:', updateError);
+      if (insertError) {
+        // Check if error is due to unique constraint (if migration hasn't been run)
+        if (insertError.code === '23505' || insertError.message?.includes('unique') || insertError.message?.includes('duplicate')) {
+          console.error('Unique constraint error - database migration may be needed:', insertError);
           toast({
             variant: 'destructive',
-            title: 'Error',
-            description: updateError.message || 'Failed to update bank savings.',
+            title: 'Database Migration Required',
+            description: 'Please run the migration script to remove the unique constraint on bank_savings table. See src/docs/remove-bank-savings-unique-constraint.sql',
           });
         } else {
-          setBankSavings(newAmount);
-          fetchBankSavingsHistory(); // Refresh history
-          toast({
-            title: 'Deposit Successful',
-            description: `₱${depositAmount.toFixed(2)} deposited to bank savings for ${distributionPeriod === 'monthly' ? format(now, 'MMMM yyyy') : format(now, 'yyyy')}.`,
-          });
-        }
-      } else {
-        // Create new record with the deposit amount
-        const { error: insertError } = await supabase
-          .from('bank_savings')
-          .insert({
-            period_start: format(startDate, 'yyyy-MM-dd'),
-            period_end: format(endDate, 'yyyy-MM-dd'),
-            period_type: periodType,
-            amount: depositAmount,
-            created_by: user?.id,
-          });
-
-        if (insertError) {
-          console.error('Error inserting bank savings:', insertError);
+          console.error('Error inserting bank savings deposit:', insertError);
           toast({
             variant: 'destructive',
             title: 'Error',
             description: insertError.message || 'Failed to save bank savings deposit.',
           });
+        }
+      } else {
+        // Calculate total bank savings for this period by summing all deposits
+        const { data: periodDeposits, error: sumError } = await supabase
+          .from('bank_savings')
+          .select('amount')
+          .eq('period_type', periodType)
+          .eq('period_start', format(startDate, 'yyyy-MM-dd'))
+          .eq('period_end', format(endDate, 'yyyy-MM-dd'));
+
+        if (!sumError && periodDeposits) {
+          const totalAmount = periodDeposits.reduce((sum, record) => sum + (record.amount || 0), 0);
+          setBankSavings(totalAmount);
         } else {
           setBankSavings(depositAmount);
-          fetchBankSavingsHistory(); // Refresh history
-          toast({
-            title: 'Deposit Successful',
-            description: `₱${depositAmount.toFixed(2)} deposited to bank savings for ${distributionPeriod === 'monthly' ? format(now, 'MMMM yyyy') : format(now, 'yyyy')}.`,
-          });
         }
+
+        fetchBankSavingsHistory(); // Refresh history
+        toast({
+          title: 'Deposit Successful',
+          description: `₱${depositAmount.toFixed(2)} deposited to bank savings for ${distributionPeriod === 'monthly' ? format(now, 'MMMM yyyy') : format(now, 'yyyy')}.`,
+        });
       }
     } catch (error: any) {
       console.error('Unexpected error saving bank savings:', error);
