@@ -807,12 +807,12 @@ export function OrdersPage() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent 
-                      className="w-auto p-0 max-w-[calc(100vw-2rem)] sm:max-w-none" 
+                      className="!w-auto !p-0 max-w-[calc(100vw-2rem)] sm:max-w-none border shadow-lg bg-background" 
                       align="start"
                       side="bottom"
-                      sideOffset={4}
+                      sideOffset={8}
                     >
-                      <div className="p-1 sm:p-2">
+                      <div className="p-0">
                         <Calendar
                           mode="range"
                           selected={dateRange}
@@ -830,10 +830,9 @@ export function OrdersPage() {
                             }
                           }}
                           numberOfMonths={1}
-                          className="rounded-md"
                         />
                       </div>
-                      <div className="flex items-center justify-between p-2 sm:p-3 border-t gap-2">
+                      <div className="flex items-center justify-between p-3 border-t gap-2 bg-background">
                         <Button
                           type="button"
                           variant="ghost"
