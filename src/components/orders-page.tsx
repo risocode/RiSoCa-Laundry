@@ -807,12 +807,12 @@ export function OrdersPage() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent 
-                      className="!w-auto !p-0 max-w-[calc(100vw-2rem)] sm:max-w-none border shadow-lg bg-background" 
-                      align="start"
+                      className="!w-auto !p-0 max-w-[calc(100vw-2rem)] sm:max-w-none border shadow-xl bg-background rounded-lg" 
+                      align="center"
                       side="bottom"
                       sideOffset={8}
                     >
-                      <div className="p-0">
+                      <div className="p-0 rounded-lg overflow-hidden">
                         <Calendar
                           mode="range"
                           selected={dateRange}
@@ -832,7 +832,7 @@ export function OrdersPage() {
                           numberOfMonths={1}
                         />
                       </div>
-                      <div className="flex items-center justify-between p-3 border-t gap-2 bg-background">
+                      <div className="flex items-center justify-between px-4 py-3 border-t gap-2 bg-background">
                         <Button
                           type="button"
                           variant="ghost"
@@ -841,7 +841,7 @@ export function OrdersPage() {
                             setDateRange(undefined);
                             setIsDatePickerOpen(false);
                           }}
-                          className="h-8 text-xs text-muted-foreground hover:text-destructive flex-1 sm:flex-initial"
+                          className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-1 sm:flex-initial transition-colors"
                         >
                           Clear
                         </Button>
@@ -853,7 +853,7 @@ export function OrdersPage() {
                             const today = new Date();
                             setDateRange({ from: today, to: undefined });
                           }}
-                          className="h-8 text-xs flex-1 sm:flex-initial"
+                          className="h-8 text-xs hover:bg-primary/10 hover:text-primary flex-1 sm:flex-initial transition-colors"
                         >
                           Today
                         </Button>
