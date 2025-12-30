@@ -66,19 +66,19 @@ export function StaticDateRangePicker({
   };
 
   return (
-    <div className={`flex flex-col bg-background rounded-xl shadow-lg border ${className || ''}`}>
+    <div className={`flex flex-col bg-background rounded-xl shadow-xl border border-border overflow-hidden ${className || ''}`}>
       {/* Simple Selected Date Display */}
       {dateRange?.from && (
-        <div className="px-5 py-3.5 border-b">
-          <div className="text-sm text-muted-foreground">Selected</div>
-          <div className="text-lg font-semibold text-foreground mt-0.5">
+        <div className="px-5 py-3.5 border-b border-border bg-background">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Selected</div>
+          <div className="text-lg font-semibold text-foreground">
             {formatDateRange()}
           </div>
         </div>
       )}
 
       {/* Calendar */}
-      <div className="p-5">
+      <div className="p-5 bg-background">
         <Calendar
           mode="range"
           selected={dateRange}
@@ -88,19 +88,19 @@ export function StaticDateRangePicker({
       </div>
 
       {/* Simple Buttons */}
-      <div className="flex gap-2 px-5 py-3.5 border-t">
+      <div className="flex gap-2 px-5 py-3.5 border-t border-border bg-background">
         <Button
           type="button"
           variant="outline"
           onClick={handleCancel}
-          className="flex-1 h-9"
+          className="flex-1 h-9 text-sm"
         >
           Cancel
         </Button>
         <Button
           type="button"
           onClick={handleConfirm}
-          className="flex-1 h-9"
+          className="flex-1 h-9 text-sm"
           disabled={!dateRange?.from}
         >
           OK

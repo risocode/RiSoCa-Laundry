@@ -21,25 +21,25 @@ function Calendar({
       className={cn("p-0", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-3",
-        caption: "flex justify-between items-center mb-3",
-        caption_label: "text-base font-medium text-foreground",
-        nav: "flex items-center gap-0.5",
+        month: "space-y-4",
+        caption: "flex justify-center items-center mb-4 relative min-h-[2rem]",
+        caption_label: "text-base font-semibold text-foreground",
+        nav: "flex items-center gap-1",
         nav_button: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-7 w-7 p-0 hover:bg-muted rounded-md"
+          "h-8 w-8 p-0 hover:bg-muted rounded-md flex items-center justify-center absolute"
         ),
-        nav_button_previous: "",
-        nav_button_next: "",
-        table: "w-full",
-        head_row: "flex w-full mb-1",
+        nav_button_previous: "left-0 top-0",
+        nav_button_next: "right-0 top-0",
+        table: "w-full border-collapse",
+        head_row: "flex w-full",
         head_cell:
-          "w-[calc(100%/7)] text-center text-xs font-normal text-muted-foreground py-1.5",
-        row: "flex w-full mt-0.5",
-        cell: "w-[calc(100%/7)] h-9 flex items-center justify-center p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+          "w-[calc(100%/7)] text-center text-xs font-medium text-muted-foreground py-2.5 flex items-center justify-center",
+        row: "flex w-full",
+        cell: "w-[calc(100%/7)] h-10 flex items-center justify-center p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal text-sm rounded-md hover:bg-muted transition-colors aria-selected:opacity-100"
+          "h-10 w-10 p-0 font-normal text-sm rounded-md hover:bg-muted transition-colors aria-selected:opacity-100 flex items-center justify-center"
         ),
         day_range_end: "day-range-end rounded-r-md",
         day_selected:

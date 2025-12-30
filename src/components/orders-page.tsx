@@ -807,7 +807,7 @@ export function OrdersPage() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent 
-                      className="!w-auto !p-0 max-w-[calc(100vw-2rem)] sm:max-w-none border-0 shadow-xl bg-transparent" 
+                      className="!w-auto !p-0 max-w-[calc(100vw-2rem)] sm:max-w-none border-0 shadow-none bg-transparent" 
                       align="center"
                       side="bottom"
                       sideOffset={8}
