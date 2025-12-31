@@ -35,7 +35,7 @@ import { InternalOrderDialog } from '@/components/internal-order-dialog';
 import { createOrderWithHistory, fetchLatestOrderId, generateNextOrderId, updateOrderFields, updateOrderStatus } from '@/lib/api/orders';
 import { supabase } from '@/lib/supabase-client';
 import { useAuthSession } from '@/hooks/use-auth-session';
-import { format, startOfDay } from 'date-fns';
+import { format, startOfDay, subDays } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
 export function OrdersPage() {
