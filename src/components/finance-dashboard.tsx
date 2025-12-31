@@ -9,9 +9,7 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { Loader2, TrendingUp, TrendingDown, DollarSign, Calendar, Package, Scale, Users, ClipboardList, Wallet } from 'lucide-react';
-import { supabase } from '@/lib/supabase-client';
-import { fetchExpenses } from '@/lib/api/expenses';
-import { format, startOfMonth, endOfMonth, subMonths, eachMonthOfInterval, differenceInDays, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfYear, endOfYear, eachDayOfInterval, eachWeekOfInterval, eachYearOfInterval, subDays, subWeeks, subYears } from 'date-fns';
+import { format } from 'date-fns';
 import {
   BarChart,
   Bar,
@@ -25,103 +23,34 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-
-type OrderData = {
-  id: string;
-  total: number;
-  is_paid: boolean;
-  created_at: string;
-  loads: number;
-  weight: number;
-};
-
-type ExpenseData = {
-  id: string;
-  amount: number;
-  category: string | null;
-  incurred_on: string;
-  created_at: string;
-};
-
-type SalaryPaymentData = {
-  id: string;
-  employee_id: string;
-  amount: number;
-  is_paid: boolean;
-  date: string;
-  created_at: string;
-};
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+import type { ChartPeriod } from './finance-dashboard/types';
+import { COLORS } from './finance-dashboard/types';
+import { fetchFinanceData } from './finance-dashboard/fetch-data';
+import { calculateFinancialTotals, calculateBusinessMetrics } from './finance-dashboard/calculate-totals';
+import { prepareChartData, prepareExpenseCategoryData } from './finance-dashboard/prepare-chart-data';
 
 export function FinanceDashboard() {
-  const [orders, setOrders] = useState<OrderData[]>([]);
-  const [expenses, setExpenses] = useState<ExpenseData[]>([]);
-  const [salaryPayments, setSalaryPayments] = useState<SalaryPaymentData[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [salaryPayments, setSalaryPayments] = useState<any[]>([]);
   const [totalUsers, setTotalUsers] = useState<number>(0);
   const [businessStartDate, setBusinessStartDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
-  const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly');
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('monthly');
 
   useEffect(() => {
-    fetchData();
+    loadData();
   }, []);
 
-  const fetchData = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      // Fetch all orders (for revenue, loads, and weight)
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select('id, total, is_paid, created_at, loads, weight')
-        .order('created_at', { ascending: true });
-
-      if (ordersError) {
-        console.error('Failed to load orders', ordersError);
-      } else {
-        setOrders(ordersData || []);
-        // Set business start date to the earliest order date
-        if (ordersData && ordersData.length > 0) {
-          setBusinessStartDate(new Date(ordersData[0].created_at));
-        }
-      }
-
-      // Fetch expenses
-      const expensesResult = await fetchExpenses();
-      if (expensesResult.error) {
-        console.error('Failed to load expenses', expensesResult.error);
-      } else {
-        setExpenses((expensesResult.data || []).map((e: any) => ({
-          id: e.id,
-          amount: e.amount,
-          category: e.category,
-          incurred_on: e.incurred_on || e.created_at,
-          created_at: e.created_at,
-        })));
-      }
-
-      // Fetch employee salary payments (where is_paid = true)
-      const { data: salaryData, error: salaryError } = await supabase
-        .from('daily_salary_payments')
-        .select('id, employee_id, amount, is_paid, date, created_at')
-        .eq('is_paid', true);
-
-      if (salaryError) {
-        console.error('Failed to load salary payments', salaryError);
-      } else {
-        setSalaryPayments(salaryData || []);
-      }
-
-      // Fetch total users count
-      const { count, error: usersError } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
-
-      if (usersError) {
-        console.error('Failed to load users count', usersError);
-      } else {
-        setTotalUsers(count || 0);
-      }
+      const data = await fetchFinanceData();
+      setOrders(data.orders);
+      setExpenses(data.expenses);
+      setSalaryPayments(data.salaryPayments);
+      setTotalUsers(data.totalUsers);
+      setBusinessStartDate(data.businessStartDate);
     } catch (error) {
       console.error('Error fetching data', error);
     } finally {
@@ -129,139 +58,31 @@ export function FinanceDashboard() {
     }
   };
 
-  // Filter data based on chart period (for summary cards, use all data)
-  const filteredData = useMemo(() => {
-    // Summary cards always show all-time data
-    return { orders, expenses, salaryPayments };
-  }, [orders, expenses, salaryPayments]);
-
   // Calculate totals
-  const paidOrders = filteredData.orders.filter(o => o.is_paid === true);
-  const totalRevenue = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-  
-  // Expenses = Regular Expenses + Employee Salaries
-  const regularExpenses = filteredData.expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-  const employeeSalaries = filteredData.salaryPayments.reduce((sum, s) => sum + (s.amount || 0), 0);
-  const totalExpenses = regularExpenses + employeeSalaries;
-  
-  const netIncome = totalRevenue - totalExpenses;
+  const {
+    totalRevenue,
+    regularExpenses,
+    employeeSalaries,
+    netIncome,
+    paidOrdersCount,
+  } = calculateFinancialTotals(orders, expenses, salaryPayments);
 
-  // Calculate total loads, weight, and orders from all orders (not filtered by date range)
-  const totalLoads = orders.reduce((sum, o) => sum + (o.loads || 0), 0);
-  const totalWeight = orders.reduce((sum, o) => sum + (o.weight || 0), 0);
-  const totalOrders = orders.length;
-
-  // Calculate total days of operation
-  const totalDaysOfOperation = businessStartDate 
-    ? differenceInDays(new Date(), businessStartDate) + 1 
-    : 0;
+  const {
+    totalLoads,
+    totalWeight,
+    totalOrders,
+    totalDaysOfOperation,
+  } = calculateBusinessMetrics(orders, businessStartDate);
 
   // Prepare chart data based on selected period
   const chartData = useMemo(() => {
-    if (orders.length === 0 && expenses.length === 0) {
-      return [];
-    }
-
-    const now = new Date();
-    let periods: Date[];
-    let dateFormatter: (date: Date) => string;
-    let periodStartFn: (date: Date) => Date;
-    let periodEndFn: (date: Date) => Date;
-
-    // Determine date range based on period
-    let startDate: Date;
-    let endDate = now;
-
-    switch (chartPeriod) {
-      case 'daily':
-        // Last 30 days
-        startDate = startOfDay(subDays(now, 29));
-        periods = eachDayOfInterval({ start: startDate, end: endDate });
-        dateFormatter = (d) => format(d, 'MMM d');
-        periodStartFn = startOfDay;
-        periodEndFn = endOfDay;
-        break;
-      case 'weekly':
-        // Last 12 weeks
-        startDate = startOfWeek(subWeeks(now, 11));
-        periods = eachWeekOfInterval({ start: startDate, end: endDate }, { weekStartsOn: 1 });
-        dateFormatter = (d) => `Week ${format(d, 'MMM d')}`;
-        periodStartFn = (d) => startOfWeek(d, { weekStartsOn: 1 });
-        periodEndFn = (d) => endOfWeek(d, { weekStartsOn: 1 });
-        break;
-      case 'monthly':
-        // Last 12 months
-        startDate = startOfMonth(subMonths(now, 11));
-        periods = eachMonthOfInterval({ start: startDate, end: endDate });
-        dateFormatter = (d) => format(d, 'MMM yyyy');
-        periodStartFn = startOfMonth;
-        periodEndFn = endOfMonth;
-        break;
-      case 'yearly':
-        // All years
-        const orderDates = orders.map(o => new Date(o.created_at).getTime());
-        const expenseDates = expenses.map(e => new Date(e.incurred_on).getTime());
-        const allDates = [...orderDates, ...expenseDates];
-        if (allDates.length === 0) return [];
-        startDate = startOfYear(new Date(Math.min(...allDates)));
-        periods = eachYearOfInterval({ start: startDate, end: endDate });
-        dateFormatter = (d) => format(d, 'yyyy');
-        periodStartFn = startOfYear;
-        periodEndFn = endOfYear;
-        break;
-    }
-
-    return periods.map((period) => {
-      const periodStart = periodStartFn(period);
-      const periodEnd = periodEndFn(period);
-      const periodKey = dateFormatter(period);
-
-      const periodOrders = orders.filter(
-        (o) => {
-          const orderDate = new Date(o.created_at);
-          return orderDate >= periodStart && orderDate <= periodEnd;
-        }
-      );
-      const periodExpenses = expenses.filter(
-        (e) => {
-          const expenseDate = new Date(e.incurred_on);
-          return expenseDate >= periodStart && expenseDate <= periodEnd;
-        }
-      );
-
-      const periodSalaries = salaryPayments.filter(
-        (s) => {
-          const salaryDate = new Date(s.date);
-          return salaryDate >= periodStart && salaryDate <= periodEnd;
-        }
-      );
-
-      const periodRevenue = periodOrders.filter(o => o.is_paid === true).reduce((sum, o) => sum + (o.total || 0), 0);
-      const periodRegularExpenses = periodExpenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-      const periodEmployeeSalaries = periodSalaries.reduce((sum, s) => sum + (s.amount || 0), 0);
-      const periodTotalExpenses = periodRegularExpenses + periodEmployeeSalaries;
-
-      return {
-        period: periodKey,
-        revenue: periodRevenue,
-        expenses: periodTotalExpenses,
-        net: periodRevenue - periodTotalExpenses,
-      };
-    }).filter(d => d.revenue > 0 || d.expenses > 0);
+    return prepareChartData(orders, expenses, salaryPayments, chartPeriod);
   }, [orders, expenses, salaryPayments, chartPeriod]);
 
   // Prepare expense category data
   const expenseCategoryData = useMemo(() => {
-    const categoryMap = new Map<string, number>();
-    filteredData.expenses.forEach((e) => {
-      const category = e.category || 'Uncategorized';
-      categoryMap.set(category, (categoryMap.get(category) || 0) + (e.amount || 0));
-    });
-
-    return Array.from(categoryMap.entries())
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value);
-  }, [filteredData.expenses]);
+    return prepareExpenseCategoryData(expenses);
+  }, [expenses]);
 
   if (loading) {
     return (
@@ -289,7 +110,7 @@ export function FinanceDashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-green-600">₱{totalRevenue.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                From {paidOrders.length} paid order{paidOrders.length !== 1 ? 's' : ''}
+                From {paidOrdersCount} paid order{paidOrdersCount !== 1 ? 's' : ''}
               </p>
             </CardContent>
           </Card>
@@ -302,7 +123,7 @@ export function FinanceDashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-red-600">₱{regularExpenses.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {filteredData.expenses.length} expense{filteredData.expenses.length !== 1 ? 's' : ''}
+                {expenses.length} expense{expenses.length !== 1 ? 's' : ''}
               </p>
             </CardContent>
           </Card>
@@ -315,7 +136,7 @@ export function FinanceDashboard() {
             <CardContent>
               <div className="text-2xl font-bold text-orange-600">₱{employeeSalaries.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {filteredData.salaryPayments.length} payment{filteredData.salaryPayments.length !== 1 ? 's' : ''}
+                {salaryPayments.length} payment{salaryPayments.length !== 1 ? 's' : ''}
               </p>
             </CardContent>
           </Card>

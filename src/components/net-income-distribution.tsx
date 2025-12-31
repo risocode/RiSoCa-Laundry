@@ -31,6 +31,9 @@ import {
 import {
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -43,7 +46,7 @@ import { supabase } from '@/lib/supabase-client';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import {
   type OrderData,
   type ExpenseData,
@@ -82,11 +85,6 @@ export function NetIncomeDistribution() {
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    loadBankSavings();
-    loadBankSavingsHistory();
-  }, [distributionPeriod]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -274,7 +272,7 @@ export function NetIncomeDistribution() {
     setClaimingDistribution(false);
     setClaimDialogOpen(false);
     setOwnerToClaim(null);
-    await fetchDistributions();
+    await loadDistributions();
   };
 
   const handleRefresh = async () => {
@@ -306,6 +304,8 @@ export function NetIncomeDistribution() {
   useEffect(() => {
     if (distributionPeriod) {
       loadDistributions();
+      loadBankSavings();
+      loadBankSavingsHistory();
     }
   }, [distributionPeriod]);
 
@@ -320,24 +320,52 @@ export function NetIncomeDistribution() {
 
   return (
     <div className="space-y-6 transition-all duration-300">
-      {/* Header with Refresh Button */}
-      <div className="flex items-center justify-between">
+      {/* Header with Refresh Button and Period Selector */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Income Distribution Overview</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Manage and track net income distribution among owners
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 border rounded-md p-1 bg-muted/50">
+            <Button
+              variant={distributionPeriod === 'monthly' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setDistributionPeriod('monthly')}
+              className="h-8 text-xs"
+            >
+              Monthly
+            </Button>
+            <Button
+              variant={distributionPeriod === 'yearly' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setDistributionPeriod('yearly')}
+              className="h-8 text-xs"
+            >
+              Yearly
+            </Button>
+            <Button
+              variant={distributionPeriod === 'all' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setDistributionPeriod('all')}
+              className="h-8 text-xs"
+            >
+              All Time
+            </Button>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
         <OwnerSelection
