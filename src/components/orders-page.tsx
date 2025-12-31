@@ -678,101 +678,105 @@ export function OrdersPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 items-stretch">
               {/* Total Orders Card */}
               <div className="p-4 rounded-[20px] bg-gray-200 dark:bg-gray-800 [box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.5),inset_10px_10px_20px_rgba(153,161,175,0.3),-10px_-10px_20px_rgba(255,255,255,0.5),10px_10px_20px_rgba(153,161,175,0.3)] dark:[box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.05),inset_10px_10px_20px_rgba(0,0,0,0.3),-10px_-10px_20px_rgba(255,255,255,0.05),10px_10px_20px_rgba(0,0,0,0.3)] flex flex-col">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="relative p-2 bg-emerald-500/80 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
-                    <Package className="h-4 w-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative p-2 bg-emerald-500/85 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
+                    <Package className="h-3.5 w-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
-                  <p className="text-[13px] font-medium text-[#94A3B8] dark:text-[#94A3B8] tracking-[0.2px] flex-1">Total Orders</p>
+                  <p className="text-[13px] font-medium text-[#64748B] dark:text-[#64748B] tracking-[0.2px] flex-1">Total Orders</p>
                 </div>
                 <div className="flex flex-col justify-end flex-1">
-                  <p className="text-[30px] font-bold text-[#334155] dark:text-[#F1F5F9] leading-[1.1] mb-3">{statistics.totalOrders}</p>
-                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8]/80 opacity-85">{statistics.todayOrders} today</p>
+                  <p className="text-[30px] font-bold text-[#334155] dark:text-[#F1F5F9] leading-[1.1] mb-2">{statistics.totalOrders}</p>
+                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8] opacity-80 mt-1.5">{statistics.todayOrders} today</p>
                 </div>
               </div>
 
               {/* Total Revenue Card */}
               <div className="p-4 rounded-[20px] bg-gray-200 dark:bg-gray-800 [box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.5),inset_10px_10px_20px_rgba(153,161,175,0.3),-10px_-10px_20px_rgba(255,255,255,0.5),10px_10px_20px_rgba(153,161,175,0.3)] dark:[box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.05),inset_10px_10px_20px_rgba(0,0,0,0.3),-10px_-10px_20px_rgba(255,255,255,0.05),10px_10px_20px_rgba(0,0,0,0.3)] flex flex-col">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="relative p-2 bg-[#6366F1]/80 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
-                    <DollarSign className="h-4 w-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative p-2 bg-[#6366F1]/85 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
+                    <DollarSign className="h-3.5 w-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
-                  <p className="text-[13px] font-medium text-[#94A3B8] dark:text-[#94A3B8] tracking-[0.2px] flex-1">Total Revenue</p>
+                  <p className="text-[13px] font-medium text-[#64748B] dark:text-[#64748B] tracking-[0.2px] flex-1">Total Revenue</p>
                 </div>
                 <div className="flex flex-col justify-end flex-1">
-                  <p className="text-[30px] font-bold text-[#334155] dark:text-[#F1F5F9] leading-[1.1] mb-3">
-                    <span className="text-[#475569] dark:text-[#94A3B8]">₱</span>{Math.ceil(statistics.totalRevenue).toLocaleString()}
+                  <p className="text-[30px] font-bold text-[#334155] dark:text-[#F1F5F9] leading-[1.1] mb-2">
+                    <span className="text-[#334155] dark:text-[#F1F5F9] opacity-85 text-[28px]">₱</span>{Math.ceil(statistics.totalRevenue).toLocaleString()}
                   </p>
-                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8]/80 opacity-85">Yesterday: ₱{Math.ceil(statistics.yesterdayRevenue).toLocaleString()}</p>
+                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8] opacity-80 mt-1.5">Yesterday: ₱{Math.ceil(statistics.yesterdayRevenue).toLocaleString()}</p>
                 </div>
               </div>
 
               {/* Pending Orders Card */}
               <div className="p-4 rounded-[20px] bg-gray-200 dark:bg-gray-800 [box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.5),inset_10px_10px_20px_rgba(153,161,175,0.3),-10px_-10px_20px_rgba(255,255,255,0.5),10px_10px_20px_rgba(153,161,175,0.3)] dark:[box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.05),inset_10px_10px_20px_rgba(0,0,0,0.3),-10px_-10px_20px_rgba(255,255,255,0.05),10px_10px_20px_rgba(0,0,0,0.3)] flex flex-col">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="relative p-2 bg-[#F97316]/80 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
-                    <Clock className="h-4 w-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative p-2 bg-[#F97316]/85 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
+                    <Clock className="h-3.5 w-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
-                  <p className="text-[13px] font-medium text-[#94A3B8] dark:text-[#94A3B8] tracking-[0.2px] flex-1">Pending</p>
+                  <p className="text-[13px] font-medium text-[#64748B] dark:text-[#64748B] tracking-[0.2px] flex-1">Pending</p>
                 </div>
                 <div className="flex flex-col justify-end flex-1">
-                  <p className="text-[30px] font-bold text-[#F97316] dark:text-[#F97316] leading-[1.1] mb-3">{statistics.pendingOrders}</p>
-                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8]/80 opacity-85">{statistics.completedOrders} completed</p>
+                  <p className="text-[30px] font-bold text-[#F97316] dark:text-[#F97316] leading-[1.1] mb-2">{statistics.pendingOrders}</p>
+                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8] opacity-80 mt-1.5">{statistics.completedOrders} completed</p>
                 </div>
               </div>
 
               {/* Payment Status Card */}
               <div className="p-4 rounded-[20px] bg-gray-200 dark:bg-gray-800 [box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.5),inset_10px_10px_20px_rgba(153,161,175,0.3),-10px_-10px_20px_rgba(255,255,255,0.5),10px_10px_20px_rgba(153,161,175,0.3)] dark:[box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.05),inset_10px_10px_20px_rgba(0,0,0,0.3),-10px_-10px_20px_rgba(255,255,255,0.05),10px_10px_20px_rgba(0,0,0,0.3)] flex flex-col">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="relative p-2 bg-[#16A34A]/80 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
-                    <CreditCard className="h-4 w-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative p-2 bg-[#16A34A]/85 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
+                    <CreditCard className="h-3.5 w-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
-                  <p className="text-[13px] font-medium text-[#94A3B8] dark:text-[#94A3B8] tracking-[0.2px] flex-1">Paid</p>
+                  <p className="text-[13px] font-medium text-[#64748B] dark:text-[#64748B] tracking-[0.2px] flex-1">Paid</p>
                 </div>
                 <div className="flex flex-col justify-end flex-1">
-                  <p className="text-[30px] font-bold text-[#16A34A] dark:text-[#16A34A] leading-[1.1] mb-3">{statistics.paidOrders}</p>
-                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8]/80 opacity-85">{statistics.unpaidOrders} unpaid</p>
+                  <p className="text-[30px] font-bold text-[#16A34A] dark:text-[#16A34A] leading-[1.1] mb-2">{statistics.paidOrders}</p>
+                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8] opacity-80 mt-1.5">{statistics.unpaidOrders} unpaid</p>
                 </div>
               </div>
 
               {/* Paid Revenue Card */}
               <div className="p-4 rounded-[20px] bg-gray-200 dark:bg-gray-800 [box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.5),inset_10px_10px_20px_rgba(153,161,175,0.3),-10px_-10px_20px_rgba(255,255,255,0.5),10px_10px_20px_rgba(153,161,175,0.3)] dark:[box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.05),inset_10px_10px_20px_rgba(0,0,0,0.3),-10px_-10px_20px_rgba(255,255,255,0.05),10px_10px_20px_rgba(0,0,0,0.3)] flex flex-col">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="relative p-2 bg-[#16A34A]/80 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
-                    <CheckCircle2 className="h-4 w-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative p-2 bg-[#16A34A]/85 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
-                  <p className="text-[13px] font-medium text-[#94A3B8] dark:text-[#94A3B8] tracking-[0.2px] flex-1">Paid Revenue</p>
+                  <p className="text-[13px] font-medium text-[#64748B] dark:text-[#64748B] tracking-[0.2px] flex-1">Paid Revenue</p>
                 </div>
                 <div className="flex flex-col justify-end flex-1">
-                  <p className="text-[30px] font-bold text-[#16A34A] dark:text-[#16A34A] leading-[1.1] mb-3">₱{Math.ceil(statistics.paidRevenue).toLocaleString()}</p>
-                  <p className="text-[12px] font-normal text-[#16A34A]/60 dark:text-[#16A34A]/60 opacity-85">Today: ₱{Math.ceil(statistics.todayRevenue).toLocaleString()}</p>
+                  <p className="text-[30px] font-bold text-[#16A34A] dark:text-[#16A34A] leading-[1.1] mb-2">
+                    <span className="text-[#16A34A] dark:text-[#16A34A] opacity-85 text-[28px]">₱</span>{Math.ceil(statistics.paidRevenue).toLocaleString()}
+                  </p>
+                  <p className="text-[12px] font-normal text-[#16A34A]/60 dark:text-[#16A34A]/60 opacity-80 mt-1.5">Today: ₱{Math.ceil(statistics.todayRevenue).toLocaleString()}</p>
                 </div>
               </div>
 
               {/* Pending Revenue Card */}
               <div className="p-4 rounded-[20px] bg-gray-200 dark:bg-gray-800 [box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.5),inset_10px_10px_20px_rgba(153,161,175,0.3),-10px_-10px_20px_rgba(255,255,255,0.5),10px_10px_20px_rgba(153,161,175,0.3)] dark:[box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.05),inset_10px_10px_20px_rgba(0,0,0,0.3),-10px_-10px_20px_rgba(255,255,255,0.05),10px_10px_20px_rgba(0,0,0,0.3)] flex flex-col">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="relative p-2 bg-[#F97316]/80 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
-                    <Wallet className="h-4 w-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative p-2 bg-[#F97316]/85 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
+                    <Wallet className="h-3.5 w-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
-                  <p className="text-[13px] font-medium text-[#94A3B8] dark:text-[#94A3B8] tracking-[0.2px] flex-1">Pending Revenue</p>
+                  <p className="text-[13px] font-medium text-[#64748B] dark:text-[#64748B] tracking-[0.2px] flex-1">Pending Revenue</p>
                 </div>
                 <div className="flex flex-col justify-end flex-1">
-                  <p className="text-[30px] font-bold text-[#F97316] dark:text-[#F97316] leading-[1.1] mb-3">₱{Math.ceil(statistics.pendingRevenue).toLocaleString()}</p>
-                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8]/80 opacity-85">&nbsp;</p>
+                  <p className="text-[30px] font-bold text-[#F97316] dark:text-[#F97316] leading-[1.1] mb-2">
+                    <span className="text-[#F97316] dark:text-[#F97316] opacity-85 text-[28px]">₱</span>{Math.ceil(statistics.pendingRevenue).toLocaleString()}
+                  </p>
+                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8] opacity-80 mt-1.5">&nbsp;</p>
                 </div>
               </div>
 
               {/* This Week Card */}
               <div className="p-4 rounded-[20px] bg-gray-200 dark:bg-gray-800 [box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.5),inset_10px_10px_20px_rgba(153,161,175,0.3),-10px_-10px_20px_rgba(255,255,255,0.5),10px_10px_20px_rgba(153,161,175,0.3)] dark:[box-shadow:inset_-10px_-10px_20px_rgba(255,255,255,0.05),inset_10px_10px_20px_rgba(0,0,0,0.3),-10px_-10px_20px_rgba(255,255,255,0.05),10px_10px_20px_rgba(0,0,0,0.3)] flex flex-col">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="relative p-2 bg-[#6366F1]/80 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
-                    <BarChart3 className="h-4 w-4 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative p-2 bg-[#4F46E5]/85 rounded-full [box-shadow:-2px_-2px_4px_rgba(255,255,255,0.5),2px_2px_4px_rgba(153,161,175,0.3)]">
+                    <BarChart3 className="h-3.5 w-3.5 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                   </div>
-                  <p className="text-[13px] font-medium text-[#94A3B8] dark:text-[#94A3B8] tracking-[0.2px] flex-1">This Week</p>
+                  <p className="text-[13px] font-medium text-[#64748B] dark:text-[#64748B] tracking-[0.2px] flex-1">This Week</p>
                 </div>
                 <div className="flex flex-col justify-end flex-1">
-                  <p className="text-[30px] font-bold text-[#6366F1] dark:text-[#6366F1] leading-[1.1] mb-3">{statistics.weekOrders}</p>
-                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8]/80 opacity-85">₱{Math.ceil(statistics.weekRevenue).toLocaleString()}</p>
+                  <p className="text-[30px] font-bold text-[#4F46E5] dark:text-[#4F46E5] leading-[1.1] mb-2">{statistics.weekOrders}</p>
+                  <p className="text-[12px] font-normal text-[#94A3B8] dark:text-[#94A3B8] opacity-80 mt-1.5">₱{Math.ceil(statistics.weekRevenue).toLocaleString()}</p>
                 </div>
               </div>
             </div>
