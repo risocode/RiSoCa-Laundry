@@ -201,24 +201,6 @@ export function ExpensesTracker() {
     load();
   };
 
-  // Filter expenses based on selected filter
-  const filteredExpenses = filterExpenses(expenses, filter);
-
-  // Calculate totals
-  const {
-    totalExpenses,
-    pendingTotal,
-    reimbursedTotal,
-    rackyTotal,
-    karayaTotal,
-    richardTotal,
-    rkrTotal,
-    pendingRacky,
-    pendingKaraya,
-    pendingRichard,
-    pendingExpenses,
-  } = calculateExpenseTotals(expenses, pendingSummary);
-
   return (
     <div className="space-y-6">
       <AddExpenseForm 
