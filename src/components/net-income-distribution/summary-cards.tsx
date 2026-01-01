@@ -34,9 +34,6 @@ export function SummaryCards({
   onDepositBankSavings,
 }: SummaryCardsProps) {
   const handleDeposit = async () => {
-    if (distributionPeriod === 'all') {
-      return;
-    }
     const amount = parseFloat(customTransferAmount);
     if (!isNaN(amount) && amount > 0 && amount <= distributionData.availableForDistribution) {
       await onDepositBankSavings(amount);

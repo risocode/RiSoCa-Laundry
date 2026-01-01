@@ -46,7 +46,7 @@ import { supabase } from '@/lib/supabase-client';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, parse, isSameMonth, isSameYear } from 'date-fns';
 import {
   type OrderData,
   type ExpenseData,
@@ -68,7 +68,8 @@ export function NetIncomeDistribution() {
   const [expenses, setExpenses] = useState<ExpenseData[]>([]);
   const [salaryPayments, setSalaryPayments] = useState<SalaryPaymentData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [distributionPeriod, setDistributionPeriod] = useState<'monthly' | 'yearly' | 'all'>('all');
+  const [distributionPeriod] = useState<'monthly' | 'yearly' | 'all'>('all'); // Always 'all' for distributions
+  const [bankSavingsHistoryFilter, setBankSavingsHistoryFilter] = useState<'monthly' | 'yearly' | 'all'>('all');
   const [bankSavingsHistory, setBankSavingsHistory] = useState<Array<{
     id: string;
     period_start: string;
@@ -132,9 +133,10 @@ export function NetIncomeDistribution() {
   const handleSaveBankSavingsDeposit = async (depositAmount: number) => {
     setSavingBankSavings(true);
     try {
+      // Always use 'all' for deposits (which uses 'custom' period type)
       const result = await saveBankSavingsDeposit(
         depositAmount,
-        distributionPeriod,
+        'all',
         user,
         toast
       );
@@ -176,6 +178,72 @@ export function NetIncomeDistribution() {
       totalBankSavingsForPeriod
     );
   }, [orders, expenses, salaryPayments, distributionPeriod, selectedOwners, existingDistributions, totalBankSavingsForPeriod]);
+
+  // Filter and group bank savings history based on selected filter
+  const filteredBankSavingsHistory = useMemo(() => {
+    if (bankSavingsHistoryFilter === 'all') {
+      return bankSavingsHistory;
+    }
+
+    // Filter by period type
+    const filtered = bankSavingsHistory.filter(record => {
+      if (bankSavingsHistoryFilter === 'monthly') {
+        return record.period_type === 'monthly';
+      } else if (bankSavingsHistoryFilter === 'yearly') {
+        return record.period_type === 'yearly';
+      }
+      return true;
+    });
+
+    return filtered;
+  }, [bankSavingsHistory, bankSavingsHistoryFilter]);
+
+  // Group filtered history by period for summary
+  const groupedBankSavingsHistory = useMemo(() => {
+    if (bankSavingsHistoryFilter === 'all') {
+      return null; // No grouping for 'all'
+    }
+
+    const groups: Record<string, typeof bankSavingsHistory> = {};
+
+    filteredBankSavingsHistory.forEach(record => {
+      const startDate = new Date(record.period_start);
+      let groupKey: string;
+
+      if (bankSavingsHistoryFilter === 'monthly') {
+        groupKey = format(startDate, 'yyyy-MM'); // Group by year-month
+      } else if (bankSavingsHistoryFilter === 'yearly') {
+        groupKey = format(startDate, 'yyyy'); // Group by year
+      } else {
+        return;
+      }
+
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(record);
+    });
+
+    // Sort groups by key (most recent first)
+    const sortedGroupKeys = Object.keys(groups).sort().reverse();
+
+    return sortedGroupKeys.map(key => {
+      const records = groups[key];
+      const total = records.reduce((sum, r) => {
+        const amount = typeof r.amount === 'number' ? r.amount : parseFloat(String(r.amount || '0'));
+        return sum + amount;
+      }, 0);
+
+      return {
+        key,
+        label: bankSavingsHistoryFilter === 'monthly'
+          ? format(new Date(records[0].period_start), 'MMMM yyyy')
+          : format(new Date(records[0].period_start), 'yyyy'),
+        records,
+        total,
+      };
+    });
+  }, [filteredBankSavingsHistory, bankSavingsHistoryFilter]);
 
   // Prepare chart data for distribution over time
   const timeSeriesData = useMemo(() => {
@@ -353,32 +421,6 @@ export function NetIncomeDistribution() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 border rounded-md p-1 bg-muted/50">
-            <Button
-              variant={distributionPeriod === 'monthly' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setDistributionPeriod('monthly')}
-              className="h-8 text-xs"
-            >
-              Monthly
-            </Button>
-            <Button
-              variant={distributionPeriod === 'yearly' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setDistributionPeriod('yearly')}
-              className="h-8 text-xs"
-            >
-              Yearly
-            </Button>
-            <Button
-              variant={distributionPeriod === 'all' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setDistributionPeriod('all')}
-              className="h-8 text-xs"
-            >
-              All Time
-            </Button>
-          </div>
           <Button
             variant="outline"
             size="sm"
@@ -409,15 +451,7 @@ export function NetIncomeDistribution() {
         selectedOwnersCount={selectedOwners.size}
         onCustomTransferAmountChange={setCustomTransferAmount}
         onShowCustomTransfer={() => {
-          if (distributionPeriod === 'all') {
-            toast({
-              variant: 'destructive',
-              title: 'Select a period',
-              description: 'Please select Monthly or Yearly period to deposit funds to bank savings.',
-            });
-          } else {
-            setShowCustomTransfer(true);
-          }
+          setShowCustomTransfer(true);
         }}
         onHideCustomTransfer={() => {
           setShowCustomTransfer(false);
@@ -708,65 +742,166 @@ export function NetIncomeDistribution() {
       {/* Bank Savings History */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Bank Savings History
-          </CardTitle>
-          <CardDescription>View all bank savings deposits by period</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Bank Savings History
+              </CardTitle>
+              <CardDescription>View all bank savings deposits by period</CardDescription>
+            </div>
+            <div className="flex items-center gap-2 border rounded-md p-1 bg-muted/50">
+              <Button
+                variant={bankSavingsHistoryFilter === 'monthly' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setBankSavingsHistoryFilter('monthly')}
+                className="h-8 text-xs"
+              >
+                Monthly
+              </Button>
+              <Button
+                variant={bankSavingsHistoryFilter === 'yearly' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setBankSavingsHistoryFilter('yearly')}
+                className="h-8 text-xs"
+              >
+                Yearly
+              </Button>
+              <Button
+                variant={bankSavingsHistoryFilter === 'all' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setBankSavingsHistoryFilter('all')}
+                className="h-8 text-xs"
+              >
+                All Time
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {bankSavingsHistory.length > 0 ? (
-            <div className="space-y-2">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {bankSavingsHistory.map((record) => {
-                    const startDate = new Date(record.period_start);
-                    const endDate = new Date(record.period_end);
-                    const periodLabel = record.period_type === 'monthly'
-                      ? format(startDate, 'MMMM yyyy')
-                      : record.period_type === 'yearly'
-                      ? format(startDate, 'yyyy')
-                      : `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd, yyyy')}`;
-                    
-                    return (
-                      <TableRow key={record.id}>
-                        <TableCell className="font-medium">{periodLabel}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {record.period_type === 'monthly' ? 'Monthly' : record.period_type === 'yearly' ? 'Yearly' : 'Custom'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-semibold text-blue-600">
-                          ₱{typeof record.amount === 'number' ? record.amount.toFixed(2) : parseFloat(record.amount || '0').toFixed(2)}
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground text-sm">
-                          {format(new Date(record.created_at), 'MMM dd, yyyy')}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-                <TableFooter>
-                  <TableRow>
-                    <TableCell colSpan={2} className="font-bold">Total Bank Savings</TableCell>
-                    <TableCell className="text-right font-bold text-blue-600">
-                      ₱{bankSavingsHistory.reduce((sum, r) => {
-                        const amount = typeof r.amount === 'number' ? r.amount : parseFloat(r.amount || '0');
-                        return sum + amount;
-                      }, 0).toFixed(2)}
-                    </TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
+          {filteredBankSavingsHistory.length > 0 ? (
+            <div className="space-y-4">
+              {groupedBankSavingsHistory ? (
+                // Grouped view (monthly or yearly)
+                <>
+                  {groupedBankSavingsHistory.map((group) => (
+                    <div key={group.key} className="space-y-2">
+                      <div className="flex items-center justify-between px-2 py-1 bg-muted/50 rounded-md">
+                        <span className="font-semibold text-sm">{group.label}</span>
+                        <span className="text-sm font-medium text-blue-600">
+                          Total: ₱{group.total.toFixed(2)}
+                        </span>
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Period</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="text-right">Date</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {group.records.map((record) => {
+                            const startDate = new Date(record.period_start);
+                            const endDate = new Date(record.period_end);
+                            const periodLabel = record.period_type === 'monthly'
+                              ? format(startDate, 'MMMM yyyy')
+                              : record.period_type === 'yearly'
+                              ? format(startDate, 'yyyy')
+                              : `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd, yyyy')}`;
+                            
+                            return (
+                              <TableRow key={record.id}>
+                                <TableCell className="font-medium">{periodLabel}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">
+                                    {record.period_type === 'monthly' ? 'Monthly' : record.period_type === 'yearly' ? 'Yearly' : 'Custom'}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right font-semibold text-blue-600">
+                                  ₱{typeof record.amount === 'number' ? record.amount.toFixed(2) : parseFloat(String(record.amount || '0')).toFixed(2)}
+                                </TableCell>
+                                <TableCell className="text-right text-muted-foreground text-sm">
+                                  {format(new Date(record.created_at), 'MMM dd, yyyy')}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ))}
+                  {/* Grand Total for grouped view */}
+                  <div className="mt-4 pt-4 border-t">
+                    <Table>
+                      <TableFooter>
+                        <TableRow>
+                          <TableCell colSpan={2} className="font-bold">
+                            Total {bankSavingsHistoryFilter === 'monthly' ? 'Monthly' : 'Yearly'} Savings
+                          </TableCell>
+                          <TableCell className="text-right font-bold text-blue-600">
+                            ₱{groupedBankSavingsHistory.reduce((sum, group) => sum + group.total, 0).toFixed(2)}
+                          </TableCell>
+                          <TableCell></TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    </Table>
+                  </div>
+                </>
+              ) : (
+                // All time view (no grouping)
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Period</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredBankSavingsHistory.map((record) => {
+                      const startDate = new Date(record.period_start);
+                      const endDate = new Date(record.period_end);
+                      const periodLabel = record.period_type === 'monthly'
+                        ? format(startDate, 'MMMM yyyy')
+                        : record.period_type === 'yearly'
+                        ? format(startDate, 'yyyy')
+                        : `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd, yyyy')}`;
+                      
+                      return (
+                        <TableRow key={record.id}>
+                          <TableCell className="font-medium">{periodLabel}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {record.period_type === 'monthly' ? 'Monthly' : record.period_type === 'yearly' ? 'Yearly' : 'Custom'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-semibold text-blue-600">
+                            ₱{typeof record.amount === 'number' ? record.amount.toFixed(2) : parseFloat(String(record.amount || '0')).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right text-muted-foreground text-sm">
+                            {format(new Date(record.created_at), 'MMM dd, yyyy')}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow>
+                      <TableCell colSpan={2} className="font-bold">Total Bank Savings</TableCell>
+                      <TableCell className="text-right font-bold text-blue-600">
+                        ₱{filteredBankSavingsHistory.reduce((sum, r) => {
+                          const amount = typeof r.amount === 'number' ? r.amount : parseFloat(String(r.amount || '0'));
+                          return sum + amount;
+                        }, 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">

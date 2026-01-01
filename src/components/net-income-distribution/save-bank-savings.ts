@@ -23,11 +23,16 @@ export async function saveBankSavingsDeposit(
     startDate = startOfYear(now);
     endDate = endOfYear(now);
     periodType = 'yearly';
+  } else if (distributionPeriod === 'all') {
+    // For all-time deposits, use a very wide date range with 'custom' type
+    startDate = new Date(2000, 0, 1); // Start from year 2000
+    endDate = now;
+    periodType = 'custom';
   } else {
     toast({
       variant: 'destructive',
       title: 'Cannot deposit',
-      description: 'Bank savings can only be deposited for monthly or yearly periods.',
+      description: 'Invalid period type for bank savings deposit.',
     });
     return { success: false };
   }
@@ -74,12 +79,28 @@ export async function saveBankSavingsDeposit(
     }
 
     // Calculate total bank savings for this period by summing all deposits
-    const { data: periodDeposits, error: sumError } = await supabase
-      .from('bank_savings')
-      .select('amount')
-      .eq('period_type', periodType)
-      .eq('period_start', format(startDate, 'yyyy-MM-dd'))
-      .eq('period_end', format(endDate, 'yyyy-MM-dd'));
+    let periodDeposits;
+    let sumError;
+    
+    if (periodType === 'custom') {
+      // For custom (all-time) deposits, sum all custom deposits regardless of dates
+      const { data, error } = await supabase
+        .from('bank_savings')
+        .select('amount')
+        .eq('period_type', 'custom');
+      periodDeposits = data;
+      sumError = error;
+    } else {
+      // For monthly/yearly, filter by period_type, period_start, and period_end
+      const { data, error } = await supabase
+        .from('bank_savings')
+        .select('amount')
+        .eq('period_type', periodType)
+        .eq('period_start', format(startDate, 'yyyy-MM-dd'))
+        .eq('period_end', format(endDate, 'yyyy-MM-dd'));
+      periodDeposits = data;
+      sumError = error;
+    }
 
     let totalAmount = depositAmount;
     if (!sumError && periodDeposits) {
@@ -89,9 +110,15 @@ export async function saveBankSavingsDeposit(
       }, 0);
     }
 
+    const depositDescription = distributionPeriod === 'all'
+      ? 'all time'
+      : distributionPeriod === 'monthly'
+      ? format(now, 'MMMM yyyy')
+      : format(now, 'yyyy');
+
     toast({
       title: 'Deposit Successful',
-      description: `₱${depositAmount.toFixed(2)} deposited to bank savings for ${distributionPeriod === 'monthly' ? format(now, 'MMMM yyyy') : format(now, 'yyyy')}.`,
+      description: `₱${depositAmount.toFixed(2)} deposited to bank savings for ${depositDescription}.`,
     });
 
     return { success: true, newTotal: totalAmount };
