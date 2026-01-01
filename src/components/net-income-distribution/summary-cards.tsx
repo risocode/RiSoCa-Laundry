@@ -35,7 +35,7 @@ export function SummaryCards({
 }: SummaryCardsProps) {
   const handleDeposit = async () => {
     const amount = parseFloat(customTransferAmount);
-    if (!isNaN(amount) && amount > 0 && amount <= distributionData.availableForDistribution) {
+    if (!isNaN(amount) && amount > 0) {
       await onDepositBankSavings(amount);
       onHideCustomTransfer();
     }
@@ -137,19 +137,18 @@ export function SummaryCards({
                       type="number"
                       step="0.01"
                       min="0"
-                      max={distributionData.availableForDistribution}
                       value={customTransferAmount}
                       onChange={(e) => onCustomTransferAmountChange(e.target.value)}
                       className="h-9 text-sm flex-1"
-                      placeholder={`Enter amount (max: ₱${distributionData.availableForDistribution.toFixed(2)})`}
-                      disabled={savingBankSavings || distributionPeriod === 'all'}
+                      placeholder="Enter amount"
+                      disabled={savingBankSavings}
                     />
                     <Button
                       size="sm"
                       variant="default"
                       onClick={handleDeposit}
                       className="h-9 text-sm"
-                      disabled={savingBankSavings || distributionPeriod === 'all'}
+                      disabled={savingBankSavings}
                     >
                       {savingBankSavings ? (
                         <>
