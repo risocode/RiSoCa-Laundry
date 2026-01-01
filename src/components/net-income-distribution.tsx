@@ -179,41 +179,25 @@ export function NetIncomeDistribution() {
     );
   }, [orders, expenses, salaryPayments, distributionPeriod, selectedOwners, existingDistributions, totalBankSavingsForPeriod]);
 
-  // Filter and group bank savings history based on selected filter
-  const filteredBankSavingsHistory = useMemo(() => {
-    if (bankSavingsHistoryFilter === 'all') {
-      return bankSavingsHistory;
-    }
-
-    // Filter by period type
-    const filtered = bankSavingsHistory.filter(record => {
-      if (bankSavingsHistoryFilter === 'monthly') {
-        return record.period_type === 'monthly';
-      } else if (bankSavingsHistoryFilter === 'yearly') {
-        return record.period_type === 'yearly';
-      }
-      return true;
-    });
-
-    return filtered;
-  }, [bankSavingsHistory, bankSavingsHistoryFilter]);
-
-  // Group filtered history by period for summary
+  // Group bank savings history by period for summary (no filtering, just grouping)
   const groupedBankSavingsHistory = useMemo(() => {
     if (bankSavingsHistoryFilter === 'all') {
       return null; // No grouping for 'all'
     }
 
+    // Group ALL records by month or year (don't filter by period_type)
     const groups: Record<string, typeof bankSavingsHistory> = {};
 
-    filteredBankSavingsHistory.forEach(record => {
+    bankSavingsHistory.forEach(record => {
       const startDate = new Date(record.period_start);
       let groupKey: string;
 
       if (bankSavingsHistoryFilter === 'monthly') {
-        groupKey = format(startDate, 'yyyy-MM'); // Group by year-month
+        // Group all records by their month (year-month)
+        groupKey = format(startDate, 'yyyy-MM');
       } else if (bankSavingsHistoryFilter === 'yearly') {
-        groupKey = format(startDate, 'yyyy'); // Group by year
+        // Group all records by their year
+        groupKey = format(startDate, 'yyyy');
       } else {
         return;
       }
@@ -243,7 +227,12 @@ export function NetIncomeDistribution() {
         total,
       };
     });
-  }, [filteredBankSavingsHistory, bankSavingsHistoryFilter]);
+  }, [bankSavingsHistory, bankSavingsHistoryFilter]);
+
+  // For grouped view, use all records (filtering is handled in grouping)
+  const filteredBankSavingsHistory = useMemo(() => {
+    return bankSavingsHistory;
+  }, [bankSavingsHistory]);
 
   // Prepare chart data for distribution over time
   const timeSeriesData = useMemo(() => {
