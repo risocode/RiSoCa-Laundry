@@ -809,7 +809,7 @@ export function NetIncomeDistribution() {
                               ? format(startDate, 'MMMM yyyy')
                               : record.period_type === 'yearly'
                               ? format(startDate, 'yyyy')
-                              : `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd, yyyy')}`;
+                              : format(startDate, 'MMMM yyyy');
                             
                             return (
                               <TableRow key={record.id}>
@@ -868,7 +868,7 @@ export function NetIncomeDistribution() {
                         ? format(startDate, 'MMMM yyyy')
                         : record.period_type === 'yearly'
                         ? format(startDate, 'yyyy')
-                        : `${format(startDate, 'MMM dd')} - ${format(endDate, 'MMM dd, yyyy')}`;
+                        : format(startDate, 'MMMM yyyy');
                       
                       return (
                         <TableRow key={record.id}>

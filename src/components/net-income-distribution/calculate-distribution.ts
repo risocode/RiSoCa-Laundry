@@ -90,9 +90,10 @@ export function calculateDistributionData(
   const availableForDistribution = netIncome - bankSavings;
 
   // Equal distribution among selected owners
+  // Distribution share is based on total net income (not after bank savings)
   const selectedCount = selectedOwners.size || 1;
   const distributionPercentage = selectedCount > 0 ? 100 / selectedCount : 0;
-  const distributionAmount = selectedCount > 0 ? availableForDistribution / selectedCount : 0;
+  const distributionAmount = selectedCount > 0 ? netIncome / selectedCount : 0;
 
   const distribution: OwnerDistribution[] = OWNERS.map((owner, index) => {
     // Racky is disabled - exclude from distribution
