@@ -90,12 +90,14 @@ export function SideAdBanners() {
     <>
       {/* Left Side Ad Banner */}
       <div
-        className="fixed left-0 top-0 h-full w-[160px] z-[998] hidden lg:flex items-start justify-center pt-20 pointer-events-none"
+        className="fixed left-0 w-[160px] z-[10] hidden lg:flex items-start justify-center pointer-events-none"
         style={{ 
-          maxHeight: '100vh',
+          top: '64px', // Start below header (header height is typically 64px)
+          height: 'calc(100vh - 64px)', // Full height minus header
+          maxHeight: 'calc(100vh - 64px)',
         }}
       >
-        <div className="sticky top-20 w-full flex justify-center pointer-events-auto">
+        <div className="sticky top-4 w-full flex justify-center pointer-events-auto">
           <ins
             id="left-side-ad"
             className="adsbygoogle"
@@ -109,12 +111,14 @@ export function SideAdBanners() {
 
       {/* Right Side Ad Banner */}
       <div
-        className="fixed right-0 top-0 h-full w-[160px] z-[998] hidden lg:flex items-start justify-center pt-20 pointer-events-none"
+        className="fixed right-0 w-[160px] z-[10] hidden lg:flex items-start justify-center pointer-events-none"
         style={{ 
-          maxHeight: '100vh',
+          top: '64px', // Start below header (header height is typically 64px)
+          height: 'calc(100vh - 64px)', // Full height minus header
+          maxHeight: 'calc(100vh - 64px)',
         }}
       >
-        <div className="sticky top-20 w-full flex justify-center pointer-events-auto">
+        <div className="sticky top-4 w-full flex justify-center pointer-events-auto">
           <ins
             id="right-side-ad"
             className="adsbygoogle"

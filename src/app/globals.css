@@ -174,7 +174,6 @@ header,
 #right-side-ad {
   display: block !important;
   visibility: visible !important;
-  position: relative !important;
 }
 
 /* Add margins to main content on desktop to account for side ads + spacing */
@@ -184,12 +183,9 @@ header,
     margin-right: calc(160px + 1.5rem) !important; /* 160px for ad + 1.5rem (24px) spacing */
   }
   
-  /* Ensure side ads are properly positioned */
-  #left-side-ad,
-  #right-side-ad {
-    position: relative !important;
-    z-index: 998 !important;
-  }
+  /* Ensure side ads are properly positioned below header */
+  /* Side ad containers are already positioned with top: 64px in the component */
+  /* z-index is set to 10 in the component, which is below header (10000) */
 }
 
 /* Add padding to main content to account for fixed header */
