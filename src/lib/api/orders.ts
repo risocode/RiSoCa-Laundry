@@ -204,6 +204,17 @@ export async function fetchOrderForCustomer(orderId: string, name: string) {
             }
           }
           
+          // If RPC didn't return found_items, fetch it separately
+          let foundItems = order.found_items;
+          if (foundItems === undefined || foundItems === null) {
+            const { data: orderData } = await supabase
+              .from('orders')
+              .select('found_items')
+              .eq('id', order.id)
+              .maybeSingle();
+            foundItems = orderData?.found_items;
+          }
+          
           return {
             data: {
               id: order.id,
@@ -224,7 +235,7 @@ export async function fetchOrderForCustomer(orderId: string, name: string) {
               order_status_history: statusHistory,
               order_type: order.order_type || 'customer',
               assigned_employee_id: order.assigned_employee_id ?? null,
-              found_items: Array.isArray(order.found_items) ? order.found_items : null,
+              found_items: Array.isArray(foundItems) && foundItems.length > 0 ? foundItems : (foundItems !== undefined ? foundItems : null),
             },
             error: null,
           };
