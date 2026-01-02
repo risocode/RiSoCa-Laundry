@@ -115,6 +115,77 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased flex flex-col h-screen overflow-hidden">
+        {/* Prevent aria-hidden on body element - accessibility fix */}
+        {/* Suppress non-critical third-party ad network errors */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                if (typeof window === 'undefined') return;
+                
+                // Monitor and prevent aria-hidden from being set on body
+                const body = document.body;
+                if (!body) return;
+                
+                // Remove aria-hidden if it exists
+                if (body.hasAttribute('aria-hidden')) {
+                  body.removeAttribute('aria-hidden');
+                }
+                
+                // Use MutationObserver to prevent aria-hidden from being set on body
+                const observer = new MutationObserver(function(mutations) {
+                  mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'aria-hidden') {
+                      if (body.getAttribute('aria-hidden') === 'true') {
+                        body.removeAttribute('aria-hidden');
+                        console.warn('Removed aria-hidden from body element - this violates accessibility guidelines');
+                      }
+                    }
+                  });
+                });
+                
+                observer.observe(body, {
+                  attributes: true,
+                  attributeFilter: ['aria-hidden']
+                });
+                
+                // Suppress non-critical third-party ad network errors
+                // These errors come from Google AdSense's ad partners and don't affect site functionality
+                const originalError = console.error;
+                console.error = function(...args) {
+                  const errorMessage = args.join(' ');
+                  // Suppress DNS resolution errors from third-party ad networks
+                  if (
+                    errorMessage.includes('ERR_NAME_NOT_RESOLVED') ||
+                    errorMessage.includes('dsp.360yield.com') ||
+                    errorMessage.includes('net::ERR_NAME_NOT_RESOLVED') ||
+                    (errorMessage.includes('Failed to load resource') && errorMessage.includes('dsp'))
+                  ) {
+                    // Silently ignore - these are non-critical ad network errors
+                    return;
+                  }
+                  // Log all other errors normally
+                  originalError.apply(console, args);
+                };
+                
+                // Also suppress network errors in window error handler
+                window.addEventListener('error', function(event) {
+                  if (
+                    event.message &&
+                    (
+                      event.message.includes('ERR_NAME_NOT_RESOLVED') ||
+                      event.message.includes('dsp.360yield.com') ||
+                      event.message.includes('net::ERR_NAME_NOT_RESOLVED')
+                    )
+                  ) {
+                    event.preventDefault();
+                    return false;
+                  }
+                }, true);
+              })();
+            `,
+          }}
+        />
         <PromoProviderWrapper>
           {children}
           <Toaster />

@@ -220,6 +220,13 @@ export default function OrderStatusPage() {
       }
       
       setSearchedOrder(mapped);
+      // Scroll to order details after a short delay to ensure DOM is updated
+      setTimeout(() => {
+        const orderDetailsSection = document.getElementById('order-details-section');
+        if (orderDetailsSection) {
+          orderDetailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
     } else {
       setSearchedOrder(null);
     }
@@ -334,7 +341,16 @@ export default function OrderStatusPage() {
                         <button
                           key={order.id}
                           type="button"
-                          onClick={() => setSelectedOrder(order)}
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            // Scroll to order details after a short delay
+                            setTimeout(() => {
+                              const orderDetailsSection = document.getElementById('order-details-section');
+                              if (orderDetailsSection) {
+                                orderDetailsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              }
+                            }, 100);
+                          }}
                           className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${
                             selectedOrder?.id === order.id
                               ? 'border-primary bg-primary/5 shadow-md'
@@ -506,7 +522,10 @@ export default function OrderStatusPage() {
               {(selectedOrder || (searchAttempted && searchedOrder)) && (() => {
                 const currentOrder = selectedOrder || searchedOrder!;
                 return (
-                  <div className="pt-6 border-t space-y-4">
+                  <div 
+                    id="order-details-section"
+                    className="pt-6 border-t space-y-4"
+                  >
                     <OrderStatusTracker order={currentOrder} />
                     <div className="flex flex-col sm:flex-row gap-3">
                       {user && currentOrder.userId === user.id && (

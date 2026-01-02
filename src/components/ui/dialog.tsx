@@ -6,6 +6,8 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+// Configure Dialog to prevent aria-hidden on body element
+// Radix UI sets aria-hidden on siblings, but we prevent it on body via MutationObserver in layout.tsx
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
