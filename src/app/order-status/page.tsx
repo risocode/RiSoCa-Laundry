@@ -176,7 +176,23 @@ export default function OrderStatusPage() {
     setLoading(true);
     setSearchAttempted(false);
 
-    const { data, error } = await fetchOrderForCustomer(orderId.trim(), name.trim());
+    // Normalize order ID: if it's just a number, prepend "RKR"
+    let normalizedOrderId = orderId.trim();
+    // Check if input is just digits (with optional leading zeros)
+    if (/^\d+$/.test(normalizedOrderId)) {
+      // It's just a number, prepend "RKR" and pad with zeros if needed
+      const num = parseInt(normalizedOrderId, 10);
+      normalizedOrderId = `RKR${String(num).padStart(3, '0')}`;
+    } else if (!normalizedOrderId.toUpperCase().startsWith('RKR')) {
+      // If it doesn't start with RKR, try to extract number and prepend RKR
+      const numMatch = normalizedOrderId.match(/\d+/);
+      if (numMatch) {
+        const num = parseInt(numMatch[0], 10);
+        normalizedOrderId = `RKR${String(num).padStart(3, '0')}`;
+      }
+    }
+
+    const { data, error } = await fetchOrderForCustomer(normalizedOrderId, name.trim());
     if (error) {
       console.error('Order lookup failed', error);
       toast({ variant: 'destructive', title: 'Search failed', description: 'Could not search for your order.' });
@@ -468,19 +484,22 @@ export default function OrderStatusPage() {
                 </div>
                 <form onSubmit={handleSearch} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                      <div className="space-y-2">
                       <Label htmlFor="orderId" className="text-sm font-medium">Order ID</Label>
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="orderId"
-                          placeholder="e.g., RKR001"
+                          placeholder="e.g., 123 or RKR123"
                           value={orderId}
                           onChange={(e) => setOrderId(e.target.value)}
                           className="pl-10 h-11"
                           disabled={loading}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Enter just the number (e.g., 123) or full ID (e.g., RKR123)
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="name" className="text-sm font-medium">Customer Name</Label>
@@ -846,7 +865,7 @@ export default function OrderStatusPage() {
                     <div className="flex-1">
                       <h3 className="font-bold text-base mb-2">Finding Your Order ID</h3>
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Your Order ID is provided when you place an order. It typically starts with "RKR" followed by numbers. You can find it in your order confirmation email or on your account's order history.
+                        Your Order ID is provided when you place an order. You can enter just the number (e.g., 123) or the full ID (e.g., RKR123). You can find it in your order confirmation email or on your account's order history.
                       </p>
                     </div>
                   </div>

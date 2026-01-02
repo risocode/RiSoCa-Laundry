@@ -143,11 +143,26 @@ export async function fetchOrderWithHistory(orderId: string) {
  * then falls back to direct query if RPC is not available.
  */
 export async function fetchOrderForCustomer(orderId: string, name: string) {
-  const trimmedOrderId = orderId.trim();
+  let trimmedOrderId = orderId.trim();
   const trimmedName = name.trim();
 
   if (!trimmedOrderId || !trimmedName) {
     return { data: null, error: null };
+  }
+
+  // Normalize order ID: if it's just a number, prepend "RKR"
+  // Check if input is just digits (with optional leading zeros)
+  if (/^\d+$/.test(trimmedOrderId)) {
+    // It's just a number, prepend "RKR" and pad with zeros if needed
+    const num = parseInt(trimmedOrderId, 10);
+    trimmedOrderId = `RKR${String(num).padStart(3, '0')}`;
+  } else if (!trimmedOrderId.toUpperCase().startsWith('RKR')) {
+    // If it doesn't start with RKR, try to extract number and prepend RKR
+    const numMatch = trimmedOrderId.match(/\d+/);
+    if (numMatch) {
+      const num = parseInt(numMatch[0], 10);
+      trimmedOrderId = `RKR${String(num).padStart(3, '0')}`;
+    }
   }
 
   try {
