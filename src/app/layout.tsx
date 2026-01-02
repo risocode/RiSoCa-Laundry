@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import { CookieConsentBanner } from '@/components/cookie-consent-banner';
 import { PromoProviderWrapper } from '@/components/promo-provider-wrapper';
+import { AdBanner } from '@/components/ad-banner';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -219,86 +220,127 @@ export default function RootLayout({
                 });
                 
                 // Prevent AdSense Auto Ads from causing layout shift
-                // Monitor for ad insertion and make them fixed position below header
-                function preventAdLayoutShift() {
+                // Move in-page ads into the ad banner container
+                // Allow overlay formats (anchor, vignette) to work normally
+                function manageAdPlacement() {
                   // Find header height (default to 64px for h-16)
                   const header = document.querySelector('header');
                   const headerHeight = header ? header.offsetHeight : 64;
                   
-                  // Find all AdSense ads
-                  const ads = document.querySelectorAll('ins.adsbygoogle');
+                  // Find ad banner container
+                  const adContainer = document.getElementById('ad-banner-container');
+                  
+                  // Find all AdSense ads that are direct children of body
+                  const ads = document.querySelectorAll('body > ins.adsbygoogle');
                   ads.forEach(function(ad) {
-                    // Make ads fixed position so they don't push content down
-                    // Position them below the header
-                    if (ad.parentElement === document.body || ad.parentElement === null) {
-                      ad.style.position = 'fixed';
-                      ad.style.top = headerHeight + 'px';
-                      ad.style.left = '0';
-                      ad.style.width = '100%';
-                      ad.style.zIndex = '998';
-                      ad.style.margin = '0';
-                      ad.style.padding = '0';
-                      ad.style.border = 'none';
-                      
-                      // Only show if ad is filled
+                    // Only process ads that are direct children of body
+                    if (ad.parentElement === document.body) {
                       const adStatus = ad.getAttribute('data-ad-status');
+                      
+                      // Check if this is an overlay format (anchor or vignette)
+                      const isAnchorAd = ad.hasAttribute('data-anchor-type') || ad.hasAttribute('data-anchor-status');
+                      const isVignette = ad.hasAttribute('data-vignette-status');
+                      
+                      // Allow overlay formats to work normally - don't move them
+                      if (isAnchorAd || isVignette) {
+                        // Ensure proper z-index for overlay ads
+                        if (isAnchorAd) {
+                          ad.style.zIndex = '997';
+                        } else if (isVignette) {
+                          ad.style.zIndex = '996';
+                        }
+                        return; // Don't process overlay ads
+                      }
+                      
+                      // Hide unfilled in-page ads
                       if (adStatus !== 'filled') {
                         ad.style.display = 'none';
-                      } else {
+                        return;
+                      }
+                      
+                      // Move filled in-page ads to the ad banner container if it exists
+                      if (adContainer && !adContainer.contains(ad)) {
+                        // Remove any positioning styles
+                        ad.style.position = '';
+                        ad.style.top = '';
+                        ad.style.left = '';
+                        ad.style.width = '';
+                        ad.style.zIndex = '';
+                        ad.style.margin = '';
+                        ad.style.padding = '';
+                        ad.style.border = '';
                         ad.style.display = 'block';
+                        
+                        // Move ad to container
+                        adContainer.appendChild(ad);
+                      } else if (!adContainer) {
+                        // If container doesn't exist yet, keep ad hidden
+                        ad.style.display = 'none';
                       }
                     }
                   });
                 }
                 
                 // Run immediately
-                preventAdLayoutShift();
+                manageAdPlacement();
                 
                 // Monitor for new ads being inserted
                 const adObserver = new MutationObserver(function(mutations) {
+                  let shouldUpdate = false;
                   mutations.forEach(function(mutation) {
                     mutation.addedNodes.forEach(function(node) {
                       if (node.nodeType === 1) { // Element node
                         if (node.tagName === 'INS' && node.classList.contains('adsbygoogle')) {
-                          preventAdLayoutShift();
-                        }
-                        // Also check for ads inside added nodes
-                        const ads = node.querySelectorAll && node.querySelectorAll('ins.adsbygoogle');
-                        if (ads && ads.length > 0) {
-                          preventAdLayoutShift();
+                          shouldUpdate = true;
                         }
                       }
                     });
-                  });
-                });
-                
-                // Observe body for ad insertions
-                adObserver.observe(document.body, {
-                  childList: true,
-                  subtree: true
-                });
-                
-                // Also observe when ad status changes
-                const statusObserver = new MutationObserver(function(mutations) {
-                  mutations.forEach(function(mutation) {
+                    // Also check for status changes
                     if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
-                      preventAdLayoutShift();
+                      shouldUpdate = true;
                     }
                   });
+                  if (shouldUpdate) {
+                    manageAdPlacement();
+                  }
                 });
                 
-                // Observe all ads for status changes
-                document.querySelectorAll('ins.adsbygoogle').forEach(function(ad) {
-                  statusObserver.observe(ad, {
-                    attributes: true,
-                    attributeFilter: ['data-ad-status']
-                  });
+                // Observe body for ad insertions and status changes
+                adObserver.observe(document.body, {
+                  childList: true,
+                  subtree: true,
+                  attributes: true,
+                  attributeFilter: ['data-ad-status']
                 });
+                
+                // Also observe the ad container when it's created
+                const containerObserver = new MutationObserver(function() {
+                  manageAdPlacement();
+                });
+                
+                // Check for container periodically (in case it's created later)
+                const checkContainer = setInterval(function() {
+                  const adContainer = document.getElementById('ad-banner-container');
+                  if (adContainer) {
+                    containerObserver.observe(adContainer, {
+                      childList: true,
+                      subtree: true
+                    });
+                    manageAdPlacement();
+                    clearInterval(checkContainer);
+                  }
+                }, 100);
+                
+                // Clean up after 10 seconds
+                setTimeout(function() {
+                  clearInterval(checkContainer);
+                }, 10000);
               })();
             `,
           }}
         />
         <PromoProviderWrapper>
+          <AdBanner />
           {children}
           <Toaster />
           <CookieConsentBanner />

@@ -91,27 +91,17 @@ body {
 }
 
 /* Prevent AdSense Auto Ads from causing layout shift */
-/* Make top ads overlay without pushing content down - position below header */
+/* Hide ads that are direct children of body - they will be moved to ad banner */
 body > ins.adsbygoogle {
-  position: fixed !important;
-  top: 64px !important; /* Below header (h-16 = 64px) */
-  left: 0 !important;
-  width: 100% !important;
-  z-index: 998 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
   display: none !important;
 }
 
-/* Show ad only when it's filled and ready, but keep it fixed so it doesn't push content */
-ins.adsbygoogle[data-ad-status="filled"] {
+/* Style ads in the ad banner container */
+#ad-banner-container ins.adsbygoogle {
   display: block !important;
-  position: fixed !important;
-  top: 64px !important; /* Below header */
-  left: 0 !important;
+  margin: 0 auto !important;
   width: 100% !important;
-  z-index: 998 !important;
+  max-width: 100% !important;
 }
 
 /* Hide unfilled ads completely to prevent layout shift */
@@ -123,7 +113,21 @@ ins.adsbygoogle[data-ad-status="done"]:not([data-ad-status="filled"]) {
   padding: 0 !important;
 }
 
-/* Ensure header stays on top */
+/* Handle overlay formats (anchor ads, vignettes) - allow them but position correctly */
+/* Anchor ads (top/bottom sticky) */
+ins.adsbygoogle[data-anchor-type],
+ins.adsbygoogle[data-anchor-status] {
+  /* Allow anchor ads to work normally, but ensure they don't conflict with banner */
+  z-index: 997 !important; /* Below banner (999) and header (1000) */
+}
+
+/* Vignette ads (full-screen overlay) */
+ins.adsbygoogle[data-vignette-status] {
+  /* Vignettes should work normally */
+  z-index: 996 !important; /* Below banner */
+}
+
+/* Ensure header and ad banner stay on top */
 header,
 [role="banner"] {
   position: relative;
@@ -131,45 +135,17 @@ header,
   background: hsl(var(--background));
 }
 
-/* Prevent AdSense Auto Ads from causing layout shift */
-/* Make top ads overlay without pushing content down - position below header */
-body > ins.adsbygoogle {
-  position: fixed !important;
-  top: 64px !important; /* Below header (h-16 = 64px) - JS will adjust dynamically */
-  left: 0 !important;
-  width: 100% !important;
-  z-index: 998 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  display: none !important;
+/* Ad banner should be above overlay ads but below header */
+#ad-banner-container,
+[id*="ad-banner"] {
+  z-index: 999 !important;
 }
 
-/* Show ad only when it's filled and ready, but keep it fixed so it doesn't push content */
-ins.adsbygoogle[data-ad-status="filled"] {
-  display: block !important;
-  position: fixed !important;
-  top: 64px !important; /* Below header - JS will adjust dynamically */
-  left: 0 !important;
-  width: 100% !important;
-  z-index: 998 !important;
-}
-
-/* Hide unfilled ads completely to prevent layout shift */
-ins.adsbygoogle[data-ad-status="unfilled"],
-ins.adsbygoogle[data-ad-status="done"]:not([data-ad-status="filled"]) {
-  display: none !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* Ensure header stays on top */
-header,
-[role="banner"] {
-  position: relative;
-  z-index: 1000;
-  background: hsl(var(--background));
+/* Add padding to main content to account for ad banner (only on desktop) */
+@media (min-width: 768px) {
+  main {
+    padding-top: 0 !important; /* Will be adjusted by JS if ad is visible */
+  }
 }
 
 /* Smooth transitions for responsive design - only for layout elements */
