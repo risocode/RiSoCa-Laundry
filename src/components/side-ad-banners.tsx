@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getAdSlot } from '@/lib/ads-config';
 
 export function SideAdBanners() {
   const [isDesktop, setIsDesktop] = useState(false);
@@ -141,7 +142,7 @@ export function SideAdBanners() {
             className="adsbygoogle"
             style={{ display: 'block', width: '160px', height: '600px', minHeight: '600px' }}
             data-ad-client="ca-pub-1482729173853463"
-            data-ad-slot="" // TODO: Add your left ad slot ID here (e.g., "1234567890")
+            data-ad-slot={getAdSlot('LEFT_SIDEBAR')}
             data-ad-format="vertical"
             data-full-width-responsive="false"
           />
@@ -164,7 +165,7 @@ export function SideAdBanners() {
             className="adsbygoogle"
             style={{ display: 'block', width: '160px', height: '600px', minHeight: '600px' }}
             data-ad-client="ca-pub-1482729173853463"
-            data-ad-slot="" // TODO: Add your right ad slot ID here (e.g., "0987654321")
+            data-ad-slot={getAdSlot('RIGHT_SIDEBAR')}
             data-ad-format="vertical"
             data-full-width-responsive="false"
           />

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronUp, ChevronDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getAdSlot } from '@/lib/ads-config';
 
 export function MobileAdBanner() {
   const [isVisible, setIsVisible] = useState(false);
@@ -168,7 +169,7 @@ export function MobileAdBanner() {
             className="adsbygoogle"
             style={{ display: 'block', width: '100%', height: '50px' }}
             data-ad-client="ca-pub-1482729173853463"
-            data-ad-slot=""
+            data-ad-slot={getAdSlot('MOBILE_TOP_BANNER')}
             data-ad-format="horizontal"
             data-full-width-responsive="true"
           />
