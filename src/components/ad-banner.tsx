@@ -1,11 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ChevronUp } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
 
 export function AdBanner() {
+  // This component is now hidden - we only want overlay/popup ads
+  // All in-page ads are hidden to prevent layout shift
+  useEffect(() => {
+    // Hide the ad banner container completely
+    const adContainer = document.getElementById('ad-banner-container');
+    if (adContainer) {
+      adContainer.style.display = 'none';
+      adContainer.style.height = '0';
+      adContainer.style.width = '0';
+      adContainer.style.position = 'fixed';
+      adContainer.style.top = '-9999px';
+      adContainer.style.left = '-9999px';
+      adContainer.style.visibility = 'hidden';
+    }
+  }, []);
+
+  // Don't render anything - we only want overlay ads
+  return null;
   const [isVisible, setIsVisible] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(64);

@@ -219,16 +219,26 @@ export default function RootLayout({
                   }
                 });
                 
-                // Prevent AdSense Auto Ads from causing layout shift
-                // Move in-page ads into the ad banner container
-                // Allow overlay formats (anchor, vignette) to work normally
+                // Prevent ALL in-page ads from affecting layout
+                // ONLY allow overlay/popup formats (anchor, vignette)
                 function manageAdPlacement() {
-                  // Find header height (default to 64px for h-16)
+                  // Ensure header is fixed and never moves
                   const header = document.querySelector('header');
-                  const headerHeight = header ? header.offsetHeight : 64;
-                  
-                  // Find ad banner container
-                  const adContainer = document.getElementById('ad-banner-container');
+                  if (header) {
+                    header.style.position = 'fixed';
+                    header.style.top = '0';
+                    header.style.left = '0';
+                    header.style.right = '0';
+                    header.style.zIndex = '10000';
+                    header.style.width = '100%';
+                    
+                    // Add padding to main content to account for fixed header
+                    const headerHeight = header.offsetHeight;
+                    const main = document.querySelector('main');
+                    if (main) {
+                      main.style.paddingTop = headerHeight + 'px';
+                    }
+                  }
                   
                   // Find all AdSense ads that are direct children of body
                   const ads = document.querySelectorAll('body > ins.adsbygoogle');
@@ -241,44 +251,50 @@ export default function RootLayout({
                       const isAnchorAd = ad.hasAttribute('data-anchor-type') || ad.hasAttribute('data-anchor-status');
                       const isVignette = ad.hasAttribute('data-vignette-status');
                       
-                      // Allow overlay formats to work normally - don't move them
+                      // ONLY allow overlay formats - hide everything else
                       if (isAnchorAd || isVignette) {
                         // Ensure proper z-index for overlay ads
                         if (isAnchorAd) {
                           ad.style.zIndex = '997';
+                          ad.style.position = 'fixed';
                         } else if (isVignette) {
                           ad.style.zIndex = '996';
+                          ad.style.position = 'fixed';
                         }
-                        return; // Don't process overlay ads
+                        // Only show if filled
+                        if (adStatus === 'filled') {
+                          ad.style.display = 'block';
+                        } else {
+                          ad.style.display = 'none';
+                        }
+                        return; // Allow overlay ads
                       }
                       
-                      // Hide unfilled in-page ads
-                      if (adStatus !== 'filled') {
-                        ad.style.display = 'none';
-                        return;
-                      }
-                      
-                      // Move filled in-page ads to the ad banner container if it exists
-                      if (adContainer && !adContainer.contains(ad)) {
-                        // Remove any positioning styles
-                        ad.style.position = '';
-                        ad.style.top = '';
-                        ad.style.left = '';
-                        ad.style.width = '';
-                        ad.style.zIndex = '';
-                        ad.style.margin = '';
-                        ad.style.padding = '';
-                        ad.style.border = '';
-                        ad.style.display = 'block';
-                        
-                        // Move ad to container
-                        adContainer.appendChild(ad);
-                      } else if (!adContainer) {
-                        // If container doesn't exist yet, keep ad hidden
-                        ad.style.display = 'none';
-                      }
+                      // Hide ALL in-page ads completely - they affect layout
+                      ad.style.display = 'none';
+                      ad.style.position = 'fixed';
+                      ad.style.top = '-9999px';
+                      ad.style.left = '-9999px';
+                      ad.style.width = '0';
+                      ad.style.height = '0';
+                      ad.style.margin = '0';
+                      ad.style.padding = '0';
+                      ad.style.visibility = 'hidden';
+                      ad.style.overflow = 'hidden';
                     }
                   });
+                  
+                  // Hide ad banner container completely
+                  const adContainer = document.getElementById('ad-banner-container');
+                  if (adContainer) {
+                    adContainer.style.display = 'none';
+                    adContainer.style.height = '0';
+                    adContainer.style.width = '0';
+                    adContainer.style.position = 'fixed';
+                    adContainer.style.top = '-9999px';
+                    adContainer.style.left = '-9999px';
+                    adContainer.style.visibility = 'hidden';
+                  }
                 }
                 
                 // Run immediately

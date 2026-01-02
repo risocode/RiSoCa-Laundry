@@ -90,62 +90,90 @@ body {
   background-size: 8px 8px;
 }
 
-/* Prevent AdSense Auto Ads from causing layout shift */
-/* Hide ads that are direct children of body - they will be moved to ad banner */
+/* Prevent ALL AdSense Auto Ads from affecting page layout */
+/* Hide ALL in-page ads - only allow overlay/popup formats */
 body > ins.adsbygoogle {
   display: none !important;
+  position: fixed !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }
 
-/* Style ads in the ad banner container */
-#ad-banner-container ins.adsbygoogle {
-  display: block !important;
-  margin: 0 auto !important;
-  width: 100% !important;
-  max-width: 100% !important;
+/* Hide all in-page ad formats completely */
+ins.adsbygoogle:not([data-anchor-type]):not([data-anchor-status]):not([data-vignette-status]) {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: fixed !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  visibility: hidden !important;
 }
 
-/* Hide unfilled ads completely to prevent layout shift */
+/* Hide unfilled ads completely */
 ins.adsbygoogle[data-ad-status="unfilled"],
 ins.adsbygoogle[data-ad-status="done"]:not([data-ad-status="filled"]) {
   display: none !important;
   height: 0 !important;
+  width: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
 }
 
-/* Handle overlay formats (anchor ads, vignettes) - allow them but position correctly */
-/* Anchor ads (top/bottom sticky) */
+/* ONLY allow overlay formats (anchor ads, vignettes) - these don't affect layout */
+/* Anchor ads (top/bottom sticky) - overlay format */
 ins.adsbygoogle[data-anchor-type],
 ins.adsbygoogle[data-anchor-status] {
-  /* Allow anchor ads to work normally, but ensure they don't conflict with banner */
-  z-index: 997 !important; /* Below banner (999) and header (1000) */
+  display: block !important;
+  position: fixed !important;
+  z-index: 997 !important; /* Below header */
+  /* Anchor ads are already overlay, so they don't affect layout */
 }
 
-/* Vignette ads (full-screen overlay) */
+/* Vignette ads (full-screen overlay) - popup format */
 ins.adsbygoogle[data-vignette-status] {
-  /* Vignettes should work normally */
-  z-index: 996 !important; /* Below banner */
+  display: block !important;
+  position: fixed !important;
+  z-index: 996 !important; /* Below header */
+  /* Vignettes are already overlay, so they don't affect layout */
 }
 
-/* Ensure header and ad banner stay on top */
+/* Ensure header is ALWAYS fixed at top and never moves */
 header,
 [role="banner"] {
-  position: relative;
-  z-index: 1000;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 10000 !important; /* Always on top */
   background: hsl(var(--background));
+  width: 100% !important;
 }
 
-/* Ad banner should be above overlay ads but below header */
+/* Hide ad banner container - we don't want in-page ads */
 #ad-banner-container,
 [id*="ad-banner"] {
-  z-index: 999 !important;
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: fixed !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  visibility: hidden !important;
 }
 
-/* Add padding to main content to account for ad banner (only on desktop) */
-@media (min-width: 768px) {
-  main {
-    padding-top: 0 !important; /* Will be adjusted by JS if ad is visible */
-  }
+/* Add padding to main content to account for fixed header */
+/* Header is fixed, so content needs padding to not be hidden behind it */
+/* JS will dynamically adjust this based on actual header height */
+main {
+  padding-top: 64px !important; /* Default header height (h-16) */
 }
 
 /* Smooth transitions for responsive design - only for layout elements */
