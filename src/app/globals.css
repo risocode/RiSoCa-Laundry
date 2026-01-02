@@ -177,11 +177,11 @@ header,
   position: relative !important;
 }
 
-/* Add margins to main content on desktop to account for side ads */
+/* Add margins to main content on desktop to account for side ads + spacing */
 @media (min-width: 1024px) {
   main {
-    margin-left: 160px !important;
-    margin-right: 160px !important;
+    margin-left: calc(160px + 1.5rem) !important; /* 160px for ad + 1.5rem (24px) spacing */
+    margin-right: calc(160px + 1.5rem) !important; /* 160px for ad + 1.5rem (24px) spacing */
   }
   
   /* Ensure side ads are properly positioned */
