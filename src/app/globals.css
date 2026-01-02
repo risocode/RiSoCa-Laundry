@@ -171,9 +171,17 @@ header,
 
 /* Allow side ad banners to be visible */
 #left-side-ad,
-#right-side-ad {
+#right-side-ad,
+#right-side-ad-container {
   display: block !important;
   visibility: visible !important;
+}
+
+/* Ensure right side ad container is visible on desktop */
+@media (min-width: 1024px) {
+  #right-side-ad-container {
+    display: flex !important;
+  }
 }
 
 /* Add margins to main content on desktop to account for side ads + spacing */

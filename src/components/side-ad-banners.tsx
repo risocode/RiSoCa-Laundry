@@ -24,11 +24,10 @@ export function SideAdBanners() {
   useEffect(() => {
     if (!isDesktop) return;
 
-    // Wait for AdSense script to load
-    const initAds = () => {
+    // Initialize left ad
+    const initLeftAd = () => {
       if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
         try {
-          // Initialize left ad
           const leftAd = document.getElementById('left-side-ad');
           if (leftAd && !leftAdLoaded && leftAd.getAttribute('data-adsbygoogle-status') === null) {
             try {
@@ -38,20 +37,51 @@ export function SideAdBanners() {
               // Ad already initialized or error
             }
           }
+        } catch (error) {
+          console.error('Error initializing left ad:', error);
+        }
+      }
+    };
 
-          // Initialize right ad
+    // Initialize right ad
+    const initRightAd = () => {
+      if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
+        try {
           const rightAd = document.getElementById('right-side-ad');
-          if (rightAd && !rightAdLoaded && rightAd.getAttribute('data-adsbygoogle-status') === null) {
-            try {
-              ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
-              setRightAdLoaded(true);
-            } catch (e) {
-              // Ad already initialized or error
+          if (rightAd) {
+            const status = rightAd.getAttribute('data-adsbygoogle-status');
+            if (!rightAdLoaded && (status === null || status === 'unfilled')) {
+              try {
+                // Force re-initialization if needed
+                if (status === 'unfilled') {
+                  rightAd.removeAttribute('data-adsbygoogle-status');
+                }
+                ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+                setRightAdLoaded(true);
+              } catch (e) {
+                // Ad already initialized or error - retry after delay
+                if (!rightAdLoaded) {
+                  setTimeout(() => {
+                    initRightAd();
+                  }, 1000);
+                }
+              }
             }
           }
         } catch (error) {
-          console.error('Error initializing side ads:', error);
+          console.error('Error initializing right ad:', error);
+          // Retry after delay
+          if (!rightAdLoaded) {
+            setTimeout(() => {
+              initRightAd();
+            }, 1000);
+          }
         }
+      } else if (!rightAdLoaded) {
+        // AdSense not loaded yet, retry
+        setTimeout(() => {
+          initRightAd();
+        }, 500);
       }
     };
 
@@ -59,12 +89,20 @@ export function SideAdBanners() {
     const timeoutId = setTimeout(() => {
       // Check if AdSense is already loaded
       if ((window as any).adsbygoogle) {
-        initAds();
+        // Initialize left ad first
+        initLeftAd();
+        // Initialize right ad after a small delay to ensure they're separate
+        setTimeout(() => {
+          initRightAd();
+        }, 100);
       } else {
         // Wait for AdSense to load
         const checkInterval = setInterval(() => {
           if ((window as any).adsbygoogle) {
-            initAds();
+            initLeftAd();
+            setTimeout(() => {
+              initRightAd();
+            }, 100);
             clearInterval(checkInterval);
           }
         }, 100);
@@ -101,8 +139,9 @@ export function SideAdBanners() {
           <ins
             id="left-side-ad"
             className="adsbygoogle"
-            style={{ display: 'block', width: '160px', height: '600px' }}
+            style={{ display: 'block', width: '160px', height: '600px', minHeight: '600px' }}
             data-ad-client="ca-pub-1482729173853463"
+            data-ad-slot="" // TODO: Add your left ad slot ID here (e.g., "1234567890")
             data-ad-format="vertical"
             data-full-width-responsive="false"
           />
@@ -111,6 +150,7 @@ export function SideAdBanners() {
 
       {/* Right Side Ad Banner */}
       <div
+        id="right-side-ad-container"
         className="fixed right-0 w-[160px] z-[10] hidden lg:flex items-start justify-center pointer-events-none"
         style={{ 
           top: '64px', // Start below header (header height is typically 64px)
@@ -122,8 +162,9 @@ export function SideAdBanners() {
           <ins
             id="right-side-ad"
             className="adsbygoogle"
-            style={{ display: 'block', width: '160px', height: '600px' }}
+            style={{ display: 'block', width: '160px', height: '600px', minHeight: '600px' }}
             data-ad-client="ca-pub-1482729173853463"
+            data-ad-slot="" // TODO: Add your right ad slot ID here (e.g., "0987654321")
             data-ad-format="vertical"
             data-full-width-responsive="false"
           />
