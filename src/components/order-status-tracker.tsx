@@ -196,6 +196,7 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
             })),
             orderType: updatedOrder.order_type || 'customer',
             assignedEmployeeId: updatedOrder.assigned_employee_id ?? null,
+            foundItems: Array.isArray(updatedOrder.found_items) && updatedOrder.found_items.length > 0 ? updatedOrder.found_items : undefined,
           };
           
           if (mapped.status !== previousStatusRef.current) {
