@@ -90,6 +90,88 @@ body {
   background-size: 8px 8px;
 }
 
+/* Prevent AdSense Auto Ads from causing layout shift */
+/* Make top ads overlay without pushing content down - position below header */
+body > ins.adsbygoogle {
+  position: fixed !important;
+  top: 64px !important; /* Below header (h-16 = 64px) */
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 998 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  display: none !important;
+}
+
+/* Show ad only when it's filled and ready, but keep it fixed so it doesn't push content */
+ins.adsbygoogle[data-ad-status="filled"] {
+  display: block !important;
+  position: fixed !important;
+  top: 64px !important; /* Below header */
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 998 !important;
+}
+
+/* Hide unfilled ads completely to prevent layout shift */
+ins.adsbygoogle[data-ad-status="unfilled"],
+ins.adsbygoogle[data-ad-status="done"]:not([data-ad-status="filled"]) {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure header stays on top */
+header,
+[role="banner"] {
+  position: relative;
+  z-index: 1000;
+  background: hsl(var(--background));
+}
+
+/* Prevent AdSense Auto Ads from causing layout shift */
+/* Make top ads overlay without pushing content down - position below header */
+body > ins.adsbygoogle {
+  position: fixed !important;
+  top: 64px !important; /* Below header (h-16 = 64px) - JS will adjust dynamically */
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 998 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  display: none !important;
+}
+
+/* Show ad only when it's filled and ready, but keep it fixed so it doesn't push content */
+ins.adsbygoogle[data-ad-status="filled"] {
+  display: block !important;
+  position: fixed !important;
+  top: 64px !important; /* Below header - JS will adjust dynamically */
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 998 !important;
+}
+
+/* Hide unfilled ads completely to prevent layout shift */
+ins.adsbygoogle[data-ad-status="unfilled"],
+ins.adsbygoogle[data-ad-status="done"]:not([data-ad-status="filled"]) {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure header stays on top */
+header,
+[role="banner"] {
+  position: relative;
+  z-index: 1000;
+  background: hsl(var(--background));
+}
+
 /* Smooth transitions for responsive design - only for layout elements */
 @media (prefers-reduced-motion: no-preference) {
   .transition-all,

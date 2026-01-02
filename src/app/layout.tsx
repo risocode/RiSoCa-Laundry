@@ -152,15 +152,27 @@ export default function RootLayout({
                 // Suppress non-critical third-party ad network errors
                 // These errors come from Google AdSense's ad partners and don't affect site functionality
                 const originalError = console.error;
+                const originalWarn = console.warn;
+                const originalLog = console.log;
+                
+                // Helper function to check if error is from ad network
+                function isAdNetworkError(message) {
+                  if (!message) return false;
+                  const msg = String(message).toLowerCase();
+                  return (
+                    msg.includes('err_name_not_resolved') ||
+                    msg.includes('dsp.360yield.com') ||
+                    msg.includes('360yield') ||
+                    msg.includes('net::err_name_not_resolved') ||
+                    (msg.includes('failed to load resource') && (msg.includes('dsp') || msg.includes('yield'))) ||
+                    (msg.includes('get') && msg.includes('dsp.360yield.com')) ||
+                    (msg.includes('cookie_push_onload'))
+                  );
+                }
+                
                 console.error = function(...args) {
                   const errorMessage = args.join(' ');
-                  // Suppress DNS resolution errors from third-party ad networks
-                  if (
-                    errorMessage.includes('ERR_NAME_NOT_RESOLVED') ||
-                    errorMessage.includes('dsp.360yield.com') ||
-                    errorMessage.includes('net::ERR_NAME_NOT_RESOLVED') ||
-                    (errorMessage.includes('Failed to load resource') && errorMessage.includes('dsp'))
-                  ) {
+                  if (isAdNetworkError(errorMessage)) {
                     // Silently ignore - these are non-critical ad network errors
                     return;
                   }
@@ -168,20 +180,120 @@ export default function RootLayout({
                   originalError.apply(console, args);
                 };
                 
-                // Also suppress network errors in window error handler
+                console.warn = function(...args) {
+                  const warnMessage = args.join(' ');
+                  if (isAdNetworkError(warnMessage)) {
+                    // Silently ignore - these are non-critical ad network warnings
+                    return;
+                  }
+                  // Log all other warnings normally
+                  originalWarn.apply(console, args);
+                };
+                
+                console.log = function(...args) {
+                  const logMessage = args.join(' ');
+                  // Suppress ad network logs but keep other logs
+                  if (isAdNetworkError(logMessage)) {
+                    return;
+                  }
+                  originalLog.apply(console, args);
+                };
+                
+                // Suppress network errors in window error handler
                 window.addEventListener('error', function(event) {
-                  if (
-                    event.message &&
-                    (
-                      event.message.includes('ERR_NAME_NOT_RESOLVED') ||
-                      event.message.includes('dsp.360yield.com') ||
-                      event.message.includes('net::ERR_NAME_NOT_RESOLVED')
-                    )
-                  ) {
+                  const errorMsg = event.message || event.filename || '';
+                  if (isAdNetworkError(errorMsg)) {
                     event.preventDefault();
+                    event.stopPropagation();
                     return false;
                   }
                 }, true);
+                
+                // Suppress unhandled promise rejections from ad networks
+                window.addEventListener('unhandledrejection', function(event) {
+                  const reason = event.reason?.message || event.reason?.toString() || '';
+                  if (isAdNetworkError(reason)) {
+                    event.preventDefault();
+                    return false;
+                  }
+                });
+                
+                // Prevent AdSense Auto Ads from causing layout shift
+                // Monitor for ad insertion and make them fixed position below header
+                function preventAdLayoutShift() {
+                  // Find header height (default to 64px for h-16)
+                  const header = document.querySelector('header');
+                  const headerHeight = header ? header.offsetHeight : 64;
+                  
+                  // Find all AdSense ads
+                  const ads = document.querySelectorAll('ins.adsbygoogle');
+                  ads.forEach(function(ad) {
+                    // Make ads fixed position so they don't push content down
+                    // Position them below the header
+                    if (ad.parentElement === document.body || ad.parentElement === null) {
+                      ad.style.position = 'fixed';
+                      ad.style.top = headerHeight + 'px';
+                      ad.style.left = '0';
+                      ad.style.width = '100%';
+                      ad.style.zIndex = '998';
+                      ad.style.margin = '0';
+                      ad.style.padding = '0';
+                      ad.style.border = 'none';
+                      
+                      // Only show if ad is filled
+                      const adStatus = ad.getAttribute('data-ad-status');
+                      if (adStatus !== 'filled') {
+                        ad.style.display = 'none';
+                      } else {
+                        ad.style.display = 'block';
+                      }
+                    }
+                  });
+                }
+                
+                // Run immediately
+                preventAdLayoutShift();
+                
+                // Monitor for new ads being inserted
+                const adObserver = new MutationObserver(function(mutations) {
+                  mutations.forEach(function(mutation) {
+                    mutation.addedNodes.forEach(function(node) {
+                      if (node.nodeType === 1) { // Element node
+                        if (node.tagName === 'INS' && node.classList.contains('adsbygoogle')) {
+                          preventAdLayoutShift();
+                        }
+                        // Also check for ads inside added nodes
+                        const ads = node.querySelectorAll && node.querySelectorAll('ins.adsbygoogle');
+                        if (ads && ads.length > 0) {
+                          preventAdLayoutShift();
+                        }
+                      }
+                    });
+                  });
+                });
+                
+                // Observe body for ad insertions
+                adObserver.observe(document.body, {
+                  childList: true,
+                  subtree: true
+                });
+                
+                // Also observe when ad status changes
+                const statusObserver = new MutationObserver(function(mutations) {
+                  mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'data-ad-status') {
+                      preventAdLayoutShift();
+                    }
+                  });
+                });
+                
+                // Observe all ads for status changes
+                document.querySelectorAll('ins.adsbygoogle').forEach(function(ad) {
+                  statusObserver.observe(ad, {
+                    attributes: true,
+                    attributeFilter: ['data-ad-status']
+                  });
+                });
               })();
             `,
           }}
