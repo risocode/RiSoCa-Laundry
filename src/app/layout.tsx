@@ -100,147 +100,18 @@ export default function RootLayout({
         <meta name="twitter:title" content="RKR Laundry Service" />
         <meta name="twitter:description" content="Fast, clean, and convenient laundry service at rkrlaundry.com. Real-time tracking and smart pricing for your laundry needs." />
         <meta name="twitter:image" content="https://rkrlaundry.com/icons/android-chrome-512x512.png" />
-        {/* Google AdSense Auto Ads - Only on pages with sufficient content */}
+        {/* Google AdSense Auto Ads */}
+        {/* 
+          Auto Ads are automatically enabled by the client parameter in the script URL.
+          DO NOT manually push enable_page_level_ads - it causes duplicate errors.
+          The script URL with ?client=ca-pub-XXXXX automatically initializes Auto Ads.
+          Publisher ID matches ads.txt: pub-1482729173853463
+        */}
         <script
           async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1036864152624333"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1482729173853463"
           crossOrigin="anonymous"
-        />
-        <script
-          id="adsense-init"
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                if (typeof window === 'undefined') return;
-                
-                // Initialize adsbygoogle array if it doesn't exist
-                window.adsbygoogle = window.adsbygoogle || [];
-                
-                // Helper function to check if page level ads already exist
-                // This MUST be checked BEFORE any flags to prevent race conditions
-                function hasPageLevelAds() {
-                  if (!window.adsbygoogle || !Array.isArray(window.adsbygoogle)) {
-                    return false;
-                  }
-                  try {
-                    for (var i = 0; i < window.adsbygoogle.length; i++) {
-                      var item = window.adsbygoogle[i];
-                      if (item && typeof item === 'object' && item.enable_page_level_ads === true) {
-                        return true;
-                      }
-                    }
-                  } catch (e) {
-                    return false;
-                  }
-                  return false;
-                }
-                
-                // CRITICAL: Check if already exists FIRST, before any other operations
-                if (hasPageLevelAds()) {
-                  return;
-                }
-                
-                // CRITICAL: Set flag IMMEDIATELY after checking (prevents duplicate execution)
-                if (window.__adsbygoogle_page_level_initialized) {
-                  return;
-                }
-                window.__adsbygoogle_page_level_initialized = true;
-                
-                // Pages with minimal content that should not show ads
-                var minimalContentPages = [
-                  '/select-location',
-                  '/download-app',
-                  '/branches',
-                  '/contact-us',
-                  '/admin',
-                  '/employee',
-                  '/login',
-                  '/register',
-                  '/reset-password',
-                  '/profile',
-                  '/delete-account',
-                  '/my-orders',
-                  '/customer-ratings',
-                  '/rating/',
-                  '/privacy-policy',
-                  '/terms-and-conditions',
-                ];
-                
-                // Check if current page should have ads
-                var path = window.location.pathname;
-                var shouldShowAds = true;
-                for (var j = 0; j < minimalContentPages.length; j++) {
-                  if (path.startsWith(minimalContentPages[j])) {
-                    shouldShowAds = false;
-                    break;
-                  }
-                }
-                if (path.startsWith('/admin/') || path.startsWith('/employee/')) {
-                  shouldShowAds = false;
-                }
-                
-                if (!shouldShowAds) {
-                  return;
-                }
-                
-                // Single function to push - will only execute once due to flag
-                function pushPageLevelAdsOnce() {
-                  // Triple-check: flag, state, and actual array content
-                  if (window.__adsbygoogle_push_executed) {
-                    return;
-                  }
-                  
-                  // Check if already pushed (double-check)
-                  if (hasPageLevelAds()) {
-                    window.__adsbygoogle_push_executed = true;
-                    return;
-                  }
-                  
-                  // Mark as executed BEFORE pushing
-                  window.__adsbygoogle_push_executed = true;
-                  
-                  // Final check before pushing
-                  if (hasPageLevelAds()) {
-                    return;
-                  }
-                  
-                  try {
-                    window.adsbygoogle.push({
-                      google_ad_client: "ca-pub-1036864152624333",
-                      enable_page_level_ads: true
-                    });
-                  } catch (e) {
-                    // Error already logged by AdSense, just prevent further attempts
-                    console.warn('AdSense push error (expected if already initialized):', e);
-                  }
-                }
-                
-                // Execute once when script is ready
-                if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
-                  pushPageLevelAdsOnce();
-                } else {
-                  // Wait for script to load, but only try once
-                  var triedOnce = false;
-                  var checkInterval = setInterval(function() {
-                    if (triedOnce || window.__adsbygoogle_push_executed) {
-                      clearInterval(checkInterval);
-                      return;
-                    }
-                    if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
-                      triedOnce = true;
-                      clearInterval(checkInterval);
-                      pushPageLevelAdsOnce();
-                    }
-                  }, 100);
-                  
-                  // Timeout after 3 seconds
-                  setTimeout(function() {
-                    clearInterval(checkInterval);
-                  }, 3000);
-                }
-              })();
-            `,
-          }}
+          data-ad-client="ca-pub-1482729173853463"
         />
       </head>
       <body className="font-body antialiased flex flex-col h-screen overflow-hidden">
