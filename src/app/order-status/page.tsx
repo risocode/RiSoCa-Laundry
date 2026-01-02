@@ -515,9 +515,6 @@ export default function OrderStatusPage() {
                           disabled={loading}
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Enter the order number (e.g., 123 for RKR123)
-                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="name" className="text-sm font-medium">Customer Name</Label>
