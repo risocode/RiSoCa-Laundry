@@ -23,6 +23,7 @@ import { useAuthSession } from '@/hooks/use-auth-session';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getCachedOrders, setCachedOrders } from '@/lib/order-cache';
+import { PopupAd } from '@/components/popup-ad';
 import {
   Tooltip,
   TooltipContent,
@@ -43,6 +44,7 @@ export default function OrderStatusPage() {
   const [loading, setLoading] = useState(false);
   const [loadingMyOrders, setLoadingMyOrders] = useState(false);
   const [orderIdSearch, setOrderIdSearch] = useState('');
+  const [popupAdTrigger, setPopupAdTrigger] = useState(0);
   const { toast } = useToast();
 
   // Auto-load orders for logged-in users with caching
@@ -176,6 +178,9 @@ export default function OrderStatusPage() {
     setLoading(true);
     setSearchAttempted(false);
 
+    // Trigger pop-up ad when Check Status is clicked
+    setPopupAdTrigger(prev => prev + 1);
+
     // Normalize order ID: user only enters numbers, we prepend "RKR"
     let normalizedOrderId = orderId.trim();
     // Remove any non-numeric characters (in case user pasted something)
@@ -255,6 +260,7 @@ export default function OrderStatusPage() {
 
   return (
     <div className="flex flex-col h-screen">
+      <PopupAd trigger={popupAdTrigger} />
       <AppHeader />
       <PromoBanner />
       <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">
@@ -362,6 +368,8 @@ export default function OrderStatusPage() {
                           type="button"
                           onClick={() => {
                             setSelectedOrder(order);
+                            // Trigger pop-up ad when order is selected
+                            setPopupAdTrigger(prev => prev + 1);
                             // Scroll to order details after a short delay
                             setTimeout(() => {
                               const orderDetailsSection = document.getElementById('order-details-section');
