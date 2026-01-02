@@ -91,8 +91,8 @@ body {
 }
 
 /* Prevent ALL AdSense Auto Ads from affecting page layout */
-/* Hide ALL in-page ads - only allow overlay/popup formats */
-body > ins.adsbygoogle {
+/* Hide ALL in-page ads - only allow overlay/popup formats and side banners */
+body > ins.adsbygoogle:not(#left-side-ad):not(#right-side-ad) {
   display: none !important;
   position: fixed !important;
   height: 0 !important;
@@ -102,8 +102,8 @@ body > ins.adsbygoogle {
   overflow: hidden !important;
 }
 
-/* Hide all in-page ad formats completely */
-ins.adsbygoogle:not([data-anchor-type]):not([data-anchor-status]):not([data-vignette-status]) {
+/* Hide all in-page ad formats completely, except side banners */
+ins.adsbygoogle:not([data-anchor-type]):not([data-anchor-status]):not([data-vignette-status]):not(#left-side-ad):not(#right-side-ad) {
   display: none !important;
   height: 0 !important;
   width: 0 !important;
@@ -115,9 +115,9 @@ ins.adsbygoogle:not([data-anchor-type]):not([data-anchor-status]):not([data-vign
   visibility: hidden !important;
 }
 
-/* Hide unfilled ads completely */
-ins.adsbygoogle[data-ad-status="unfilled"],
-ins.adsbygoogle[data-ad-status="done"]:not([data-ad-status="filled"]) {
+/* Hide unfilled ads completely, except side banners */
+ins.adsbygoogle[data-ad-status="unfilled"]:not(#left-side-ad):not(#right-side-ad),
+ins.adsbygoogle[data-ad-status="done"]:not([data-ad-status="filled"]):not(#left-side-ad):not(#right-side-ad) {
   display: none !important;
   height: 0 !important;
   width: 0 !important;
@@ -157,7 +157,7 @@ header,
 
 /* Hide ad banner container - we don't want in-page ads */
 #ad-banner-container,
-[id*="ad-banner"] {
+[id*="ad-banner"]:not(#left-side-ad):not(#right-side-ad) {
   display: none !important;
   height: 0 !important;
   width: 0 !important;
@@ -169,11 +169,42 @@ header,
   visibility: hidden !important;
 }
 
+/* Allow side ad banners to be visible */
+#left-side-ad,
+#right-side-ad {
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+}
+
+/* Add margins to main content on desktop to account for side ads */
+@media (min-width: 1024px) {
+  main {
+    margin-left: 160px !important;
+    margin-right: 160px !important;
+  }
+  
+  /* Ensure side ads are properly positioned */
+  #left-side-ad,
+  #right-side-ad {
+    position: relative !important;
+    z-index: 998 !important;
+  }
+}
+
 /* Add padding to main content to account for fixed header */
 /* Header is fixed, so content needs padding to not be hidden behind it */
 /* JS will dynamically adjust this based on actual header height */
 main {
   padding-top: 64px !important; /* Default header height (h-16) */
+}
+
+/* On desktop, add side margins to account for side ad banners */
+@media (min-width: 1024px) {
+  main {
+    margin-left: 160px !important;
+    margin-right: 160px !important;
+  }
 }
 
 /* Smooth transitions for responsive design - only for layout elements */
