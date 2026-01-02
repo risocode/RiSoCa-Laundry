@@ -50,6 +50,7 @@ export function EmployeeSalary() {
   const [updatingPayment, setUpdatingPayment] = useState<string | null>(null);
   const [editingPaymentAmount, setEditingPaymentAmount] = useState<string | null>(null);
   const [editingPaymentValue, setEditingPaymentValue] = useState<string>('');
+  const [lastManualSave, setLastManualSave] = useState<Record<string, number>>({}); // Track manual saves by payment key
   const { toast } = useToast();
 
   const loadOrders = async () => {
@@ -83,8 +84,17 @@ export function EmployeeSalary() {
 
   // Auto-save calculated salaries when orders and employees are loaded
   // This runs after fetchAllDailyPayments has loaded existing records
+  // Skip auto-save if a manual save happened recently (within last 2 seconds)
   useEffect(() => {
     if (orders.length === 0 || employees.length === 0) return;
+    
+    // Check if any manual saves happened recently
+    const now = Date.now();
+    const recentManualSaves = Object.values(lastManualSave).some(timestamp => now - timestamp < 2000);
+    if (recentManualSaves) {
+      // Skip auto-save if manual save happened recently to prevent overwriting
+      return;
+    }
     
     // Get unique dates from orders
     const uniqueDates = new Set<string>();
@@ -98,7 +108,7 @@ export function EmployeeSalary() {
         loadDailyPayments(dateStr);
       });
     });
-  }, [orders, employees]);
+  }, [orders, employees, lastManualSave]);
 
   const loadDailyPayments = async (dateStr: string) => {
     try {
@@ -224,9 +234,24 @@ export function EmployeeSalary() {
     const paymentKey = `${employeeId}-${dateStr}`;
     const amount = parseFloat(editingPaymentValue);
 
+    if (isNaN(amount) || amount < 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Amount',
+        description: 'Please enter a valid positive number.',
+      });
+      return;
+    }
+
     setUpdatingPayment(paymentKey);
 
     try {
+      // Mark this as a manual save to prevent auto-save from overwriting
+      setLastManualSave(prev => ({
+        ...prev,
+        [paymentKey]: Date.now()
+      }));
+
       await savePaymentAmount(
         employeeId,
         date,
@@ -244,12 +269,27 @@ export function EmployeeSalary() {
       
       setEditingPaymentAmount(null);
       setEditingPaymentValue('');
+      
+      // Clear the manual save flag after 3 seconds (auto-save can run again after that)
+      setTimeout(() => {
+        setLastManualSave(prev => {
+          const updated = { ...prev };
+          delete updated[paymentKey];
+          return updated;
+        });
+      }, 3000);
     } catch (error: any) {
       console.error('Failed to update payment amount:', error);
       toast({
         variant: 'destructive',
         title: 'Update Failed',
         description: error.message || 'Failed to update payment amount. Please try again.',
+      });
+      // Remove manual save flag on error
+      setLastManualSave(prev => {
+        const updated = { ...prev };
+        delete updated[paymentKey];
+        return updated;
       });
     } finally {
       setUpdatingPayment(null);
@@ -425,16 +465,9 @@ export function EmployeeSalary() {
                              : [];
                            const paymentKey = `${emp.id}-${dateKey}`;
                            const isEditingAmount = editingPaymentAmount === paymentKey;
-                           // Use payment amount if it exists and matches calculated (synced), otherwise use calculated salary
-                           // This ensures payment amount defaults to calculated salary unless manually edited
-                           const paymentAmount = payment?.amount ?? null;
-                           const calculatedRounded = Math.round(employeeSalary * 100) / 100;
-                           const paymentRounded = paymentAmount ? Math.round(paymentAmount * 100) / 100 : null;
-                           // If payment amount exists but doesn't match calculated, use calculated (auto-save will sync it)
-                           // If payment amount matches calculated or is null, use calculated
-                           const currentAmount = (paymentRounded !== null && Math.abs(paymentRounded - calculatedRounded) < 0.01) 
-                             ? paymentAmount! 
-                             : employeeSalary;
+                           // Use payment amount from database if it exists, otherwise use calculated salary
+                           // This preserves manually edited amounts while defaulting to calculated salary
+                           const currentAmount = payment?.amount ?? employeeSalary;
                            
                            return (
                              <div key={emp.id} className="flex flex-col gap-2 p-3 border rounded-md bg-background">

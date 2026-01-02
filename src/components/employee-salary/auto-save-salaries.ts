@@ -54,20 +54,29 @@ export async function autoSaveDailySalaries(
                 console.error(`Failed to auto-save salary for ${emp.id} on ${dateStr}:`, error);
               }
             } else if (existing && !checkError) {
-              // Always update the amount to match the calculated salary
-              // This ensures payment amount stays in sync with calculated salary
-              const { error } = await supabase
-                .from('daily_salary_payments')
-                .update({
-                  amount: calculatedSalary,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('employee_id', emp.id)
-                .eq('date', dateStr);
+              // Only update the amount if it matches the calculated salary (within tolerance)
+              // This preserves manually edited amounts that differ from calculated
+              const existingAmount = existing.amount || 0;
+              const calculatedRounded = Math.round(calculatedSalary * 100) / 100;
+              const existingRounded = Math.round(existingAmount * 100) / 100;
+              
+              // If amounts match (within 0.01), update to ensure sync
+              // If amounts differ significantly, preserve the manual edit
+              if (Math.abs(existingRounded - calculatedRounded) < 0.01) {
+                const { error } = await supabase
+                  .from('daily_salary_payments')
+                  .update({
+                    amount: calculatedSalary,
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('employee_id', emp.id)
+                  .eq('date', dateStr);
 
-              if (error) {
-                console.error(`Failed to auto-save salary for ${emp.id} on ${dateStr}:`, error);
+                if (error) {
+                  console.error(`Failed to auto-save salary for ${emp.id} on ${dateStr}:`, error);
+                }
               }
+              // If amounts differ significantly, don't update - preserve manual edit
             }
           } catch (error: any) {
             console.error(`Error checking/inserting salary for ${emp.id} on ${dateStr}:`, error);
