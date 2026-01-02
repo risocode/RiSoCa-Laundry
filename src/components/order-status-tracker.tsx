@@ -222,7 +222,7 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
   useEffect(() => {
     setOrder(initialOrder);
     previousStatusRef.current = initialOrder.status;
-  }, [initialOrder.id, initialOrder.status]);
+  }, [initialOrder]);
 
   useEffect(() => {
     const orderStatusIndex = statuses.findIndex(s => s.name === order.status);
