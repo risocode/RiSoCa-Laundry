@@ -22,6 +22,7 @@ export type OrderInsert = {
   assigned_employee_id?: string | null; // For backward compatibility (single employee)
   assigned_employee_ids?: string[]; // Array of employee IDs (JSON array in database)
   load_pieces?: number[] | null; // Array of piece counts per load (JSONB array in database)
+  found_items?: string[] | null; // Array of items found in customer laundry (JSONB array in database)
   created_at?: string; // Optional custom creation date (ISO string)
 };
 
@@ -295,6 +296,7 @@ export async function fetchOrderForCustomer(orderId: string, name: string) {
         order_status_history: (matchedOrder.order_status_history as any[]) || [],
         order_type: matchedOrder.order_type || 'customer',
         assigned_employee_id: matchedOrder.assigned_employee_id ?? null,
+        found_items: Array.isArray(matchedOrder.found_items) ? matchedOrder.found_items : null,
       },
       error: null,
     };

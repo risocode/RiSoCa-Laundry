@@ -51,6 +51,10 @@ export function mapOrder(o: any): Order {
       Array.isArray(o.load_pieces) && o.load_pieces.length > 0
         ? o.load_pieces
         : undefined,
+    foundItems:
+      Array.isArray(o.found_items) && o.found_items.length > 0
+        ? o.found_items
+        : undefined,
   };
 
   // CRITICAL: Ensure balance is never undefined

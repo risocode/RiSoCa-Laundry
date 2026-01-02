@@ -95,6 +95,7 @@ export default function OrderStatusPage() {
           })),
           orderType: o.order_type || 'customer',
           assignedEmployeeId: o.assigned_employee_id ?? null,
+          foundItems: Array.isArray(o.found_items) && o.found_items.length > 0 ? o.found_items : undefined,
         }));
         
         // Update cache with fresh data
@@ -204,6 +205,7 @@ export default function OrderStatusPage() {
         })),
         orderType: data.order_type || 'customer',
         assignedEmployeeId: data.assigned_employee_id ?? null,
+        foundItems: Array.isArray(data.found_items) && data.found_items.length > 0 ? data.found_items : undefined,
       };
       setSearchedOrder(mapped);
     } else {
@@ -526,6 +528,7 @@ export default function OrderStatusPage() {
                                   })),
                                   orderType: o.order_type || 'customer',
                                   assignedEmployeeId: o.assigned_employee_id ?? null,
+                                  foundItems: Array.isArray(o.found_items) && o.found_items.length > 0 ? o.found_items : undefined,
                                 }));
                                 setMyOrders(mapped);
                                 setSelectedOrder(null);

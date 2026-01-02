@@ -44,6 +44,8 @@ import {
   ChevronRight,
   Users,
   Calendar,
+  Plus,
+  Search,
 } from 'lucide-react';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { StatusDialog } from '@/components/status-dialog';
@@ -403,6 +405,72 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     </div>
                 )}
             </TableCell>
+            <TableCell className="px-2 min-w-[200px] max-w-[300px]">
+                {isEditing ? (
+                    <div className="space-y-2">
+                        <div className="text-xs font-medium text-muted-foreground mb-1">Found Items</div>
+                        <div className="space-y-1.5 border rounded-md p-2 bg-muted/30">
+                            {(editableOrder.foundItems || []).map((item, index) => (
+                                <div key={index} className="flex items-center gap-1.5">
+                                    <Input
+                                        type="text"
+                                        value={item}
+                                        onChange={(e) => {
+                                            const newItems = [...(editableOrder.foundItems || [])];
+                                            newItems[index] = e.target.value;
+                                            handleFieldChange('foundItems', newItems);
+                                        }}
+                                        className="h-7 text-xs border flex-1"
+                                        disabled={isSaving}
+                                        placeholder="Item description"
+                                    />
+                                    <Button
+                                        type="button"
+                                        size="icon"
+                                        variant="ghost"
+                                        onClick={() => {
+                                            const newItems = (editableOrder.foundItems || []).filter((_, i) => i !== index);
+                                            handleFieldChange('foundItems', newItems.length > 0 ? newItems : undefined);
+                                        }}
+                                        disabled={isSaving}
+                                        className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            ))}
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                    const newItems = [...(editableOrder.foundItems || []), ''];
+                                    handleFieldChange('foundItems', newItems);
+                                }}
+                                disabled={isSaving}
+                                className="w-full h-7 text-xs"
+                            >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add Item
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-1">
+                        {workingOrder.foundItems && workingOrder.foundItems.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                                {workingOrder.foundItems.map((item, index) => (
+                                    <Badge key={index} variant="outline" className="text-xs bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200">
+                                        {item}
+                                    </Badge>
+                                ))}
+                            </div>
+                        ) : (
+                            <span className="text-xs text-muted-foreground">No items found</span>
+                        )}
+                    </div>
+                )}
+            </TableCell>
             <TableCell className="text-right px-2">
                 {isEditing ? (
                     <Input 
@@ -613,9 +681,11 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
             assignedEmployeeIds: safeOrder.assignedEmployeeIds || 
                 (safeOrder.assignedEmployeeId ? [safeOrder.assignedEmployeeId] : undefined),
             // Ensure loadPieces is properly initialized as array
-            loadPieces: safeOrder.loadPieces || undefined
+            loadPieces: safeOrder.loadPieces || undefined,
+            // Ensure foundItems is properly initialized as array
+            foundItems: safeOrder.foundItems || undefined
         });
-    }, [order.id, order.balance, order.isPaid, order.total, order.assignedEmployeeId, order.assignedEmployeeIds, order.loadPieces]);
+    }, [order.id, order.balance, order.isPaid, order.total, order.assignedEmployeeId, order.assignedEmployeeIds, order.loadPieces, order.foundItems]);
 
     // Employees are now fetched via useEmployees hook with caching
 
@@ -1001,6 +1071,73 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                                         </div>
                                     )}
                                 </div>
+                                <div className="space-y-1.5">
+                                    <Label htmlFor={`found-items-mob-${order.id}`} className="flex items-center gap-2">
+                                        <Search className="h-3 w-3 text-muted-foreground" />
+                                        Found Items
+                                    </Label>
+                                    {isEditing ? (
+                                        <div className="space-y-2">
+                                            <div className="space-y-1.5 border rounded-md p-2 bg-muted/30">
+                                                {(editableOrder.foundItems || []).map((item, index) => (
+                                                    <div key={index} className="flex items-center gap-1.5">
+                                                        <Input
+                                                            type="text"
+                                                            value={item}
+                                                            onChange={(e) => {
+                                                                const newItems = [...(editableOrder.foundItems || [])];
+                                                                newItems[index] = e.target.value;
+                                                                handleFieldChange('foundItems', newItems);
+                                                            }}
+                                                            className="h-7 text-xs border flex-1"
+                                                            disabled={isSaving}
+                                                            placeholder="Item description"
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            onClick={() => {
+                                                                const newItems = (editableOrder.foundItems || []).filter((_, i) => i !== index);
+                                                                handleFieldChange('foundItems', newItems.length > 0 ? newItems : undefined);
+                                                            }}
+                                                            disabled={isSaving}
+                                                            className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        const newItems = [...(editableOrder.foundItems || []), ''];
+                                                        handleFieldChange('foundItems', newItems);
+                                                    }}
+                                                    disabled={isSaving}
+                                                    className="w-full h-7 text-xs"
+                                                >
+                                                    <Plus className="h-3 w-3 mr-1" />
+                                                    Add Item
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-wrap gap-1">
+                                            {workingOrder.foundItems && workingOrder.foundItems.length > 0 ? (
+                                                workingOrder.foundItems.map((item, index) => (
+                                                    <Badge key={index} variant="outline" className="text-xs bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200">
+                                                        {item}
+                                                    </Badge>
+                                                ))
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground">No items found</span>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3 items-end">
                                 <div className="space-y-1.5">
@@ -1358,6 +1495,12 @@ export function OrderList({
                 <div className="flex items-center justify-center gap-2">
                   <Layers className="h-4 w-4 text-primary" />
                   Load
+                </div>
+              </TableHead>
+              <TableHead className="min-w-[200px] font-semibold px-2">
+                <div className="flex items-center gap-2">
+                  <Search className="h-4 w-4 text-primary" />
+                  Found Items
                 </div>
               </TableHead>
               <TableHead className="min-w-[130px] font-semibold text-right px-2">

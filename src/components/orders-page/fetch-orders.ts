@@ -22,6 +22,7 @@ const ORDER_SELECT_FIELDS = `
   assigned_employee_id,
   assigned_employee_ids,
   load_pieces,
+  found_items,
   order_status_history(*)
 `;
 
@@ -44,6 +45,7 @@ const FALLBACK_ORDER_SELECT_FIELDS = `
   order_type,
   assigned_employee_id,
   load_pieces,
+  found_items,
   order_status_history(*)
 `;
 

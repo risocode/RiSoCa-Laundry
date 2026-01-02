@@ -155,6 +155,20 @@ export async function handleOrderUpdate(
       }
     }
 
+    // Include found_items if provided
+    if (updatedOrder.foundItems !== undefined) {
+      // If foundItems is provided, use it (can be array or undefined/null)
+      if (updatedOrder.foundItems && updatedOrder.foundItems.length > 0) {
+        // Filter out empty strings and trim items
+        const cleanedItems = updatedOrder.foundItems
+          .map(item => item?.trim())
+          .filter(item => item && item.length > 0);
+        patch.found_items = cleanedItems.length > 0 ? cleanedItems : null;
+      } else {
+        patch.found_items = null;
+      }
+    }
+
     // Use finalOrderId (which might be the new RKR ID) for the update
     const { error: patchError } = await updateOrderFields(
       finalOrderId,

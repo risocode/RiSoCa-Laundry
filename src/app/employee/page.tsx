@@ -64,6 +64,7 @@ export default function EmployeePage() {
       assignedEmployeeIds: Array.isArray(o.assigned_employee_ids) && o.assigned_employee_ids.length > 0 
         ? o.assigned_employee_ids 
         : undefined,
+      foundItems: Array.isArray(o.found_items) && o.found_items.length > 0 ? o.found_items : undefined,
     };
   };
 
@@ -90,6 +91,7 @@ export default function EmployeePage() {
         order_type,
         assigned_employee_id,
         assigned_employee_ids,
+        found_items,
         order_status_history(*)
       `)
       .order('created_at', { ascending: false });

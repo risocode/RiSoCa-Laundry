@@ -95,6 +95,7 @@ export default function MyOrdersPage() {
           })),
           orderType: o.order_type || 'customer',
           assignedEmployeeId: o.assigned_employee_id ?? null,
+          foundItems: Array.isArray(o.found_items) && o.found_items.length > 0 ? o.found_items : undefined,
         }));
         
         // Update cache with fresh data
@@ -341,10 +342,13 @@ export default function MyOrdersPage() {
                                         statusHistory: (o.order_status_history ?? []).map((sh: any) => ({
                                           status: sh.status,
                                           timestamp: new Date(sh.created_at),
-                                        })),
-                                      }));
-                                      setMyOrders(mapped);
-                                      setSelectedOrder(null);
+                                  })),
+                                  orderType: o.order_type || 'customer',
+                                  assignedEmployeeId: o.assigned_employee_id ?? null,
+                                  foundItems: Array.isArray(o.found_items) && o.found_items.length > 0 ? o.found_items : undefined,
+                                }));
+                                setMyOrders(mapped);
+                                setSelectedOrder(null);
                                     }
                                     setLoadingMyOrders(false);
                                   }}

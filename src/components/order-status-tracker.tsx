@@ -146,6 +146,7 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
               })),
               orderType: updatedOrder.order_type || 'customer',
               assignedEmployeeId: updatedOrder.assigned_employee_id ?? null,
+              foundItems: Array.isArray(updatedOrder.found_items) && updatedOrder.found_items.length > 0 ? updatedOrder.found_items : undefined,
             };
             
             if (mapped.status !== previousStatusRef.current) {
@@ -269,6 +270,7 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
         })),
         orderType: updatedOrder.order_type || 'customer',
         assignedEmployeeId: updatedOrder.assigned_employee_id ?? null,
+        foundItems: Array.isArray(updatedOrder.found_items) && updatedOrder.found_items.length > 0 ? updatedOrder.found_items : undefined,
       };
       setOrder(mapped);
       setLastUpdated(new Date());
@@ -360,6 +362,21 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
                     <Badge variant="outline" className="text-xs">
                       Package {order.servicePackage.replace('package', '').toUpperCase()}
                     </Badge>
+                  </div>
+                )}
+                {order.foundItems && order.foundItems.length > 0 && (
+                  <div className="flex flex-col gap-1.5 pt-2 border-t">
+                    <div className="flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                      <span className="text-xs font-semibold text-yellow-700 dark:text-yellow-300">Items Found:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 ml-6">
+                      {order.foundItems.map((item, index) => (
+                        <Badge key={index} variant="outline" className="text-xs bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200">
+                          {item}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>

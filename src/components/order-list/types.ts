@@ -24,6 +24,7 @@ export type Order = {
   assignedEmployeeId?: string | null; // For backward compatibility (single employee)
   assignedEmployeeIds?: string[]; // Array of employee IDs (multiple employees)
   loadPieces?: number[]; // Array of piece counts per load [30, 25] means Load 1: 30 pcs, Load 2: 25 pcs
+  foundItems?: string[]; // Array of items found in customer laundry ["wallet", "keys", "phone"]
 };
 
 export type OrderListProps = {
