@@ -132,7 +132,7 @@ export default function RootLayout({
                 
                 // Track if aria-hidden was set by AdSense (for overlay ads)
                 let isAdSenseOverlay = false;
-                let overlayCheckInterval: ReturnType<typeof setInterval> | null = null;
+                let overlayCheckInterval = null;
                 
                 // Function to check if AdSense overlay ads are active
                 function checkAdSenseOverlay() {
@@ -223,6 +223,19 @@ export default function RootLayout({
                     // Silently ignore - these are non-critical ad network errors
                     return;
                   }
+                  // Suppress browser warning about aria-hidden on body (from AdSense overlay ads)
+                  if (errorMessage && typeof errorMessage === 'string' && (
+                    errorMessage.includes('Blocked aria-hidden') ||
+                    errorMessage.includes('aria-hidden') && errorMessage.includes('body') && (
+                      errorMessage.includes('accessibility') ||
+                      errorMessage.includes('assistive technology') ||
+                      errorMessage.includes('WAI-ARIA')
+                    )
+                  )) {
+                    // This is a browser accessibility warning - AdSense overlay ads try to set aria-hidden on body
+                    // The browser correctly blocks it, but we suppress the warning to clean up console
+                    return;
+                  }
                   // Log all other errors normally
                   originalError.apply(console, args);
                 };
@@ -231,6 +244,19 @@ export default function RootLayout({
                   const warnMessage = args.join(' ');
                   if (isAdNetworkError(warnMessage)) {
                     // Silently ignore - these are non-critical ad network warnings
+                    return;
+                  }
+                  // Suppress browser warning about aria-hidden on body (from AdSense overlay ads)
+                  if (warnMessage && typeof warnMessage === 'string' && (
+                    warnMessage.includes('Blocked aria-hidden') ||
+                    warnMessage.includes('aria-hidden') && warnMessage.includes('body') && (
+                      warnMessage.includes('accessibility') ||
+                      warnMessage.includes('assistive technology') ||
+                      warnMessage.includes('WAI-ARIA')
+                    )
+                  )) {
+                    // This is a browser accessibility warning - AdSense overlay ads try to set aria-hidden on body
+                    // The browser correctly blocks it, but we suppress the warning to clean up console
                     return;
                   }
                   // Log all other warnings normally
