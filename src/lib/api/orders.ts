@@ -128,9 +128,10 @@ export async function fetchMyOrders() {
 }
 
 export async function fetchOrderWithHistory(orderId: string) {
+  // Explicitly select found_items to ensure it's included even with RLS
   return supabase
     .from('orders')
-    .select('*, order_status_history(*)')
+    .select('*, found_items, order_status_history(*)')
     .eq('id', orderId)
     .maybeSingle();
 }

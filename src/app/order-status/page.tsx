@@ -185,6 +185,12 @@ export default function OrderStatusPage() {
     }
 
     if (data) {
+      // Debug: Log the raw data to see what we're getting
+      if (process.env.NODE_ENV === 'development') {
+        console.log('fetchOrderForCustomer - Raw data:', data);
+        console.log('fetchOrderForCustomer - found_items:', data.found_items, 'Type:', typeof data.found_items, 'IsArray:', Array.isArray(data.found_items));
+      }
+      
       const mapped: Order = {
         id: data.id,
         userId: data.customer_id,
@@ -205,8 +211,14 @@ export default function OrderStatusPage() {
         })),
         orderType: data.order_type || 'customer',
         assignedEmployeeId: data.assigned_employee_id ?? null,
-        foundItems: Array.isArray(data.found_items) && data.found_items.length > 0 ? data.found_items : undefined,
+        foundItems: Array.isArray(data.found_items) && data.found_items.length > 0 ? data.found_items : (data.found_items ? [data.found_items].flat() : undefined),
       };
+      
+      // Debug: Log the mapped order
+      if (process.env.NODE_ENV === 'development') {
+        console.log('fetchOrderForCustomer - Mapped order foundItems:', mapped.foundItems);
+      }
+      
       setSearchedOrder(mapped);
     } else {
       setSearchedOrder(null);

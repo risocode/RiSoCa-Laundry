@@ -125,6 +125,12 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
           // Fetch updated order with history
           const { data: updatedOrder, error } = await fetchOrderWithHistory(order.id);
           if (!error && updatedOrder) {
+            // Preserve foundItems from current order if fetchOrderWithHistory doesn't return it
+            const currentFoundItems = order.foundItems;
+            const fetchedFoundItems = Array.isArray(updatedOrder.found_items) && updatedOrder.found_items.length > 0 
+              ? updatedOrder.found_items 
+              : undefined;
+            
             const mapped: Order = {
               id: updatedOrder.id,
               userId: updatedOrder.customer_id,
@@ -146,7 +152,7 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
               })),
               orderType: updatedOrder.order_type || 'customer',
               assignedEmployeeId: updatedOrder.assigned_employee_id ?? null,
-              foundItems: Array.isArray(updatedOrder.found_items) && updatedOrder.found_items.length > 0 ? updatedOrder.found_items : undefined,
+              foundItems: fetchedFoundItems || currentFoundItems, // Preserve existing foundItems if fetch doesn't return it
             };
             
             if (mapped.status !== previousStatusRef.current) {
@@ -175,37 +181,44 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
         setIsRefreshing(true);
         const { data: updatedOrder, error } = await fetchOrderWithHistory(order.id);
         if (!error && updatedOrder) {
-          const mapped: Order = {
-            id: updatedOrder.id,
-            userId: updatedOrder.customer_id,
-            customerName: updatedOrder.customer_name,
-            contactNumber: updatedOrder.contact_number,
-            load: updatedOrder.loads,
-            weight: updatedOrder.weight,
-            status: updatedOrder.status,
-            total: updatedOrder.total,
-            orderDate: new Date(updatedOrder.created_at),
-            isPaid: updatedOrder.is_paid,
-            balance: typeof updatedOrder.balance === 'number' ? updatedOrder.balance : (updatedOrder.balance ? parseFloat(updatedOrder.balance) : (updatedOrder.is_paid ? 0 : updatedOrder.total)),
-            deliveryOption: updatedOrder.delivery_option ?? undefined,
-            servicePackage: updatedOrder.service_package,
-            distance: updatedOrder.distance ?? 0,
-            statusHistory: (updatedOrder.order_status_history ?? []).map((sh: any) => ({
-              status: sh.status,
-              timestamp: new Date(sh.created_at),
-            })),
-            orderType: updatedOrder.order_type || 'customer',
-            assignedEmployeeId: updatedOrder.assigned_employee_id ?? null,
-            foundItems: Array.isArray(updatedOrder.found_items) && updatedOrder.found_items.length > 0 ? updatedOrder.found_items : undefined,
-          };
-          
-          if (mapped.status !== previousStatusRef.current) {
-            setHasNewUpdate(true);
-            previousStatusRef.current = mapped.status;
-          }
-          
-          setOrder(mapped);
-          setLastUpdated(new Date());
+          // Preserve foundItems from current order if fetchOrderWithHistory doesn't return it
+          setOrder(currentOrder => {
+            const fetchedFoundItems = Array.isArray(updatedOrder.found_items) && updatedOrder.found_items.length > 0 
+              ? updatedOrder.found_items 
+              : undefined;
+            
+            const mapped: Order = {
+              id: updatedOrder.id,
+              userId: updatedOrder.customer_id,
+              customerName: updatedOrder.customer_name,
+              contactNumber: updatedOrder.contact_number,
+              load: updatedOrder.loads,
+              weight: updatedOrder.weight,
+              status: updatedOrder.status,
+              total: updatedOrder.total,
+              orderDate: new Date(updatedOrder.created_at),
+              isPaid: updatedOrder.is_paid,
+              balance: typeof updatedOrder.balance === 'number' ? updatedOrder.balance : (updatedOrder.balance ? parseFloat(updatedOrder.balance) : (updatedOrder.is_paid ? 0 : updatedOrder.total)),
+              deliveryOption: updatedOrder.delivery_option ?? undefined,
+              servicePackage: updatedOrder.service_package,
+              distance: updatedOrder.distance ?? 0,
+              statusHistory: (updatedOrder.order_status_history ?? []).map((sh: any) => ({
+                status: sh.status,
+                timestamp: new Date(sh.created_at),
+              })),
+              orderType: updatedOrder.order_type || 'customer',
+              assignedEmployeeId: updatedOrder.assigned_employee_id ?? null,
+              foundItems: fetchedFoundItems || currentOrder.foundItems, // Preserve existing foundItems if fetch doesn't return it
+            };
+            
+            if (mapped.status !== previousStatusRef.current) {
+              setHasNewUpdate(true);
+              previousStatusRef.current = mapped.status;
+            }
+            
+            setLastUpdated(new Date());
+            return mapped;
+          });
         }
         setIsRefreshing(false);
       }, 30000); // Refresh every 30 seconds
@@ -218,8 +231,18 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
     };
   }, [order.id, order.status]);
 
-  // Update when order prop changes
+  // Update when order prop changes - always use initialOrder as source of truth
   useEffect(() => {
+    // Debug: Log initial order to verify foundItems
+    if (process.env.NODE_ENV === 'development') {
+      console.log('OrderStatusTracker - Initial order received:', {
+        id: initialOrder.id,
+        foundItems: initialOrder.foundItems,
+        foundItemsType: typeof initialOrder.foundItems,
+        foundItemsIsArray: Array.isArray(initialOrder.foundItems),
+        foundItemsLength: initialOrder.foundItems?.length
+      });
+    }
     setOrder(initialOrder);
     previousStatusRef.current = initialOrder.status;
   }, [initialOrder]);
@@ -250,6 +273,12 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
     setIsRefreshing(true);
     const { data: updatedOrder, error } = await fetchOrderWithHistory(order.id);
     if (!error && updatedOrder) {
+      // Preserve foundItems from current order if fetchOrderWithHistory doesn't return it
+      const currentFoundItems = order.foundItems;
+      const fetchedFoundItems = Array.isArray(updatedOrder.found_items) && updatedOrder.found_items.length > 0 
+        ? updatedOrder.found_items 
+        : undefined;
+      
       const mapped: Order = {
         id: updatedOrder.id,
         userId: updatedOrder.customer_id,
@@ -271,7 +300,7 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
         })),
         orderType: updatedOrder.order_type || 'customer',
         assignedEmployeeId: updatedOrder.assigned_employee_id ?? null,
-        foundItems: Array.isArray(updatedOrder.found_items) && updatedOrder.found_items.length > 0 ? updatedOrder.found_items : undefined,
+        foundItems: fetchedFoundItems || currentFoundItems, // Preserve existing foundItems if fetch doesn't return it
       };
       setOrder(mapped);
       setLastUpdated(new Date());
@@ -365,24 +394,30 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
                     </Badge>
                   </div>
                 )}
-                {order.foundItems && order.foundItems.length > 0 && (
-                  <div className="flex flex-col gap-1.5 pt-2 border-t">
-                    <div className="flex items-center gap-2">
-                      <Search className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                      <span className="text-xs font-semibold text-yellow-700 dark:text-yellow-300">Items Found in Your Laundry:</span>
+                {(() => {
+                  // Debug: Log foundItems to help diagnose
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('OrderStatusTracker - foundItems:', order.foundItems, 'Order ID:', order.id);
+                  }
+                  return order.foundItems && Array.isArray(order.foundItems) && order.foundItems.length > 0 ? (
+                    <div className="flex flex-col gap-1.5 pt-2 border-t">
+                      <div className="flex items-center gap-2">
+                        <Search className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                        <span className="text-xs font-semibold text-yellow-700 dark:text-yellow-300">Items Found in Your Laundry:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 ml-6">
+                        {order.foundItems.map((item, index) => (
+                          <Badge key={index} variant="outline" className="text-xs bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 font-medium">
+                            {item}
+                          </Badge>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground ml-6 mt-1">
+                        Please collect these items when you pick up your laundry.
+                      </p>
                     </div>
-                    <div className="flex flex-wrap gap-1.5 ml-6">
-                      {order.foundItems.map((item, index) => (
-                        <Badge key={index} variant="outline" className="text-xs bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 font-medium">
-                          {item}
-                        </Badge>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground ml-6 mt-1">
-                      Please collect these items when you pick up your laundry.
-                    </p>
-                  </div>
-                )}
+                  ) : null;
+                })()}
               </CardContent>
             </Card>
             
