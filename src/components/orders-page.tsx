@@ -194,7 +194,7 @@ export function OrdersPage() {
             />
           </div>
         </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto overflow-x-auto scrollable p-6">
+        <CardContent className="flex-1 overflow-y-auto scrollable p-6">
           {loadingAdmin ? (
             <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
               <Loader2 className="h-12 w-12 mb-4 animate-spin text-primary" />

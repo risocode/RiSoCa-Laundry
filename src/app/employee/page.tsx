@@ -239,7 +239,7 @@ export default function EmployeePage() {
             New Order
           </Button>
         </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto overflow-x-auto scrollable pt-4 pb-4">
+      <CardContent className="flex-1 overflow-y-auto scrollable pt-4 pb-4">
         {loadingOrders ? (
           <div className="flex flex-col items-center justify-center h-40 text-center text-muted-foreground">
             <Loader2 className="h-12 w-12 mb-2 animate-spin" />

@@ -405,7 +405,7 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
                     </div>
                 )}
             </TableCell>
-            <TableCell className="px-2 min-w-[200px] max-w-[300px]">
+            <TableCell className="px-2">
                 {isEditing ? (
                     <div className="space-y-2">
                         <div className="text-xs font-medium text-muted-foreground mb-1">Found Items</div>
@@ -1463,65 +1463,65 @@ export function OrderList({
       </div>
 
       {/* Desktop View - Table */}
-      <div className="hidden md:block overflow-x-auto w-full">
-        <Table className="w-full min-w-full">
+      <div className="hidden md:block w-full">
+        <Table className="w-full">
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="min-w-[120px] font-semibold px-2">
+              <TableHead className="w-auto font-semibold px-2">
                 <div className="flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
                   ORDER #
                 </div>
               </TableHead>
-              <TableHead className="min-w-[120px] font-semibold text-center px-2">
+              <TableHead className="w-auto font-semibold text-center px-2">
                 <div className="flex items-center justify-center gap-2">
                   <Calendar className="h-4 w-4 text-primary" />
                   Date
                 </div>
               </TableHead>
-              <TableHead className="min-w-[140px] font-semibold px-2">
+              <TableHead className="w-auto font-semibold px-2">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-primary" />
                   Name
                 </div>
               </TableHead>
-              <TableHead className="min-w-[140px] font-semibold px-2">
+              <TableHead className="w-auto font-semibold px-2">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-primary" />
                   Employee
                 </div>
               </TableHead>
-              <TableHead className="min-w-[90px] font-semibold text-center px-2">
+              <TableHead className="w-auto font-semibold text-center px-2">
                 <div className="flex items-center justify-center gap-2">
                   <Layers className="h-4 w-4 text-primary" />
                   Load
                 </div>
               </TableHead>
-              <TableHead className="min-w-[200px] font-semibold px-2">
+              <TableHead className="w-auto font-semibold px-2">
                 <div className="flex items-center gap-2">
                   <Search className="h-4 w-4 text-primary" />
                   Found Items
                 </div>
               </TableHead>
-              <TableHead className="min-w-[130px] font-semibold text-right px-2">
+              <TableHead className="w-auto font-semibold text-right px-2">
                 <div className="flex items-center justify-end gap-2">
                   <DollarSign className="h-4 w-4 text-primary" />
                   Total (₱)
                 </div>
               </TableHead>
-              <TableHead className="min-w-[110px] font-semibold text-center px-2">
+              <TableHead className="w-auto font-semibold text-center px-2">
                 <div className="flex items-center justify-center gap-2">
                   <CreditCard className="h-4 w-4 text-primary" />
                   Payment
                 </div>
               </TableHead>
-              <TableHead className="min-w-[150px] font-semibold text-center px-2">
+              <TableHead className="w-auto font-semibold text-center px-2">
                 <div className="flex items-center justify-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                   Status
                 </div>
               </TableHead>
-              <TableHead className="min-w-[120px] font-semibold text-center px-2">
+              <TableHead className="w-auto font-semibold text-center px-2">
                 <div className="flex items-center justify-center gap-2">
                   <MoreVertical className="h-4 w-4 text-primary" />
                   Action
