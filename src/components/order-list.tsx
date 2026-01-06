@@ -216,7 +216,7 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
           "hover:bg-muted/30 transition-colors border-b",
           isEditing && "bg-primary/5 border-primary/20"
         )}>
-            <TableCell className="font-semibold px-2">
+            <TableCell className="font-semibold px-2" style={{ width: '100px', minWidth: '100px' }}>
               <div className="flex items-center gap-2">
                 <span className="text-primary font-bold">{workingOrder.id}</span>
                 {workingOrder.orderType === 'internal' && (
@@ -226,7 +226,7 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                 )}
               </div>
             </TableCell>
-            <TableCell className="text-center px-2">
+            <TableCell className="text-center px-2" style={{ width: '120px', minWidth: '120px' }}>
                 {isEditing ? (
                     <Input 
                         type="date" 
@@ -235,21 +235,21 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                             const newDate = new Date(e.target.value);
                             handleFieldChange('orderDate', newDate);
                         }} 
-                        className="h-9 w-full min-w-[120px] max-w-[150px] border-2 text-center" 
+                        className="h-9 w-full border-2 text-center" 
                         disabled={isSaving}
                     />
                 ) : (
                     <span className="font-medium text-sm">{format(workingOrder.orderDate, 'MMM dd, yyyy')}</span>
                 )}
             </TableCell>
-            <TableCell className="px-2">
+            <TableCell className="px-2" style={{ width: '180px', minWidth: '180px' }}>
                 {isEditing ? (
                     <div className="space-y-1.5">
                         <Input 
                             type="text" 
                             value={editableOrder.customerName} 
                             onChange={e => handleFieldChange('customerName', e.target.value)} 
-                            className="h-9 w-full min-w-[120px] max-w-[200px] border-2" 
+                            className="h-9 w-full border-2" 
                             disabled={isSaving}
                             placeholder="Customer Name"
                         />
@@ -258,7 +258,7 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                             placeholder="Contact Number"
                             value={editableOrder.contactNumber && editableOrder.contactNumber !== 'N/A' ? editableOrder.contactNumber : ''} 
                             onChange={e => handleFieldChange('contactNumber', e.target.value)} 
-                            className="h-8 w-full min-w-[120px] max-w-[200px] border-2 text-xs" 
+                            className="h-8 w-full border-2 text-xs" 
                             disabled={isSaving}
                         />
                     </div>
@@ -274,9 +274,9 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                     </div>
                 )}
             </TableCell>
-            <TableCell className="px-2">
+            <TableCell className="px-2" style={{ width: '200px', minWidth: '200px' }}>
                 {isEditing ? (
-                    <div className="flex flex-wrap gap-1.5 min-w-[140px] max-w-[250px]">
+                    <div className="flex flex-wrap gap-1.5">
                         {employees.map((emp) => {
                             const selectedIds = editableOrder.assignedEmployeeIds || [];
                             const isSelected = selectedIds.includes(emp.id);
@@ -343,9 +343,9 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                     })()
                 )}
             </TableCell>
-            <TableCell className="text-center px-2">
+            <TableCell className="text-center px-2" style={{ width: '180px', minWidth: '180px' }}>
                 {isEditing ? (
-                    <div className="space-y-2 min-w-[120px]">
+                    <div className="space-y-2">
                         <Input 
                             type="number" 
                             min="1"
@@ -443,7 +443,7 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                     </div>
                 )}
             </TableCell>
-            <TableCell className="px-2">
+            <TableCell className="px-2" style={{ width: '150px', minWidth: '150px' }}>
                 {isEditing ? (
                     <div className="space-y-2">
                         <div className="text-xs font-medium text-muted-foreground mb-1">Found Items</div>
@@ -509,13 +509,13 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                     </div>
                 )}
             </TableCell>
-            <TableCell className="text-right px-2">
+            <TableCell className="text-right px-2" style={{ width: '100px', minWidth: '100px' }}>
                 {isEditing ? (
                     <Input 
                         type="number" 
                         value={editableOrder.total.toString()} 
                         onChange={e => handleFieldChange('total', e.target.value)} 
-                        className="h-9 w-full min-w-[100px] max-w-[150px] border-2 text-right font-semibold" 
+                        className="h-9 w-full border-2 text-right font-semibold" 
                         disabled={isSaving}
                     />
                 ) : (
@@ -533,7 +533,7 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                     </div>
                 )}
             </TableCell>
-             <TableCell className="text-center px-2">
+             <TableCell className="text-center px-2" style={{ width: '100px', minWidth: '100px' }}>
                 {isEditing ? (
                     <Button
                         size="sm"
@@ -582,9 +582,9 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                     })()
                 )}
             </TableCell>
-            <TableCell className="text-center px-2">
+            <TableCell className="text-center px-2" style={{ width: '140px', minWidth: '140px' }}>
                 {isEditing ? (
-                     <div className="relative w-full min-w-[140px] max-w-[200px] mx-auto">
+                     <div className="relative w-full mx-auto">
                         <Select
                             value={editableOrder.status}
                             onValueChange={(value) => handleFieldChange('status', value)}
@@ -620,7 +620,7 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                     </Badge>
                 )}
             </TableCell>
-            <TableCell className="text-center px-2">
+            <TableCell className="text-center px-2" style={{ width: '140px', minWidth: '140px' }}>
                  {isEditing ? (
                     <div className="flex items-center justify-center gap-2">
                         {onDeleteOrder && (
@@ -1588,65 +1588,64 @@ export function OrderList({
 
       {/* Desktop View - Table */}
       <div className="hidden md:block w-full">
-        <div className="overflow-x-auto">
-          <Table className="w-full">
+        <Table className="w-full">
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="w-auto font-semibold px-2">
+              <TableHead className="font-semibold px-2" style={{ width: '100px', minWidth: '100px' }}>
                 <div className="flex items-center gap-2">
                   <Package className="h-4 w-4 text-primary" />
                   ORDER #
                 </div>
               </TableHead>
-              <TableHead className="w-auto font-semibold text-center px-2">
+              <TableHead className="font-semibold text-center px-2" style={{ width: '120px', minWidth: '120px' }}>
                 <div className="flex items-center justify-center gap-2">
                   <Calendar className="h-4 w-4 text-primary" />
                   Date
                 </div>
               </TableHead>
-              <TableHead className="w-auto font-semibold px-2">
+              <TableHead className="font-semibold px-2" style={{ width: '180px', minWidth: '180px' }}>
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-primary" />
                   Name
                 </div>
               </TableHead>
-              <TableHead className="w-auto font-semibold px-2">
+              <TableHead className="font-semibold px-2" style={{ width: '200px', minWidth: '200px' }}>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-primary" />
                   Employee
                 </div>
               </TableHead>
-              <TableHead className="w-auto font-semibold text-center px-2">
+              <TableHead className="font-semibold text-center px-2" style={{ width: '180px', minWidth: '180px' }}>
                 <div className="flex items-center justify-center gap-2">
                   <Layers className="h-4 w-4 text-primary" />
                   Load
                 </div>
               </TableHead>
-              <TableHead className="w-auto font-semibold px-2">
+              <TableHead className="font-semibold px-2" style={{ width: '150px', minWidth: '150px' }}>
                 <div className="flex items-center gap-2">
                   <Search className="h-4 w-4 text-primary" />
                   Found Items
                 </div>
               </TableHead>
-              <TableHead className="w-auto font-semibold text-right px-2">
+              <TableHead className="font-semibold text-right px-2" style={{ width: '100px', minWidth: '100px' }}>
                 <div className="flex items-center justify-end gap-2">
                   <DollarSign className="h-4 w-4 text-primary" />
                   Total (₱)
                 </div>
               </TableHead>
-              <TableHead className="w-auto font-semibold text-center px-2">
+              <TableHead className="font-semibold text-center px-2" style={{ width: '100px', minWidth: '100px' }}>
                 <div className="flex items-center justify-center gap-2">
                   <CreditCard className="h-4 w-4 text-primary" />
                   Payment
                 </div>
               </TableHead>
-              <TableHead className="w-auto font-semibold text-center px-2">
+              <TableHead className="font-semibold text-center px-2" style={{ width: '140px', minWidth: '140px' }}>
                 <div className="flex items-center justify-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                   Status
                 </div>
               </TableHead>
-              <TableHead className="w-auto font-semibold text-center px-2">
+              <TableHead className="font-semibold text-center px-2" style={{ width: '140px', minWidth: '140px' }}>
                 <div className="flex items-center justify-center gap-2">
                   <MoreVertical className="h-4 w-4 text-primary" />
                   Action
@@ -1660,7 +1659,6 @@ export function OrderList({
             ))}
           </TableBody>
         </Table>
-        </div>
 
         {/* Desktop Pagination */}
         {totalPages > 1 && (

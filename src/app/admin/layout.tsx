@@ -69,8 +69,8 @@ export default function AdminLayout({
       <AppHeader />
       <PromoBanner />
       <main className="flex-1 w-full pb-20">
-        <div className="container mx-auto px-4 py-4 sm:py-8 w-full">
-          <div className="w-full max-w-7xl space-y-6">
+        <div className="w-full px-4 py-4 sm:py-8">
+          <div className="w-full space-y-6">
             {children}
           </div>
         </div>
