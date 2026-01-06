@@ -4,6 +4,7 @@ export const SALARY_PER_LOAD = 30;
 
 export const ELIGIBLE_STATUSES = [
   'Ready for Pick Up',
+  'Out for Delivery',
   'Delivered',
   'Success',
 ] as const;

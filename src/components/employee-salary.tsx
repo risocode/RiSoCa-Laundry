@@ -33,7 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/hooks/use-employees';
 import type { Order } from '@/components/order-list';
 import type { DailySalary, Employee, DailyPaymentStatus } from './employee-salary/types';
-import { SALARY_PER_LOAD } from './employee-salary/types';
+import { SALARY_PER_LOAD, ELIGIBLE_STATUSES } from './employee-salary/types';
 import { fetchOrders, fetchAllDailyPayments, fetchDailyPayments } from './employee-salary/fetch-data';
 import { groupOrdersByDate, calculateActualTotalSalary, calculateEmployeeLoads, calculateEmployeeSalary } from './employee-salary/calculate-salary';
 import { autoSaveDailySalaries } from './employee-salary/auto-save-salaries';
@@ -369,9 +369,14 @@ export function EmployeeSalary() {
                               const isMyra = myraEmployee?.id === emp.id;
                               
                               // Calculate loads for this employee, handling both single and multiple employee assignments
+                              // Only count orders with eligible statuses: Ready for Pick Up, Out for Delivery, Delivered, Success
                               let customerLoadsForEmployee = 0;
                               
-                              orders.forEach(order => {
+                              const eligibleOrders = orders.filter(order => 
+                                ELIGIBLE_STATUSES.includes(order.status)
+                              );
+                              
+                              eligibleOrders.forEach(order => {
                                 if (order.orderType === 'internal') return; // Skip internal orders here
                                 
                                 // Check if order has multiple employees assigned
@@ -465,9 +470,10 @@ export function EmployeeSalary() {
                              : [];
                            const paymentKey = `${emp.id}-${dateKey}`;
                            const isEditingAmount = editingPaymentAmount === paymentKey;
-                           // Use payment amount from database if it exists, otherwise use calculated salary
+                           // Use payment amount from database if it exists and is not 0, otherwise use calculated salary
                            // This preserves manually edited amounts while defaulting to calculated salary
-                           const currentAmount = payment?.amount ?? employeeSalary;
+                           // If amount is 0, treat it as unset and use calculated
+                           const currentAmount = (payment?.amount && payment.amount > 0) ? payment.amount : employeeSalary;
                            
                            return (
                              <div key={emp.id} className="flex flex-col gap-2 p-3 border rounded-md bg-background">

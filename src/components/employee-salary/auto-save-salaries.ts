@@ -60,9 +60,10 @@ export async function autoSaveDailySalaries(
               const calculatedRounded = Math.round(calculatedSalary * 100) / 100;
               const existingRounded = Math.round(existingAmount * 100) / 100;
               
+              // If amount is 0, always update to calculated (treat 0 as unset/default)
               // If amounts match (within 0.01), update to ensure sync
               // If amounts differ significantly, preserve the manual edit
-              if (Math.abs(existingRounded - calculatedRounded) < 0.01) {
+              if (existingRounded === 0 || Math.abs(existingRounded - calculatedRounded) < 0.01) {
                 const { error } = await supabase
                   .from('daily_salary_payments')
                   .update({

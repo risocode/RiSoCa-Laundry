@@ -16,7 +16,12 @@ export function calculateEmployeeLoads(
   
   let customerLoadsForEmployee = 0;
   
-  orders.forEach(order => {
+  // Only count orders with eligible statuses
+  const eligibleOrders = orders.filter(order => 
+    ELIGIBLE_STATUSES.includes(order.status)
+  );
+  
+  eligibleOrders.forEach(order => {
     if (order.orderType === 'internal') return;
     
     if (order.assignedEmployeeIds && Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length > 0) {
