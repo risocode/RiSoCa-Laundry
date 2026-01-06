@@ -46,9 +46,11 @@ import {
   Calendar,
   Plus,
   Search,
+  Trash2,
 } from 'lucide-react';
 import { PaymentDialog } from '@/components/payment-dialog';
 import { StatusDialog } from '@/components/status-dialog';
+import { DeleteOrderDialog } from '@/components/delete-order-dialog';
 import { useEmployees } from '@/hooks/use-employees';
 import {
   Accordion,
@@ -71,12 +73,13 @@ import {
   getPaymentBadgeInfo,
 } from './order-list/utils';
 
-function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: OrderListProps['onUpdateOrder'] }) {
+function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpdateOrder: OrderListProps['onUpdateOrder'], onDeleteOrder?: OrderListProps['onDeleteOrder'] }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editableOrder, setEditableOrder] = useState(order);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const { employees, loading: loadingEmployees } = useEmployees();
 
     // SAFETY CHECK: If balance is undefined but order is not paid, set balance to total
@@ -585,6 +588,18 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
             <TableCell className="text-center px-2">
                  {isEditing ? (
                     <div className="flex items-center justify-center gap-2">
+                        {onDeleteOrder && (
+                            <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                onClick={() => setIsDeleteDialogOpen(true)} 
+                                disabled={isSaving}
+                                className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive"
+                                title="Delete order"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        )}
                         <Button 
                             size="icon" 
                             variant="ghost" 
@@ -641,6 +656,19 @@ function OrderRow({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Order
             currentStatus={workingOrder.status}
             orderId={workingOrder.id}
         />
+        {onDeleteOrder && (
+            <DeleteOrderDialog
+                isOpen={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={async () => {
+                    if (onDeleteOrder) {
+                        await onDeleteOrder(workingOrder.id);
+                        setIsEditing(false);
+                    }
+                }}
+                orderId={workingOrder.id}
+            />
+        )}
         </>
     );
 }
@@ -650,12 +678,13 @@ const Label = ({ children, ...props }: React.LabelHTMLAttributes<HTMLLabelElemen
     <label className="text-xs font-medium text-muted-foreground" {...props}>{children}</label>
 );
 
-function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: OrderListProps['onUpdateOrder'] }) {
+function OrderCard({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpdateOrder: OrderListProps['onUpdateOrder'], onDeleteOrder?: OrderListProps['onDeleteOrder'] }) {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editableOrder, setEditableOrder] = useState(order);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const { employees, loading: loadingEmployees } = useEmployees();
 
     // SAFETY CHECK: If balance is undefined but order is not paid, set balance to total
@@ -1274,6 +1303,17 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
                             <div className="flex justify-end gap-2 pt-2 border-t">
                                 {isEditing ? (
                                     <>
+                                        {onDeleteOrder && (
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => setIsDeleteDialogOpen(true)} 
+                                                disabled={isSaving}
+                                                className="gap-2 hover:bg-destructive/10 hover:border-destructive hover:text-destructive"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                                Delete
+                                            </Button>
+                                        )}
                                         <Button 
                                             variant="outline" 
                                             onClick={handleCancel} 
@@ -1339,6 +1379,19 @@ function OrderCard({ order, onUpdateOrder }: { order: Order, onUpdateOrder: Orde
             currentStatus={workingOrder.status}
             orderId={workingOrder.id}
         />
+        {onDeleteOrder && (
+            <DeleteOrderDialog
+                isOpen={isDeleteDialogOpen}
+                onClose={() => setIsDeleteDialogOpen(false)}
+                onConfirm={async () => {
+                    if (onDeleteOrder) {
+                        await onDeleteOrder(workingOrder.id);
+                        setIsEditing(false);
+                    }
+                }}
+                orderId={workingOrder.id}
+            />
+        )}
         </>
     );
 }
@@ -1349,6 +1402,7 @@ export type { Order, StatusHistory, OrderListProps } from './order-list/types';
 export function OrderList({
   orders,
   onUpdateOrder,
+  onDeleteOrder,
   enablePagination = true,
 }: OrderListProps) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -1415,7 +1469,7 @@ export function OrderList({
       {/* Mobile View - Card List */}
       <div className="md:hidden space-y-4">
         {paginatedOrders.map((order) => (
-          <OrderCard key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} />
+          <OrderCard key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} onDeleteOrder={onDeleteOrder} />
         ))}
         
         {/* Mobile Pagination */}
@@ -1531,7 +1585,7 @@ export function OrderList({
           </TableHeader>
           <TableBody>
             {paginatedOrders.map((order) => (
-              <OrderRow key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} />
+              <OrderRow key={`${order.id}-${order.balance}-${order.isPaid}`} order={order} onUpdateOrder={onUpdateOrder} onDeleteOrder={onDeleteOrder} />
             ))}
           </TableBody>
         </Table>

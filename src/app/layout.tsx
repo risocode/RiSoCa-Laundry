@@ -101,11 +101,9 @@ export default function RootLayout({
         <meta name="twitter:title" content="RKR Laundry Service" />
         <meta name="twitter:description" content="Fast, clean, and convenient laundry service at rkrlaundry.com. Real-time tracking and smart pricing for your laundry needs." />
         <meta name="twitter:image" content="https://rkrlaundry.com/icons/android-chrome-512x512.png" />
-        {/* Google AdSense Auto Ads */}
+        {/* Google AdSense - Auto Ads DISABLED (using specific ad units only) */}
         {/* 
-          Auto Ads are automatically enabled by the client parameter in the script URL.
-          DO NOT manually push enable_page_level_ads - it causes duplicate errors.
-          The script URL with ?client=ca-pub-XXXXX automatically initializes Auto Ads.
+          Auto Ads are DISABLED - we only use specific ad units (left sidebar, right sidebar, mobile banner, popup).
           Publisher ID matches ads.txt: pub-1482729173853463
         */}
         <script
@@ -113,6 +111,17 @@ export default function RootLayout({
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1482729173853463"
           crossOrigin="anonymous"
           data-ad-client="ca-pub-1482729173853463"
+        />
+        {/* Explicitly disable Auto Ads / Page-Level Ads */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (window.adsbygoogle = window.adsbygoogle || []).push({
+                google_ad_client: "ca-pub-1482729173853463",
+                enable_page_level_ads: false
+              });
+            `,
+          }}
         />
       </head>
       <body className="font-body antialiased flex flex-col h-screen overflow-hidden">

@@ -31,6 +31,7 @@ import { filterOrders } from './orders-page/filter-orders';
 import { fetchOrders } from './orders-page/fetch-orders';
 import { handleOrderUpdate } from './orders-page/handle-order-updates';
 import { handleOrderCreation } from './orders-page/handle-order-creation';
+import { deleteOrder } from '@/lib/api/orders';
 
 export function OrdersPage() {
   const { toast } = useToast();
@@ -127,6 +128,33 @@ export function OrdersPage() {
     await handleOrderCreation(newOrder, user?.id, toast, loadOrders);
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      const { error } = await deleteOrder(orderId);
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Delete failed',
+          description: error.message || 'Failed to delete order. Please try again.',
+        });
+      } else {
+        toast({
+          title: 'Order deleted',
+          description: `Order ${orderId} has been permanently deleted.`,
+        });
+        // Refresh orders list
+        loadOrders();
+      }
+    } catch (err: any) {
+      console.error('Error deleting order:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Delete failed',
+        description: err.message || 'An unexpected error occurred. Please try again.',
+      });
+    }
+  };
+
   return (
     <div className="w-full">
       {/* Main Orders Card */}
@@ -204,6 +232,7 @@ export function OrdersPage() {
             <OrderList
               orders={filteredOrders}
               onUpdateOrder={handleUpdateOrder}
+              onDeleteOrder={handleDeleteOrder}
               enablePagination={datePreset === 'all'}
             />
           ) : (

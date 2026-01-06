@@ -30,6 +30,7 @@ export type Order = {
 export type OrderListProps = {
   orders: Order[];
   onUpdateOrder: (order: Order) => Promise<void>;
+  onDeleteOrder?: (orderId: string) => Promise<void>; // Optional delete handler
   enablePagination?: boolean; // If false, show all orders without pagination
 };
 

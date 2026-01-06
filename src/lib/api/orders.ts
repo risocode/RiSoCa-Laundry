@@ -548,6 +548,33 @@ export async function cancelOrderByCustomer(orderId: string, customerId: string)
 }
 
 /**
+ * Delete an order (admin only)
+ * This will delete the order and its associated status history
+ */
+export async function deleteOrder(orderId: string) {
+  // First, delete the order status history
+  const { error: historyError } = await supabase
+    .from('order_status_history')
+    .delete()
+    .eq('order_id', orderId);
+
+  if (historyError) {
+    console.error('Error deleting order status history:', historyError);
+    // Continue even if history deletion fails
+  }
+
+  // Then, delete the order
+  const { data, error } = await supabase
+    .from('orders')
+    .delete()
+    .eq('id', orderId)
+    .select()
+    .single();
+
+  return { data, error };
+}
+
+/**
  * Count orders created by a customer today (including canceled orders)
  * Uses UTC for consistency with database timestamps
  */
