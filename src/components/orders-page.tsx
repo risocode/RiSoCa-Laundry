@@ -158,8 +158,8 @@ export function OrdersPage() {
   return (
     <div className="w-full">
       {/* Main Orders Card */}
-      <Card className="w-full flex flex-col shadow-xl border-2">
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b p-6">
+      <Card className="w-full flex flex-col shadow-xl border-2 h-[calc(100vh-8rem)]">
+        <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b p-6 flex-shrink-0">
           <div className="flex flex-col gap-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -222,7 +222,7 @@ export function OrdersPage() {
             />
           </div>
         </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto scrollable p-6">
+        <CardContent className="flex-1 overflow-y-auto overflow-x-auto scrollable p-6 min-h-0">
           {loadingAdmin ? (
             <div className="flex flex-col items-center justify-center h-64 text-center text-muted-foreground">
               <Loader2 className="h-12 w-12 mb-4 animate-spin text-primary" />

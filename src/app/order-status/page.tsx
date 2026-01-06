@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getCachedOrders, setCachedOrders } from '@/lib/order-cache';
 import { PopupAd } from '@/components/popup-ad';
+import { isAdmin } from '@/lib/auth-helpers';
 import {
   Tooltip,
   TooltipContent,
@@ -45,7 +46,22 @@ export default function OrderStatusPage() {
   const [loadingMyOrders, setLoadingMyOrders] = useState(false);
   const [orderIdSearch, setOrderIdSearch] = useState('');
   const [popupAdTrigger, setPopupAdTrigger] = useState(0);
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
   const { toast } = useToast();
+
+  // Check if user is admin
+  useEffect(() => {
+    async function checkAdminRole() {
+      if (authLoading) return;
+      if (!user) {
+        setUserIsAdmin(false);
+        return;
+      }
+      const adminStatus = await isAdmin(user.id);
+      setUserIsAdmin(adminStatus);
+    }
+    checkAdminRole();
+  }, [user, authLoading]);
 
   // Auto-load orders for logged-in users with caching
   useEffect(() => {
@@ -260,7 +276,7 @@ export default function OrderStatusPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      <PopupAd trigger={popupAdTrigger} />
+      {!userIsAdmin && <PopupAd trigger={popupAdTrigger} />}
       <AppHeader />
       <PromoBanner />
       <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">

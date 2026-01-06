@@ -109,6 +109,25 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
 
     // Employees are now fetched via useEmployees hook with caching
 
+    // Helper function to calculate total based on loads, servicePackage, and distance
+    const calculateTotalFromLoads = (loads: number, servicePackage: string, distance: number): number => {
+        const baseCost = loads * 180;
+        const needsLocation = servicePackage === 'package2' || servicePackage === 'package3';
+        const isFree = needsLocation && distance > 0 && distance <= 0.5;
+        
+        let transportFee = 0;
+        if (!isFree && needsLocation) {
+            const billableDistance = Math.max(0, distance - 1);
+            if (servicePackage === 'package2') {
+                transportFee = billableDistance * 20;
+            } else if (servicePackage === 'package3') {
+                transportFee = billableDistance * 20 * 2;
+            }
+        }
+        
+        return baseCost + transportFee;
+    };
+
     const handleFieldChange = (field: keyof Order, value: string | number | boolean | null | string[] | Date) => {
         let newOrderState = { ...editableOrder };
 
@@ -329,10 +348,26 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                     <div className="space-y-2 min-w-[120px]">
                         <Input 
                             type="number" 
+                            min="1"
                             value={editableOrder.load} 
                             onChange={e => {
-                                const newLoad = Number(e.target.value) || 0;
+                                const newLoad = Math.max(1, Number(e.target.value) || 1);
+                                
+                                // Calculate new weight (each load = 7.5 kg)
+                                const newWeight = newLoad * 7.5;
+                                
+                                // Calculate new total based on loads, servicePackage, and distance
+                                const newTotal = calculateTotalFromLoads(
+                                    newLoad,
+                                    editableOrder.servicePackage,
+                                    editableOrder.distance || 0
+                                );
+                                
+                                // Update load, weight, and total
                                 handleFieldChange('load', newLoad);
+                                handleFieldChange('weight', newWeight);
+                                handleFieldChange('total', newTotal);
+                                
                                 // Adjust loadPieces array if load count changes
                                 if (newLoad !== editableOrder.load) {
                                     const currentPieces = editableOrder.loadPieces || [];
@@ -702,6 +737,25 @@ function OrderCard({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUp
     // Use safeOrder for all calculations to ensure balance is never undefined
     const workingOrder = safeOrder;
 
+    // Helper function to calculate total based on loads, servicePackage, and distance
+    const calculateTotalFromLoads = (loads: number, servicePackage: string, distance: number): number => {
+        const baseCost = loads * 180;
+        const needsLocation = servicePackage === 'package2' || servicePackage === 'package3';
+        const isFree = needsLocation && distance > 0 && distance <= 0.5;
+        
+        let transportFee = 0;
+        if (!isFree && needsLocation) {
+            const billableDistance = Math.max(0, distance - 1);
+            if (servicePackage === 'package2') {
+                transportFee = billableDistance * 20;
+            } else if (servicePackage === 'package3') {
+                transportFee = billableDistance * 20 * 2;
+            }
+        }
+        
+        return baseCost + transportFee;
+    };
+
     // Fix: Watch for balance and isPaid changes, not just order.id
     useEffect(() => {
         setEditableOrder({
@@ -1023,10 +1077,26 @@ function OrderCard({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUp
                                             <Input 
                                                 id={`load-mob-${order.id}`} 
                                                 type="number" 
+                                                min="1"
                                                 value={editableOrder.load} 
                                                 onChange={e => {
-                                                    const newLoad = Number(e.target.value) || 0;
+                                                    const newLoad = Math.max(1, Number(e.target.value) || 1);
+                                                    
+                                                    // Calculate new weight (each load = 7.5 kg)
+                                                    const newWeight = newLoad * 7.5;
+                                                    
+                                                    // Calculate new total based on loads, servicePackage, and distance
+                                                    const newTotal = calculateTotalFromLoads(
+                                                        newLoad,
+                                                        editableOrder.servicePackage,
+                                                        editableOrder.distance || 0
+                                                    );
+                                                    
+                                                    // Update load, weight, and total
                                                     handleFieldChange('load', newLoad);
+                                                    handleFieldChange('weight', newWeight);
+                                                    handleFieldChange('total', newTotal);
+                                                    
                                                     // Adjust loadPieces array if load count changes
                                                     if (newLoad !== editableOrder.load) {
                                                         const currentPieces = editableOrder.loadPieces || [];
@@ -1517,8 +1587,9 @@ export function OrderList({
       </div>
 
       {/* Desktop View - Table */}
-      <div className="hidden md:block w-full">
-        <Table className="w-full">
+      <div className="hidden md:block w-full overflow-x-auto">
+        <div className="min-w-full inline-block">
+          <Table className="w-full">
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
               <TableHead className="w-auto font-semibold px-2">
@@ -1589,6 +1660,7 @@ export function OrderList({
             ))}
           </TableBody>
         </Table>
+        </div>
 
         {/* Desktop Pagination */}
         {totalPages > 1 && (
