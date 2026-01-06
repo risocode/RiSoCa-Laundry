@@ -156,7 +156,7 @@ export function OrdersPage() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-full">
       {/* Main Orders Card */}
       <Card className="w-full flex flex-col shadow-xl border-2">
         <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 border-b p-6">

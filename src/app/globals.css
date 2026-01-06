@@ -209,6 +209,12 @@ main {
     margin-left: 160px !important;
     margin-right: 160px !important;
   }
+  
+  /* Override margins for admin pages (no ads) */
+  [data-admin-layout] main {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
 }
 
 /* Smooth transitions for responsive design - only for layout elements */
