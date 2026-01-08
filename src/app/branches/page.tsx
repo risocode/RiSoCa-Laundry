@@ -14,7 +14,7 @@ const branches = [
     { 
         name: "Main Branch", 
         address: "228 Divisoria Enrile Cagayan", 
-        mapLink: "https://maps.app.goo.gl/CDcYYu91x34uhuHm9",
+        mapLink: "https://www.google.com/maps/place/RKR+Laundry/@17.5229606,121.775069,21z/data=!4m6!3m5!1s0x338583541bb0adf7:0xaf899040178c3ef1!8m2!3d17.5229507!4d121.7750615!16s%2Fg%2F11yskzr976?hl=en&entry=ttu&g_ep=EgoyMDI2MDEwNC4wIKXMDSoASAFQAw%3D%3D",
         phoneNumbers: [
             "09157079908",
             "09459787490",
