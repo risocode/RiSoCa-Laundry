@@ -116,10 +116,16 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              (window.adsbygoogle = window.adsbygoogle || []).push({
-                google_ad_client: "ca-pub-1482729173853463",
-                enable_page_level_ads: false
-              });
+              (function() {
+                // Only set enable_page_level_ads once per page
+                if (!window.__adsbygoogle_page_level_ads_set) {
+                  window.__adsbygoogle_page_level_ads_set = true;
+                  (window.adsbygoogle = window.adsbygoogle || []).push({
+                    google_ad_client: "ca-pub-1482729173853463",
+                    enable_page_level_ads: false
+                  });
+                }
+              })();
             `,
           }}
         />
