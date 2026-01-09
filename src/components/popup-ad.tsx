@@ -76,15 +76,8 @@ export function PopupAd({ trigger }: { trigger: number }) {
         const status = popupAd.getAttribute('data-adsbygoogle-status');
         if (status === 'filled') {
           setAdFilled(true);
-        } else if (status === 'unfilled' || status === 'done') {
-          // Ad failed to load, close after delay
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-          }
-          timeoutRef.current = setTimeout(() => {
-            setIsOpen(false);
-          }, 3000); // Close after 3 seconds if no ad
         }
+        // Don't auto-close on unfilled - let user close manually or wait longer
       }
     };
 
@@ -101,44 +94,48 @@ export function PopupAd({ trigger }: { trigger: number }) {
       });
     }
 
-    // Small delay to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      // Check if AdSense is already loaded
-      if ((window as any).adsbygoogle) {
-        initAd();
-        checkAdStatus();
-      } else {
-        // Wait for AdSense to load
-        const checkInterval = setInterval(() => {
-          if ((window as any).adsbygoogle) {
-            initAd();
-            checkAdStatus();
+    // Initialize ad immediately - no delay
+    let checkInterval: NodeJS.Timeout | null = null;
+    
+    if ((window as any).adsbygoogle) {
+      initAd();
+      checkAdStatus();
+    } else {
+      // Wait for AdSense to load, but check more frequently
+      checkInterval = setInterval(() => {
+        if ((window as any).adsbygoogle) {
+          initAd();
+          checkAdStatus();
+          if (checkInterval) {
             clearInterval(checkInterval);
           }
-        }, 100);
+        }
+      }, 50); // Check every 50ms for faster initialization
 
-        // Clear interval after 10 seconds
-        setTimeout(() => {
+      // Clear interval after 10 seconds
+      setTimeout(() => {
+        if (checkInterval) {
           clearInterval(checkInterval);
-        }, 10000);
-      }
-    }, 500);
+        }
+      }, 10000);
+    }
 
-    // Auto-close if no ad loads within 3 seconds to avoid blank popup
+    // Only auto-close if no ad loads after 10 seconds (much longer)
     timeoutRef.current = setTimeout(() => {
       const popupAd = document.getElementById('popup-ad');
       if (popupAd) {
         const status = popupAd.getAttribute('data-adsbygoogle-status') || popupAd.getAttribute('data-ad-status');
-        if (status !== 'filled') {
+        if (status !== 'filled' && !adFilled) {
+          // Only close if still no ad after 10 seconds
           setIsOpen(false);
         }
-      } else if (!adFilled) {
-        setIsOpen(false);
       }
-    }, 3000);
+    }, 10000); // Extended to 10 seconds
 
     return () => {
-      clearTimeout(timeoutId);
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
@@ -159,27 +156,23 @@ export function PopupAd({ trigger }: { trigger: number }) {
             variant="ghost"
             size="sm"
             onClick={() => setIsOpen(false)}
-            className="absolute top-2 right-2 z-10 h-6 w-6 p-0 rounded-full bg-background/80 hover:bg-background"
+            className="absolute top-2 right-2 z-20 h-6 w-6 p-0 rounded-full bg-background/80 hover:bg-background"
             aria-label="Close ad"
           >
             <X className="h-4 w-4" />
           </Button>
           
-          {/* Ad container - render ad element so it can load, but hide if not filled */}
+          {/* Ad container - always visible so ad can load immediately */}
           <div 
-            className="w-full min-h-[250px] flex items-center justify-center bg-muted/30"
-            style={{ 
-              display: adFilled ? 'flex' : 'none',
-              minHeight: '250px'
-            }}
+            className="w-full min-h-[250px] flex items-center justify-center bg-muted/30 relative"
+            style={{ minHeight: '250px' }}
           >
             <ins
               id="popup-ad"
               className="adsbygoogle"
               style={{ 
-                display: adFilled ? 'block' : 'none', 
+                display: 'block', 
                 width: '100%', 
-                height: '250px', 
                 minHeight: '250px' 
               }}
               data-ad-client="ca-pub-1482729173853463"
@@ -187,17 +180,17 @@ export function PopupAd({ trigger }: { trigger: number }) {
               data-ad-format="rectangle"
               data-full-width-responsive="true"
             />
-          </div>
-          
-          {/* Loading state - briefly show while ad loads, then auto-close if no ad */}
-          {isOpen && !adFilled && (
-            <div className="w-full min-h-[250px] flex items-center justify-center bg-muted/30">
-              <div className="text-center space-y-2">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-sm text-muted-foreground">Loading ad...</p>
+            
+            {/* Loading state overlay - only show if ad hasn't filled yet */}
+            {!adFilled && (
+              <div className="absolute inset-0 w-full min-h-[250px] flex items-center justify-center bg-muted/30 z-10">
+                <div className="text-center space-y-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                  <p className="text-sm text-muted-foreground">Loading ad...</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
