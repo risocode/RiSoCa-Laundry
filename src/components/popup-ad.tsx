@@ -12,6 +12,7 @@ export function PopupAd({ trigger }: { trigger: number }) {
   const [adFilled, setAdFilled] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const observerRef = useRef<MutationObserver | null>(null);
+  const statusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Trigger pop-up ad when trigger value changes (button click)
@@ -34,10 +35,14 @@ export function PopupAd({ trigger }: { trigger: number }) {
         observerRef.current.disconnect();
         observerRef.current = null;
       }
+      if (statusCheckIntervalRef.current) {
+        clearInterval(statusCheckIntervalRef.current);
+        statusCheckIntervalRef.current = null;
+      }
       return;
     }
 
-    // Wait for AdSense script to load
+    // Wait for dialog to be fully rendered in DOM before initializing ad
     const initAd = () => {
       if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
         try {
@@ -54,7 +59,8 @@ export function PopupAd({ trigger }: { trigger: number }) {
                 ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
                 setAdLoaded(true);
               } catch (e) {
-                // Ad already initialized or error
+                // Ad already initialized or error - retry
+                console.log('Ad initialization error, will retry:', e);
               }
             }
             
@@ -77,65 +83,76 @@ export function PopupAd({ trigger }: { trigger: number }) {
         if (status === 'filled') {
           setAdFilled(true);
         }
-        // Don't auto-close on unfilled - let user close manually or wait longer
       }
     };
 
     // Set up observer to watch for ad status changes
-    const popupAd = document.getElementById('popup-ad');
-    if (popupAd) {
-      observerRef.current = new MutationObserver(() => {
-        checkAdStatus();
-      });
-      
-      observerRef.current.observe(popupAd, {
-        attributes: true,
-        attributeFilter: ['data-adsbygoogle-status', 'data-ad-status'],
-      });
-    }
-
-    // Initialize ad immediately - no delay
-    let checkInterval: NodeJS.Timeout | null = null;
-    
-    if ((window as any).adsbygoogle) {
-      initAd();
-      checkAdStatus();
-    } else {
-      // Wait for AdSense to load, but check more frequently
-      checkInterval = setInterval(() => {
-        if ((window as any).adsbygoogle) {
-          initAd();
+    const setupObserver = () => {
+      const popupAd = document.getElementById('popup-ad');
+      if (popupAd && !observerRef.current) {
+        observerRef.current = new MutationObserver(() => {
           checkAdStatus();
-          if (checkInterval) {
+        });
+        
+        observerRef.current.observe(popupAd, {
+          attributes: true,
+          attributeFilter: ['data-adsbygoogle-status', 'data-ad-status'],
+        });
+      }
+    };
+
+    // Small delay to ensure dialog is fully rendered in DOM
+    const timeoutId = setTimeout(() => {
+      // Set up observer first
+      setupObserver();
+      
+      // Then initialize ad
+      if ((window as any).adsbygoogle) {
+        initAd();
+        checkAdStatus();
+      } else {
+        // Wait for AdSense to load
+        const checkInterval = setInterval(() => {
+          if ((window as any).adsbygoogle) {
+            initAd();
+            checkAdStatus();
             clearInterval(checkInterval);
           }
-        }
-      }, 50); // Check every 50ms for faster initialization
+        }, 100);
 
-      // Clear interval after 10 seconds
-      setTimeout(() => {
-        if (checkInterval) {
+        // Clear interval after 10 seconds
+        setTimeout(() => {
           clearInterval(checkInterval);
-        }
-      }, 10000);
-    }
+        }, 10000);
+      }
+    }, 300); // Small delay to ensure dialog DOM is ready
 
-    // Only auto-close if no ad loads after 10 seconds (much longer)
+    // Periodic check for ad status (in case observer misses it)
+    statusCheckIntervalRef.current = setInterval(() => {
+      if (isOpen && !adFilled) {
+        checkAdStatus();
+      } else {
+        if (statusCheckIntervalRef.current) {
+          clearInterval(statusCheckIntervalRef.current);
+          statusCheckIntervalRef.current = null;
+        }
+      }
+    }, 500); // Check every 500ms
+
+    // Only auto-close if no ad loads after 15 seconds
     timeoutRef.current = setTimeout(() => {
       const popupAd = document.getElementById('popup-ad');
       if (popupAd) {
         const status = popupAd.getAttribute('data-adsbygoogle-status') || popupAd.getAttribute('data-ad-status');
         if (status !== 'filled' && !adFilled) {
-          // Only close if still no ad after 10 seconds
+          // Only close if still no ad after 15 seconds
           setIsOpen(false);
         }
       }
-    }, 10000); // Extended to 10 seconds
+    }, 15000); // Extended to 15 seconds
 
     return () => {
-      if (checkInterval) {
-        clearInterval(checkInterval);
-      }
+      clearTimeout(timeoutId);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
@@ -143,6 +160,10 @@ export function PopupAd({ trigger }: { trigger: number }) {
       if (observerRef.current) {
         observerRef.current.disconnect();
         observerRef.current = null;
+      }
+      if (statusCheckIntervalRef.current) {
+        clearInterval(statusCheckIntervalRef.current);
+        statusCheckIntervalRef.current = null;
       }
     };
   }, [isOpen, adLoaded, adFilled]);
