@@ -113,7 +113,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="font-body antialiased flex flex-col h-screen overflow-hidden">
+      <body className="font-body antialiased flex flex-col min-h-screen">
         {/* Prevent aria-hidden on body element - accessibility fix */}
         {/* Suppress non-critical third-party ad network errors */}
         <script

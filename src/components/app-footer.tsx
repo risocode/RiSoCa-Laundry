@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export function AppFooter() {
   return (
-    <footer className="fixed bottom-0 left-0 right-0 w-full min-h-[3.5rem] py-2 px-4 bg-background/95 border-t z-10 backdrop-blur-sm">
+    <footer className="fixed bottom-0 left-0 right-0 w-full min-h-[3.5rem] py-2 px-4 bg-background/95 border-t z-[9999] backdrop-blur-sm">
       <div className="container mx-auto flex flex-wrap items-center justify-center text-xs sm:text-sm text-muted-foreground gap-x-4 gap-y-1">
         <p className="text-center">&copy; {new Date().getFullYear()} RKR Laundry. All rights reserved.</p>
         <div className="flex items-center gap-x-3">
