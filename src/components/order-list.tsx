@@ -51,6 +51,7 @@ import {
 import { PaymentDialog } from '@/components/payment-dialog';
 import { StatusDialog } from '@/components/status-dialog';
 import { DeleteOrderDialog } from '@/components/delete-order-dialog';
+import { LoadDetailsDialog } from '@/components/load-details-dialog';
 import { useEmployees } from '@/hooks/use-employees';
 import {
   Accordion,
@@ -80,6 +81,7 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
     const { employees, loading: loadingEmployees } = useEmployees();
 
     // SAFETY CHECK: If balance is undefined but order is not paid, set balance to total
@@ -432,7 +434,19 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                     </div>
                 ) : (
                     <div className="flex flex-col gap-0.5 items-center">
-                        <Badge variant="outline" className="font-semibold">
+                        <Badge 
+                            variant="outline" 
+                            className="font-semibold cursor-pointer hover:bg-primary/10 hover:border-primary hover:text-primary transition-all"
+                            onClick={() => setIsLoadDialogOpen(true)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setIsLoadDialogOpen(true);
+                                }
+                            }}
+                        >
                             {workingOrder.load} load{workingOrder.load > 1 ? 's' : ''}
                         </Badge>
                         {workingOrder.loadPieces && workingOrder.loadPieces.length > 0 && workingOrder.loadPieces.some(p => p !== null && p !== undefined) && (
@@ -691,6 +705,13 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
             currentStatus={workingOrder.status}
             orderId={workingOrder.id}
         />
+        <LoadDetailsDialog
+            isOpen={isLoadDialogOpen}
+            onClose={() => setIsLoadDialogOpen(false)}
+            orderId={workingOrder.id}
+            loadCount={workingOrder.load}
+            loadPieces={workingOrder.loadPieces}
+        />
         {onDeleteOrder && (
             <DeleteOrderDialog
                 isOpen={isDeleteDialogOpen}
@@ -720,6 +741,7 @@ function OrderCard({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUp
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
     const { employees, loading: loadingEmployees } = useEmployees();
 
     // SAFETY CHECK: If balance is undefined but order is not paid, set balance to total
@@ -1161,7 +1183,20 @@ function OrderCard({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUp
                                         </div>
                                     ) : (
                                         <div className="flex flex-col gap-0.5">
-                                            <span className="font-medium">{workingOrder.load} load{workingOrder.load > 1 ? 's' : ''}</span>
+                                            <span 
+                                                className="font-medium cursor-pointer hover:text-primary transition-colors"
+                                                onClick={() => setIsLoadDialogOpen(true)}
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        setIsLoadDialogOpen(true);
+                                                    }
+                                                }}
+                                            >
+                                                {workingOrder.load} load{workingOrder.load > 1 ? 's' : ''}
+                                            </span>
                                             {workingOrder.loadPieces && workingOrder.loadPieces.length > 0 && workingOrder.loadPieces.some(p => p !== null && p !== undefined) && (
                                                 <div className="text-xs text-muted-foreground">
                                                     ({workingOrder.loadPieces.filter(p => p !== null && p !== undefined).join(', ')} pcs)
@@ -1448,6 +1483,13 @@ function OrderCard({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUp
             }}
             currentStatus={workingOrder.status}
             orderId={workingOrder.id}
+        />
+        <LoadDetailsDialog
+            isOpen={isLoadDialogOpen}
+            onClose={() => setIsLoadDialogOpen(false)}
+            orderId={workingOrder.id}
+            loadCount={workingOrder.load}
+            loadPieces={workingOrder.loadPieces}
         />
         {onDeleteOrder && (
             <DeleteOrderDialog
