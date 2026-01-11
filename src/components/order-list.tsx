@@ -708,9 +708,8 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
         <LoadDetailsDialog
             isOpen={isLoadDialogOpen}
             onClose={() => setIsLoadDialogOpen(false)}
-            orderId={workingOrder.id}
-            loadCount={workingOrder.load}
-            loadPieces={workingOrder.loadPieces}
+            order={workingOrder}
+            onUpdateOrder={onUpdateOrder}
         />
         {onDeleteOrder && (
             <DeleteOrderDialog
@@ -1487,9 +1486,8 @@ function OrderCard({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUp
         <LoadDetailsDialog
             isOpen={isLoadDialogOpen}
             onClose={() => setIsLoadDialogOpen(false)}
-            orderId={workingOrder.id}
-            loadCount={workingOrder.load}
-            loadPieces={workingOrder.loadPieces}
+            order={workingOrder}
+            onUpdateOrder={onUpdateOrder}
         />
         {onDeleteOrder && (
             <DeleteOrderDialog
