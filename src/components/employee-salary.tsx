@@ -382,10 +382,22 @@ export function EmployeeSalary() {
   };
 
   const handleSaveLoadCompletion = async (loadCompletion: LoadCompletionData) => {
-    if (!loadDialogOrder || !loadDialogDate || !loadDialogEmployeeId) return;
+    console.log('[handleSaveLoadCompletion] Starting save operation', {
+      hasOrder: !!loadDialogOrder,
+      hasDate: !!loadDialogDate,
+      hasEmployeeId: !!loadDialogEmployeeId,
+      orderId: loadDialogOrder?.id,
+    });
+
+    if (!loadDialogOrder || !loadDialogDate || !loadDialogEmployeeId) {
+      console.warn('[handleSaveLoadCompletion] Missing required data, aborting');
+      return;
+    }
 
     try {
       const dateStr = format(loadDialogDate, 'yyyy-MM-dd');
+      console.log('[handleSaveLoadCompletion] Saving load completion data', { dateStr, employeeId: loadDialogEmployeeId });
+      
       await saveLoadCompletion(
         loadDialogEmployeeId,
         loadDialogDate,
@@ -400,10 +412,18 @@ export function EmployeeSalary() {
         }
       );
 
+      console.log('[handleSaveLoadCompletion] Load completion saved successfully');
+
       // Check if there are incomplete loads for this order
       const orderCompletion = loadCompletion[loadDialogOrder.id];
       const incompleteLoads = orderCompletion?.incomplete_loads || [];
       const nextDayEmployeeId = orderCompletion?.next_day_employee_id || null;
+
+      console.log('[handleSaveLoadCompletion] Checking for incomplete loads', {
+        incompleteLoadsCount: incompleteLoads.length,
+        incompleteLoads,
+        nextDayEmployeeId,
+      });
 
       // If there are incomplete loads, create a new order for tomorrow
       // NOTE: The original order is NOT modified - it remains unchanged in the main dashboard
@@ -412,91 +432,129 @@ export function EmployeeSalary() {
         const tomorrow = startOfDay(addDays(loadDialogDate, 1));
         const incompleteLoadCount = incompleteLoads.length;
         
-        try {
-          // Generate new order ID for tomorrow's order
-          const { latestId, error: idError } = await fetchLatestOrderId();
-          if (idError) {
-            console.error('Failed to generate order ID:', idError);
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description: 'Failed to generate order ID for tomorrow\'s order. Please try again.',
-            });
-            return; // Exit early if ID generation fails
-          }
-          
-          const newOrderId = generateNextOrderId(latestId);
-          
-          // Calculate values for tomorrow's order
-          const incompleteWeight = incompleteLoadCount * 7.5;
-          const incompleteTotal = calculateTotalFromLoads(
-            incompleteLoadCount,
-            loadDialogOrder.servicePackage,
-            loadDialogOrder.distance || 0
-          );
-          
-          // Determine employee assignment for the new order
-          const assignedEmployeeId = nextDayEmployeeId || loadDialogEmployeeId;
-          
-          // Create the new order for tomorrow
-          const { error: createError } = await createOrderWithHistory({
-            id: newOrderId,
-            customer_id: loadDialogOrder.userId || 'admin-manual',
-            customer_name: loadDialogOrder.customerName,
-            contact_number: loadDialogOrder.contactNumber,
-            service_package: loadDialogOrder.servicePackage as 'package1' | 'package2' | 'package3',
-            weight: incompleteWeight,
-            loads: incompleteLoadCount,
-            distance: loadDialogOrder.distance ?? null,
-            delivery_option: loadDialogOrder.deliveryOption ?? null,
-            status: 'Partial Complete',
-            total: incompleteTotal,
-            is_paid: false,
-            order_type: loadDialogOrder.orderType || 'customer',
-            assigned_employee_id: assignedEmployeeId,
-            assigned_employee_ids: assignedEmployeeId ? [assignedEmployeeId] : undefined,
-            created_at: tomorrow.toISOString(),
-          });
+        console.log('[handleSaveLoadCompletion] Creating order for tomorrow', {
+          tomorrow: tomorrow.toISOString(),
+          incompleteLoadCount,
+        });
 
-          if (createError) {
-            console.error('Failed to create order for tomorrow:', createError);
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description: 'Failed to create order for tomorrow. Please try again.',
-            });
-          } else {
-            toast({
-              title: 'Order Created for Tomorrow',
-              description: `New order #${newOrderId} created for tomorrow with ${incompleteLoadCount} load${incompleteLoadCount > 1 ? 's' : ''}. The original order remains unchanged.`,
-            });
-          }
-        } catch (orderCreationError: any) {
-          console.error('Error creating order for tomorrow:', orderCreationError);
+        // Generate new order ID for tomorrow's order
+        const { latestId, error: idError } = await fetchLatestOrderId();
+        
+        if (idError) {
+          console.error('[handleSaveLoadCompletion] Failed to generate order ID:', idError);
           toast({
             variant: 'destructive',
             title: 'Error',
-            description: orderCreationError.message || 'Failed to create order for tomorrow. Please try again.',
+            description: `Failed to generate order ID for tomorrow's order: ${idError.message || 'Unknown error'}. Please try again.`,
           });
-          // Continue execution - we've saved the load completion, just failed to create tomorrow's order
+          // Continue to finally block - don't return early
+        } else if (latestId !== null) {
+          try {
+            const newOrderId = generateNextOrderId(latestId);
+            console.log('[handleSaveLoadCompletion] Generated new order ID', { newOrderId });
+            
+            // Calculate values for tomorrow's order
+            const incompleteWeight = incompleteLoadCount * 7.5;
+            const incompleteTotal = calculateTotalFromLoads(
+              incompleteLoadCount,
+              loadDialogOrder.servicePackage,
+              loadDialogOrder.distance || 0
+            );
+            
+            // Determine employee assignment for the new order
+            const assignedEmployeeId = nextDayEmployeeId || loadDialogEmployeeId;
+            
+            if (!assignedEmployeeId) {
+              console.error('[handleSaveLoadCompletion] No employee ID available for new order');
+              toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'No employee assigned for tomorrow\'s order. Please assign an employee.',
+              });
+              // Continue to finally block
+            } else {
+              console.log('[handleSaveLoadCompletion] Creating order with data', {
+                newOrderId,
+                assignedEmployeeId,
+                incompleteLoadCount,
+                incompleteWeight,
+                incompleteTotal,
+              });
+
+              // Create the new order for tomorrow
+              const { error: createError } = await createOrderWithHistory({
+                id: newOrderId,
+                customer_id: loadDialogOrder.userId || 'admin-manual',
+                customer_name: loadDialogOrder.customerName,
+                contact_number: loadDialogOrder.contactNumber,
+                service_package: loadDialogOrder.servicePackage as 'package1' | 'package2' | 'package3',
+                weight: incompleteWeight,
+                loads: incompleteLoadCount,
+                distance: loadDialogOrder.distance ?? null,
+                delivery_option: loadDialogOrder.deliveryOption ?? null,
+                status: 'Partial Complete',
+                total: incompleteTotal,
+                is_paid: false,
+                order_type: loadDialogOrder.orderType || 'customer',
+                assigned_employee_id: assignedEmployeeId,
+                assigned_employee_ids: assignedEmployeeId ? [assignedEmployeeId] : undefined,
+                created_at: tomorrow.toISOString(),
+              });
+
+              if (createError) {
+                console.error('[handleSaveLoadCompletion] Failed to create order for tomorrow:', createError);
+                toast({
+                  variant: 'destructive',
+                  title: 'Error',
+                  description: `Failed to create order for tomorrow: ${createError.message || 'Unknown error'}. Please try again.`,
+                });
+              } else {
+                console.log('[handleSaveLoadCompletion] Order created successfully for tomorrow', { newOrderId });
+                toast({
+                  title: 'Order Created for Tomorrow',
+                  description: `New order #${newOrderId} created for tomorrow with ${incompleteLoadCount} load${incompleteLoadCount > 1 ? 's' : ''}. The original order remains unchanged.`,
+                });
+              }
+            }
+          } catch (orderCreationError: any) {
+            console.error('[handleSaveLoadCompletion] Exception creating order for tomorrow:', orderCreationError);
+            toast({
+              variant: 'destructive',
+              title: 'Error',
+              description: `Failed to create order for tomorrow: ${orderCreationError.message || 'Unknown error'}. Please try again.`,
+            });
+            // Continue execution - we've saved the load completion, just failed to create tomorrow's order
+          }
+        } else {
+          console.warn('[handleSaveLoadCompletion] Latest order ID is null, cannot generate new ID');
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to generate order ID: No existing orders found. Please try again.',
+          });
         }
+      } else {
+        console.log('[handleSaveLoadCompletion] No incomplete loads, skipping order creation');
       }
 
       // Refresh orders to recalculate salaries (wrap in try-catch to prevent blocking)
+      console.log('[handleSaveLoadCompletion] Refreshing orders');
       try {
         await loadOrders();
+        console.log('[handleSaveLoadCompletion] Orders refreshed successfully');
       } catch (loadError) {
-        console.error('Error refreshing orders:', loadError);
+        console.error('[handleSaveLoadCompletion] Error refreshing orders:', loadError);
         // Non-critical error, don't block dialog closure
       }
     } catch (error: any) {
-      console.error('Failed to save load completion:', error);
+      console.error('[handleSaveLoadCompletion] Failed to save load completion:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message || 'Failed to save load completion. Please try again.',
+        description: `Failed to save load completion: ${error.message || 'Unknown error'}. Please try again.`,
       });
     } finally {
+      console.log('[handleSaveLoadCompletion] Closing dialog (finally block)');
       // Always close the dialog, even if there were errors
       handleCloseLoadDetails();
     }
