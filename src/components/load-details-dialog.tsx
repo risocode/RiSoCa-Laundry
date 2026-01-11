@@ -23,12 +23,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Layers, Check, X, Loader2 } from 'lucide-react';
+import { Layers, Check, X, Loader2, AlertCircle } from 'lucide-react';
 import type { Order } from './order-list/types';
 import type { Employee, LoadCompletionData } from './employee-salary/types';
 import { cn } from '@/lib/utils';
 import { useEmployees } from '@/hooks/use-employees';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type LoadDetailsDialogProps = {
   isOpen: boolean;
@@ -52,6 +62,8 @@ export function LoadDetailsDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [loadStatuses, setLoadStatuses] = useState<boolean[]>([]); // true = done, false = not done
   const [nextDayEmployeeId, setNextDayEmployeeId] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingLoadIndex, setPendingLoadIndex] = useState<number | null>(null);
   const { employees, loading: loadingEmployees } = useEmployees();
 
   // Initialize load statuses when dialog opens
@@ -76,9 +88,34 @@ export function LoadDetailsDialog({
   }, [isOpen, order, loadCompletion]);
 
   const handleLoadToggle = (loadIndex: number) => {
-    const newStatuses = [...loadStatuses];
-    newStatuses[loadIndex] = !newStatuses[loadIndex];
-    setLoadStatuses(newStatuses);
+    const currentStatus = loadStatuses[loadIndex];
+    const newStatus = !currentStatus;
+    
+    // If unchecking (marking as not done), show confirmation dialog
+    if (currentStatus && !newStatus) {
+      setPendingLoadIndex(loadIndex);
+      setShowConfirmDialog(true);
+    } else {
+      // If checking (marking as done), update immediately
+      const newStatuses = [...loadStatuses];
+      newStatuses[loadIndex] = newStatus;
+      setLoadStatuses(newStatuses);
+    }
+  };
+
+  const handleConfirmUncheck = () => {
+    if (pendingLoadIndex !== null) {
+      const newStatuses = [...loadStatuses];
+      newStatuses[pendingLoadIndex] = false;
+      setLoadStatuses(newStatuses);
+      setPendingLoadIndex(null);
+    }
+    setShowConfirmDialog(false);
+  };
+
+  const handleCancelUncheck = () => {
+    setPendingLoadIndex(null);
+    setShowConfirmDialog(false);
   };
 
   const handleSave = async () => {
@@ -271,6 +308,41 @@ export function LoadDetailsDialog({
           </Button>
         </div>
       </DialogContent>
+      
+      {/* Confirmation Dialog for Unchecking Load */}
+      <AlertDialog 
+        open={showConfirmDialog} 
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCancelUncheck();
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+              Transfer Load to Tomorrow?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2 pt-2">
+              <p>
+                This load will be marked as incomplete and transferred to <strong>{format(addDays(date, 1), 'MMM dd, yyyy')}</strong> (tomorrow).
+              </p>
+              <p className="text-sm text-muted-foreground">
+                • The employee assignment can be edited later or tomorrow
+                • This load will not count toward today's salary
+                • The main order will still show {order.load} load{order.load > 1 ? 's' : ''} total
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelUncheck}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmUncheck} className="bg-orange-600 hover:bg-orange-700">
+              Confirm Transfer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
