@@ -60,6 +60,7 @@ export function OrderFilters({
           <option value="Out for Delivery">Out for Delivery</option>
           <option value="Delivered">Delivered</option>
           <option value="Success">Success</option>
+          <option value="Partial Complete">Partial Complete</option>
           <option value="Canceled">Canceled</option>
         </select>
         <select

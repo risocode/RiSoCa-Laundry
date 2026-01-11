@@ -23,6 +23,7 @@ const statusOptions = [
   'Out for Delivery',
   'Delivered',
   'Success',
+  'Partial Complete',
   'Canceled',
 ];
 
@@ -31,6 +32,8 @@ const getStatusColor = (status: string) => {
     case 'Delivered':
     case 'Success':
       return 'bg-green-500';
+    case 'Partial Complete':
+      return 'bg-orange-400';
     case 'Out for Delivery':
     case 'Ready for Pick Up':
       return 'bg-blue-500';

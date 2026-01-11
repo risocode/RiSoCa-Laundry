@@ -397,7 +397,7 @@ export function EmployeeSalary() {
             <CardTitle>Daily Salary Calculation</CardTitle>
             <CardDescription>
               Salary is calculated at ₱{SALARY_PER_LOAD} per load assigned to each employee. 
-              Only orders with status "Ready for Pick Up", "Out for Delivery", "Delivered", "Success", or "Washing" (and beyond) are counted. 
+              Only orders with status "Ready for Pick Up", "Out for Delivery", "Delivered", "Success", "Partial Complete", or "Washing" (and beyond) are counted. 
               Old unassigned orders are automatically counted for MYRA (the original employee).
             </CardDescription>
           </div>

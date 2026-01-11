@@ -90,6 +90,13 @@ const statuses = [
     color: 'text-green-600'
   },
   { 
+    name: 'Partial Complete', 
+    icon: Layers, 
+    description: 'Some loads are completed, remaining loads will continue tomorrow',
+    estimatedTime: 'In Progress',
+    color: 'text-orange-500'
+  },
+  { 
     name: 'Canceled', 
     icon: X, 
     description: 'This order has been canceled',

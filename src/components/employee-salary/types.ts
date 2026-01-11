@@ -7,6 +7,7 @@ export const ELIGIBLE_STATUSES = [
   'Out for Delivery',
   'Delivered',
   'Success',
+  'Partial Complete',
 ] as const;
 
 export type DailySalary = {
