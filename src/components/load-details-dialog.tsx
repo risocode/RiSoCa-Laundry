@@ -143,9 +143,10 @@ export function LoadDetailsDialog({
       };
 
       await onSave(completionData);
-      onClose();
+      // Don't call onClose() here - the parent component (handleSaveLoadCompletion) will handle closing
     } catch (error) {
       console.error('Error saving load completion:', error);
+      // Error is handled by parent component, don't close dialog on error
     } finally {
       setIsSaving(false);
     }

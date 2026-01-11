@@ -412,15 +412,19 @@ export function EmployeeSalary() {
         const tomorrow = startOfDay(addDays(loadDialogDate, 1));
         const incompleteLoadCount = incompleteLoads.length;
         
-        // Generate new order ID for tomorrow's order
-        const { latestId, error: idError } = await fetchLatestOrderId();
-        if (idError) {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Failed to generate order ID for tomorrow\'s order.',
-          });
-        } else {
+        try {
+          // Generate new order ID for tomorrow's order
+          const { latestId, error: idError } = await fetchLatestOrderId();
+          if (idError) {
+            console.error('Failed to generate order ID:', idError);
+            toast({
+              variant: 'destructive',
+              title: 'Error',
+              description: 'Failed to generate order ID for tomorrow\'s order. Please try again.',
+            });
+            return; // Exit early if ID generation fails
+          }
+          
           const newOrderId = generateNextOrderId(latestId);
           
           // Calculate values for tomorrow's order
@@ -467,12 +471,24 @@ export function EmployeeSalary() {
               description: `New order #${newOrderId} created for tomorrow with ${incompleteLoadCount} load${incompleteLoadCount > 1 ? 's' : ''}. The original order remains unchanged.`,
             });
           }
+        } catch (orderCreationError: any) {
+          console.error('Error creating order for tomorrow:', orderCreationError);
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: orderCreationError.message || 'Failed to create order for tomorrow. Please try again.',
+          });
+          // Continue execution - we've saved the load completion, just failed to create tomorrow's order
         }
       }
 
-      // Refresh orders to recalculate salaries
-      await loadOrders();
-      handleCloseLoadDetails();
+      // Refresh orders to recalculate salaries (wrap in try-catch to prevent blocking)
+      try {
+        await loadOrders();
+      } catch (loadError) {
+        console.error('Error refreshing orders:', loadError);
+        // Non-critical error, don't block dialog closure
+      }
     } catch (error: any) {
       console.error('Failed to save load completion:', error);
       toast({
@@ -480,6 +496,9 @@ export function EmployeeSalary() {
         title: 'Error',
         description: error.message || 'Failed to save load completion. Please try again.',
       });
+    } finally {
+      // Always close the dialog, even if there were errors
+      handleCloseLoadDetails();
     }
   };
 
