@@ -84,11 +84,14 @@ export function calculateStatistics(allOrders: Order[]): OrderStatistics {
     0
   );
 
-  // Calculate total loads (sum of all customer orders' load property)
-  const totalLoads = customerOrders.reduce((sum, o) => sum + (o.load || 0), 0);
+  // Calculate total loads (sum of all orders' load property, including internal orders)
+  const totalLoads = allOrders.reduce((sum, o) => sum + (o.load || 0), 0);
   
-  // Calculate today's loads
-  const todayLoads = todayCustomerOrders.reduce((sum, o) => sum + (o.load || 0), 0);
+  // Calculate today's loads (including internal orders)
+  const todayAllOrders = allOrders.filter(
+    (o) => startOfDay(o.orderDate).getTime() === today.getTime()
+  );
+  const todayLoads = todayAllOrders.reduce((sum, o) => sum + (o.load || 0), 0);
 
   // Yesterday's stats - all customer orders created yesterday
   const yesterday = startOfDay(subDays(new Date(), 1));
