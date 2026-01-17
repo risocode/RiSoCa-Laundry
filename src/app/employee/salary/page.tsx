@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Loader2, Inbox, CalendarIcon } from 'lucide-react';
+import { Loader2, Inbox, CalendarIcon, Trophy, User } from 'lucide-react';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { supabase } from '@/lib/supabase-client';
 import { format, startOfDay } from 'date-fns';
@@ -36,6 +36,14 @@ import { Badge } from '@/components/ui/badge';
 import { isAdmin, isEmployee } from '@/lib/auth-helpers';
 
 const SALARY_PER_LOAD = 30;
+
+type EmployeeSummary = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  currentUnpaid: number;
+  totalSalary: number;
+};
 
 type DailySalary = {
   date: Date;
@@ -55,12 +63,15 @@ export default function EmployeeSalaryPage() {
   const [userIsAdmin, setUserIsAdmin] = useState(false);
   const [userIsEmployee, setUserIsEmployee] = useState(false);
   const [employeeId, setEmployeeId] = useState<string | null>(null);
+  const [topEmployees, setTopEmployees] = useState<EmployeeSummary[]>([]);
+  const [loadingTopEmployees, setLoadingTopEmployees] = useState(true);
 
   useEffect(() => {
     fetchOrders();
     if (user) {
       checkUserRole();
     }
+    fetchTopEmployees();
   }, [user]);
 
   const checkUserRole = async () => {
@@ -149,6 +160,69 @@ export default function EmployeeSalaryPage() {
       });
     }
   }, [employeeId, orders]);
+
+  const fetchTopEmployees = async () => {
+    setLoadingTopEmployees(true);
+    try {
+      // Fetch all employees
+      const { data: employees, error: employeesError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .eq('role', 'employee')
+        .order('first_name', { ascending: true });
+
+      if (employeesError || !employees) {
+        console.error('Error fetching employees:', employeesError);
+        setTopEmployees([]);
+        setLoadingTopEmployees(false);
+        return;
+      }
+
+      // Fetch all daily salary payments
+      const { data: payments, error: paymentsError } = await supabase
+        .from('daily_salary_payments')
+        .select('employee_id, amount, is_paid')
+        .order('date', { ascending: false });
+
+      if (paymentsError) {
+        console.error('Error fetching payments:', paymentsError);
+        setTopEmployees([]);
+        setLoadingTopEmployees(false);
+        return;
+      }
+
+      // Calculate unpaid and total salary for each employee
+      const employeeSummaries: EmployeeSummary[] = employees.map((emp) => {
+        const employeePayments = (payments || []).filter((p) => p.employee_id === emp.id);
+        
+        const currentUnpaid = employeePayments
+          .filter((p) => !p.is_paid)
+          .reduce((sum, p) => sum + (p.amount || 0), 0);
+        
+        const totalSalary = employeePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+        return {
+          id: emp.id,
+          firstName: emp.first_name,
+          lastName: emp.last_name,
+          currentUnpaid,
+          totalSalary,
+        };
+      });
+
+      // Sort by unpaid salary descending and take top 3
+      const top3 = employeeSummaries
+        .sort((a, b) => b.currentUnpaid - a.currentUnpaid)
+        .slice(0, 3);
+
+      setTopEmployees(top3);
+    } catch (error) {
+      console.error('Error in fetchTopEmployees:', error);
+      setTopEmployees([]);
+    } finally {
+      setLoadingTopEmployees(false);
+    }
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -256,6 +330,75 @@ export default function EmployeeSalaryPage() {
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto overflow-x-hidden scrollable pt-4 pb-4">
+        {/* Top 3 Employees Summary */}
+        {userIsAdmin && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-primary" />
+              Top 3 Employees by Unpaid Salary
+            </h3>
+            {loadingTopEmployees ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : topEmployees.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {topEmployees.map((emp, index) => (
+                  <Card key={emp.id} className="border-2">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                          {index === 0 ? (
+                            <Trophy className="h-5 w-5 text-primary" />
+                          ) : (
+                            <User className="h-5 w-5 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base truncate">
+                            {emp.firstName} {emp.lastName}
+                          </CardTitle>
+                          <CardDescription className="text-xs">
+                            {index === 0 && '🥇 Highest Unpaid'}
+                            {index === 1 && '🥈 Second Highest'}
+                            {index === 2 && '🥉 Third Highest'}
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900">
+                        <div>
+                          <div className="text-xs text-muted-foreground">Current Unpaid</div>
+                          <div className="text-xl font-bold text-orange-700 dark:text-orange-400">
+                            ₱{emp.currentUnpaid.toFixed(2)}
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="bg-orange-600 hover:bg-orange-700">
+                          Unpaid
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900">
+                        <div>
+                          <div className="text-xs text-muted-foreground">Total Salary Throughout</div>
+                          <div className="text-xl font-bold text-green-700 dark:text-green-400">
+                            ₱{emp.totalSalary.toFixed(2)}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Inbox className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No employee salary data available</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Calendar Date Range Filter */}
         <div className="mb-6 p-4 border rounded-lg bg-muted/50 transition-all duration-300">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
