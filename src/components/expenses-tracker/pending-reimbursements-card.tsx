@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import type { Expense } from './types';
+import { formatCurrency } from '@/lib/utils';
 
 interface PendingReimbursementsCardProps {
   pendingTotal: number;
@@ -47,7 +48,7 @@ export function PendingReimbursementsCard({
                 <div>
                   <div className="text-xs text-muted-foreground font-medium">Racky</div>
                   <div className="font-bold text-lg text-orange-700 dark:text-orange-400 mt-1">
-                    ₱{pendingRacky.toFixed(2)}
+                    ₱{formatCurrency(pendingRacky)}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {pendingExpenses.filter(e => e.expense_for === 'Racky').length} expense(s)
@@ -81,7 +82,7 @@ export function PendingReimbursementsCard({
                 <div>
                   <div className="text-xs text-muted-foreground font-medium">Karaya</div>
                   <div className="font-bold text-lg text-orange-700 dark:text-orange-400 mt-1">
-                    ₱{pendingKaraya.toFixed(2)}
+                    ₱{formatCurrency(pendingKaraya)}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {pendingExpenses.filter(e => e.expense_for === 'Karaya').length} expense(s)
@@ -115,7 +116,7 @@ export function PendingReimbursementsCard({
                 <div>
                   <div className="text-xs text-muted-foreground font-medium">Richard</div>
                   <div className="font-bold text-lg text-orange-700 dark:text-orange-400 mt-1">
-                    ₱{pendingRichard.toFixed(2)}
+                    ₱{formatCurrency(pendingRichard)}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {pendingExpenses.filter(e => e.expense_for === 'Richard').length} expense(s)
@@ -146,7 +147,7 @@ export function PendingReimbursementsCard({
         <div className="pt-3 border-t">
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              <span className="font-semibold">Total Pending:</span> ₱{pendingTotal.toFixed(2)}
+              <span className="font-semibold">Total Pending:</span> ₱{formatCurrency(pendingTotal)}
             </div>
           </div>
         </div>

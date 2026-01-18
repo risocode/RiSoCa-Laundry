@@ -29,7 +29,7 @@ import { Loader2, Inbox, CalendarIcon, Trophy, User } from 'lucide-react';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { supabase } from '@/lib/supabase-client';
 import { format, startOfDay } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrencyWhole } from '@/lib/utils';
 import { SalaryCalendar } from '@/components/salary-calendar';
 import type { Order } from '@/components/order-list';
 import { Badge } from '@/components/ui/badge';
@@ -326,7 +326,7 @@ export default function EmployeeSalaryPage() {
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sticky top-0 bg-background z-10 border-b rounded-t-lg">
         <div>
           <CardTitle className="text-lg sm:text-xl">{userIsAdmin && !userIsEmployee ? 'Employee Salary' : 'My Salary'}</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">Salary is calculated at ₱{SALARY_PER_LOAD} per load for each day. All loads are paid immediately.</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Salary is calculated at ₱{formatCurrencyWhole(SALARY_PER_LOAD)} per load for each day. All loads are paid immediately.</CardDescription>
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto overflow-x-hidden scrollable pt-4 pb-4">
@@ -371,7 +371,7 @@ export default function EmployeeSalaryPage() {
                         <div>
                           <div className="text-xs text-muted-foreground">Current Unpaid</div>
                           <div className="text-xl font-bold text-orange-700 dark:text-orange-400">
-                            ₱{emp.currentUnpaid.toFixed(2)}
+                            ₱{formatCurrencyWhole(emp.currentUnpaid)}
                           </div>
                         </div>
                         <Badge variant="secondary" className="bg-orange-600 hover:bg-orange-700">
@@ -382,7 +382,7 @@ export default function EmployeeSalaryPage() {
                         <div>
                           <div className="text-xs text-muted-foreground">Total Salary Throughout</div>
                           <div className="text-xl font-bold text-green-700 dark:text-green-400">
-                            ₱{emp.totalSalary.toFixed(2)}
+                            ₱{formatCurrencyWhole(emp.totalSalary)}
                           </div>
                         </div>
                       </div>
@@ -456,7 +456,7 @@ export default function EmployeeSalaryPage() {
             <Card>
               <CardContent className="pt-4">
                 <div className="text-sm text-muted-foreground">Total Salary</div>
-                <div className="text-2xl font-bold text-primary">₱{totalSalary.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-primary">₱{formatCurrencyWhole(totalSalary)}</div>
               </CardContent>
             </Card>
             <Card>
@@ -502,7 +502,7 @@ export default function EmployeeSalaryPage() {
                       </div>
                       <div className="flex gap-4 text-sm text-right">
                         <span>Loads: <span className="font-bold">{totalLoads}</span></span>
-                        <span className="text-primary">Salary: <span className="font-bold">₱{totalSalary.toFixed(2)}</span></span>
+                        <span className="text-primary">Salary: <span className="font-bold">₱{formatCurrencyWhole(totalSalary)}</span></span>
                       </div>
                     </div>
                   </AccordionTrigger>
@@ -522,7 +522,7 @@ export default function EmployeeSalaryPage() {
                             <TableCell className="text-xs">{order.id}</TableCell>
                             <TableCell className="text-xs">{order.customerName}</TableCell>
                             <TableCell className="text-center text-xs">{order.load}</TableCell>
-                            <TableCell className="text-right text-xs">₱{(order.load * SALARY_PER_LOAD).toFixed(2)}</TableCell>
+                            <TableCell className="text-right text-xs">₱{formatCurrencyWhole(order.load * SALARY_PER_LOAD)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -530,7 +530,7 @@ export default function EmployeeSalaryPage() {
                         <TableRow>
                           <TableCell colSpan={2} className="font-bold text-xs">Total</TableCell>
                           <TableCell className="text-center font-bold text-xs">{totalLoads}</TableCell>
-                          <TableCell className="text-right font-bold text-xs">₱{totalSalary.toFixed(2)}</TableCell>
+                          <TableCell className="text-right font-bold text-xs">₱{formatCurrencyWhole(totalSalary)}</TableCell>
                         </TableRow>
                       </TableFooter>
                     </Table>

@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase-client';
+import { formatCurrencyWhole } from '@/lib/utils';
 import { getAverageRating } from '@/lib/api/ratings';
 
 export default function AboutUsPage() {
@@ -319,7 +320,7 @@ export default function AboutUsPage() {
                         <div className="flex-1">
                           <p className="font-semibold text-foreground mb-1">Package 1</p>
                           <p className="text-sm text-muted-foreground mb-2">Wash, Dry, and Fold (Drop-off)</p>
-                          <Badge variant="secondary" className="text-xs">₱180 per 7.5kg load</Badge>
+                          <Badge variant="secondary" className="text-xs">₱{formatCurrencyWhole(180)} per 7.5kg load</Badge>
                         </div>
                       </div>
                     </CardContent>

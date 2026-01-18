@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DollarSign, TrendingUp, TrendingDown, Share2, Calendar, Loader2, X } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 import type { DistributionData } from './types';
 
 interface SummaryCardsProps {
@@ -52,7 +53,7 @@ export function SummaryCards({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-            ₱{distributionData.totalRevenue.toFixed(2)}
+            ₱{formatCurrency(distributionData.totalRevenue)}
           </div>
           <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
             <Calendar className="h-3 w-3" />
@@ -70,7 +71,7 @@ export function SummaryCards({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-            ₱{distributionData.totalExpenses.toFixed(2)}
+            ₱{formatCurrency(distributionData.totalExpenses)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             Business expenses only
@@ -87,7 +88,7 @@ export function SummaryCards({
         </CardHeader>
         <CardContent>
           <div className={`text-2xl font-bold ${distributionData.netIncome >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            ₱{distributionData.netIncome.toFixed(2)}
+            ₱{formatCurrency(distributionData.netIncome)}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             Revenue - Expenses
@@ -105,7 +106,7 @@ export function SummaryCards({
         <CardContent>
           <div className="space-y-2">
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              ₱{bankSavings.toFixed(2)}
+              ₱{formatCurrency(bankSavings)}
             </div>
             <p className="text-xs text-muted-foreground">
               Deducted from net income
@@ -123,7 +124,7 @@ export function SummaryCards({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-            ₱{distributionData.availableForDistribution.toFixed(2)}
+            ₱{formatCurrency(distributionData.availableForDistribution)}
           </div>
           <p className="text-xs text-muted-foreground mt-1 mb-3">
             Net Income - Bank Savings
@@ -170,7 +171,7 @@ export function SummaryCards({
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Available: ₱{distributionData.availableForDistribution.toFixed(2)}
+                    Available: ₱{formatCurrency(distributionData.availableForDistribution)}
                   </p>
                 </div>
               ) : (
@@ -189,22 +190,6 @@ export function SummaryCards({
         </CardContent>
       </Card>
 
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-white dark:from-primary/10 dark:to-background">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Per Owner Share</CardTitle>
-          <div className="h-10 w-10 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
-            <Share2 className="h-5 w-5 text-primary" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-primary">
-            ₱{selectedOwnersCount > 0 ? (distributionData.availableForDistribution / selectedOwnersCount).toFixed(2) : '0.00'}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {selectedOwnersCount > 0 ? `${(100 / selectedOwnersCount).toFixed(2)}% each` : 'No owners selected'}
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }

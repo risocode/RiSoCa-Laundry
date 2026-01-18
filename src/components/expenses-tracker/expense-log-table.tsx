@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Trash2, Loader2, Edit2, Check, X, CheckCircle2, Clock, Inbox } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 import type { Expense, FilterType } from './types';
 
 interface ExpenseLogTableProps {
@@ -213,7 +214,7 @@ export function ExpenseLogTable({
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        ₱{Number(expense.amount).toFixed(2)}
+                        ₱{formatCurrency(Number(expense.amount))}
                       </TableCell>
                       <TableCell className="text-center">
                         <Button 

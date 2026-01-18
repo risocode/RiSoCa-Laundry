@@ -27,6 +27,7 @@ export type DistributionRecord = {
   share_amount: number;
   net_share: number;
   personal_expenses?: number; // optional
+  claimed_amount?: number;
   is_claimed: boolean;
   claimed_at?: string | null;
   period_start: string;
@@ -54,6 +55,8 @@ export type OwnerDistribution = {
   percentage: number;
   personalExpenses: number;
   netShare: number;
+  claimedAmount: number;
+  remainingShare: number;
   color: string;
   isSelected: boolean;
   isDisabled: boolean;

@@ -85,9 +85,15 @@ export function calculateDistributionData(
   // But they will be reimbursed, so we need to account for them
   const totalPersonalExpenses = Object.values(ownerExpenses).reduce((sum, val) => sum + val, 0);
   
-  // Available for distribution = Net Income - Bank Savings
-  // Bank savings is deducted from net income before distribution
-  const availableForDistribution = netIncome - bankSavings;
+  // Calculate total claimed amount from existing distributions for the current period
+  const periodTypeForFilter = distributionPeriod === 'all' ? 'custom' : distributionPeriod;
+  const totalClaimedAmount = existingDistributions
+    .filter(d => d.period_type === periodTypeForFilter)
+    .reduce((sum, d) => sum + (d.claimed_amount || 0), 0);
+  
+  // Available for distribution = Net Income - Bank Savings - Total Claimed Amounts
+  // Bank savings and claimed amounts are deducted from net income before distribution
+  const availableForDistribution = netIncome - bankSavings - totalClaimedAmount;
 
   // Equal distribution among selected owners
   // Distribution share is based on total net income (not after bank savings)
@@ -103,17 +109,25 @@ export function calculateDistributionData(
       d => d.owner_name === owner && 
       d.period_type === (distributionPeriod === 'all' ? 'custom' : distributionPeriod)
     );
+    const claimedAmount =
+      existingDist?.claimed_amount ??
+      (existingDist?.is_claimed ? existingDist?.net_share ?? 0 : 0);
+    const netShare = isSelected ? (distributionAmount - ownerExpenses[owner]) : 0;
+    const remainingShare = netShare > 0 ? Math.max(netShare - claimedAmount, 0) : 0;
+    const isClaimed = netShare > 0 ? claimedAmount >= netShare : false;
 
     return {
       name: owner,
       share: isSelected ? distributionAmount : 0,
       percentage: isSelected ? distributionPercentage : 0,
       personalExpenses: ownerExpenses[owner],
-      netShare: isSelected ? (distributionAmount - ownerExpenses[owner]) : 0, // After deducting their personal expenses
+      netShare,
+      claimedAmount,
+      remainingShare,
       color: COLORS[index],
       isSelected,
       isDisabled,
-      isClaimed: existingDist?.is_claimed || false,
+      isClaimed,
       claimedAt: existingDist?.claimed_at || null,
       distributionId: existingDist?.id || null,
     };

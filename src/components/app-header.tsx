@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Gift, WashingMachine, Sparkles, Clock } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrencyWhole } from '@/lib/utils';
 import { usePromo } from '@/contexts/promo-context';
 import type { Promo } from '@/lib/api/promos';
 
@@ -182,7 +182,7 @@ export function AppHeader() {
                       ✨ <strong className="text-red-700 text-xs sm:text-sm">Special Offer!</strong> ✨
                     </span>
                     <span className="text-yellow-900 font-bold text-[10px] sm:text-xs">
-                      — Only <strong className="text-red-700 text-sm sm:text-base">₱{promo.price_per_load} per load</strong>! 🎉
+                      — Only <strong className="text-red-700 text-sm sm:text-base">₱{formatCurrencyWhole(promo.price_per_load)} per load</strong>! 🎉
                     </span>
                   </div>
                   {/* Date for desktop only - below Special Offer */}

@@ -3,6 +3,7 @@
 import { Layers, MapPin, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { PricingResult } from './calculate-price';
+import { formatCurrencyWhole } from '@/lib/utils';
 
 interface PricingSummaryProps {
   isPending: boolean;
@@ -57,7 +58,7 @@ export function PricingSummary({
             <div className="flex justify-between items-center pt-2">
               <span className="text-base font-semibold text-foreground">Total Amount</span>
               <span className="text-3xl font-bold text-primary">
-                ₱{Math.ceil(pricingResult.computedPrice).toFixed(0)}
+                ₱{formatCurrencyWhole(pricingResult.computedPrice)}
               </span>
             </div>
             <p className="text-xs text-muted-foreground text-center pt-2 border-t">

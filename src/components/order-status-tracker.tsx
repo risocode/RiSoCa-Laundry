@@ -438,21 +438,17 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
                 )}
               </CardContent>
             </Card>
-
-            {/* Items Found Card - Only show if there are found items */}
-            {order.foundItems && Array.isArray(order.foundItems) && order.foundItems.length > 0 && (
-              <Card className="border-2 bg-gradient-to-br from-yellow-50/50 to-yellow-100/30 dark:from-yellow-950/20 dark:to-yellow-900/10">
-                <CardHeader className="p-3 pb-2">
-                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Search className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                    Items Found
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 pt-0 space-y-2 text-sm">
+            
+            <Card className="border-2 bg-gradient-to-br from-yellow-50/50 to-yellow-100/30 dark:from-yellow-950/20 dark:to-yellow-900/10">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Search className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                  Found Items
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0 space-y-2 text-sm">
+                {order.foundItems && Array.isArray(order.foundItems) && order.foundItems.length > 0 ? (
                   <div className="flex flex-col gap-2">
-                    <p className="text-xs text-muted-foreground">
-                      Items found in your laundry:
-                    </p>
                     <div className="flex flex-wrap gap-1.5">
                       {order.foundItems.map((item, index) => (
                         <Badge key={index} variant="outline" className="text-xs bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 font-medium">
@@ -464,9 +460,12 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
                       Please collect these items when you pick up your laundry.
                     </p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <p className="text-xs text-muted-foreground">No items found</p>
+                )}
+              </CardContent>
+            </Card>
+
           </div>
 
           <Separator />

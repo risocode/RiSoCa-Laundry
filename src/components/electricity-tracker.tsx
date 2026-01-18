@@ -39,6 +39,7 @@ import {
   type ElectricityReading,
 } from '@/lib/api/electricity';
 import { useAuthSession } from '@/hooks/use-auth-session';
+import { formatCurrencyWhole } from '@/lib/utils';
 
 const electricitySchema = z.object({
   reading: z.coerce.number().min(0, 'Reading must be greater than or equal to 0'),
@@ -170,7 +171,7 @@ export function ElectricityTracker() {
     setIsEditingPrice(false);
     toast({
       title: 'Price Updated',
-      description: `Price per kWh set to ₱${newPrice.toFixed(2)}`,
+      description: `Price per kWh set to ₱${formatCurrencyWhole(newPrice)}`,
     });
   };
 
@@ -281,7 +282,7 @@ export function ElectricityTracker() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <p className="text-lg font-semibold">₱{pricePerKwh.toFixed(2)}</p>
+                  <p className="text-lg font-semibold">₱{formatCurrencyWhole(pricePerKwh)}</p>
                   <Button
                     size="icon"
                     variant="ghost"
@@ -295,7 +296,7 @@ export function ElectricityTracker() {
             </div>
             <div className="space-y-1">
               <Label className="text-sm text-muted-foreground">Total</Label>
-              <p className="text-lg font-semibold text-primary">₱{stats.total.toFixed(2)}</p>
+              <p className="text-lg font-semibold text-primary">₱{formatCurrencyWhole(stats.total)}</p>
             </div>
           </div>
         </CardContent>

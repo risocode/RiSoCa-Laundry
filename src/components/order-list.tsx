@@ -58,7 +58,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrencyWhole } from '@/lib/utils';
 import { format } from 'date-fns';
 import type {
   Order,
@@ -565,13 +565,13 @@ function OrderRow({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUpd
                     <div className="flex items-center justify-end gap-2">
                         {isPartiallyPaid ? (
                             <>
-                                <span className="line-through text-muted-foreground text-sm">₱{workingOrder.total.toFixed(0)}</span>
-                                <span className="text-orange-600 dark:text-orange-400 font-bold text-base">₱{workingOrder.balance!.toFixed(0)}</span>
+                                <span className="line-through text-muted-foreground text-sm">₱{formatCurrencyWhole(workingOrder.total)}</span>
+                                <span className="text-orange-600 dark:text-orange-400 font-bold text-base">₱{formatCurrencyWhole(workingOrder.balance!)}</span>
                             </>
                         ) : isFullyPaid ? (
-                            <span className="text-green-600 dark:text-green-400 font-bold text-base">₱{workingOrder.total.toFixed(0)}</span>
+                            <span className="text-green-600 dark:text-green-400 font-bold text-base">₱{formatCurrencyWhole(workingOrder.total)}</span>
                         ) : (
-                            <span className="text-red-600 dark:text-red-400 font-bold text-base">₱{workingOrder.total.toFixed(0)}</span>
+                            <span className="text-red-600 dark:text-red-400 font-bold text-base">₱{formatCurrencyWhole(workingOrder.total)}</span>
                         )}
                     </div>
                 )}
@@ -955,10 +955,10 @@ function OrderCard({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUp
                                     {(() => {
                                         const badgeInfo = getPaymentBadgeInfo(workingOrder.isPaid, isPartiallyPaid);
                                         const amountText = isPartiallyPaid 
-                                            ? `₱${workingOrder.balance!.toFixed(0)}` 
+                                            ? `₱${formatCurrencyWhole(workingOrder.balance!)}` 
                                             : isFullyPaid 
-                                                ? `₱${workingOrder.total.toFixed(0)}` 
-                                                : `₱${workingOrder.total.toFixed(0)}`;
+                                                ? `₱${formatCurrencyWhole(workingOrder.total)}` 
+                                                : `₱${formatCurrencyWhole(workingOrder.total)}`;
                                         
                                         return badgeInfo.clickable ? (
                                             <Badge 
@@ -1296,13 +1296,13 @@ function OrderCard({ order, onUpdateOrder, onDeleteOrder }: { order: Order, onUp
                                         <div className="flex flex-col gap-1">
                                             {isPartiallyPaid ? (
                                                 <>
-                                                    <span className="line-through text-muted-foreground text-sm">₱{workingOrder.total.toFixed(0)}</span>
-                                                    <span className="text-orange-600 dark:text-orange-400 font-bold text-base">₱{workingOrder.balance!.toFixed(0)}</span>
+                                                    <span className="line-through text-muted-foreground text-sm">₱{formatCurrencyWhole(workingOrder.total)}</span>
+                                                    <span className="text-orange-600 dark:text-orange-400 font-bold text-base">₱{formatCurrencyWhole(workingOrder.balance!)}</span>
                                                 </>
                                             ) : isFullyPaid ? (
-                                                <span className="text-green-600 dark:text-green-400 font-bold text-base">₱{workingOrder.total.toFixed(0)}</span>
+                                                <span className="text-green-600 dark:text-green-400 font-bold text-base">₱{formatCurrencyWhole(workingOrder.total)}</span>
                                             ) : (
-                                                <span className="text-red-600 dark:text-red-400 font-bold text-base">₱{workingOrder.total.toFixed(0)}</span>
+                                                <span className="text-red-600 dark:text-red-400 font-bold text-base">₱{formatCurrencyWhole(workingOrder.total)}</span>
                                             )}
                                         </div>
                                     )}

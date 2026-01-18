@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { formatCurrencyWhole } from '@/lib/utils';
 import { DollarSign, Package, Truck, Sparkles, CheckCircle2, ArrowRight, Info } from 'lucide-react';
 import Link from 'next/link';
 
@@ -52,7 +53,7 @@ export default function ServiceRatesPage() {
                       <Package className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-primary mb-1">₱180</div>
+                  <div className="text-2xl font-bold text-primary mb-1">₱{formatCurrencyWhole(180)}</div>
                   <div className="text-xs text-muted-foreground">Per 7.5kg Load</div>
                 </CardContent>
               </Card>
@@ -76,7 +77,7 @@ export default function ServiceRatesPage() {
                       <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-primary mb-1">₱20</div>
+                  <div className="text-2xl font-bold text-primary mb-1">₱{formatCurrencyWhole(20)}</div>
                   <div className="text-xs text-muted-foreground">Per Additional km</div>
                 </CardContent>
               </Card>

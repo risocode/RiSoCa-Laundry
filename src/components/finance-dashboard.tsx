@@ -28,6 +28,7 @@ import { COLORS } from './finance-dashboard/types';
 import { fetchFinanceData } from './finance-dashboard/fetch-data';
 import { calculateFinancialTotals, calculateBusinessMetrics } from './finance-dashboard/calculate-totals';
 import { prepareChartData, prepareExpenseCategoryData } from './finance-dashboard/prepare-chart-data';
+import { formatCurrency } from '@/lib/utils';
 
 export function FinanceDashboard() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -108,7 +109,7 @@ export function FinanceDashboard() {
               <DollarSign className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">₱{totalRevenue.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-green-600">₱{formatCurrency(totalRevenue)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 From {paidOrdersCount} paid order{paidOrdersCount !== 1 ? 's' : ''}
               </p>
@@ -121,7 +122,7 @@ export function FinanceDashboard() {
               <TrendingDown className="h-4 w-4 text-red-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">₱{regularExpenses.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-red-600">₱{formatCurrency(regularExpenses)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {expenses.length} expense{expenses.length !== 1 ? 's' : ''}
               </p>
@@ -134,7 +135,7 @@ export function FinanceDashboard() {
               <Wallet className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">₱{employeeSalaries.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-orange-600">₱{formatCurrency(employeeSalaries)}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 {salaryPayments.length} payment{salaryPayments.length !== 1 ? 's' : ''}
               </p>
@@ -148,7 +149,7 @@ export function FinanceDashboard() {
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                ₱{netIncome.toFixed(2)}
+                ₱{formatCurrency(netIncome)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {netIncome >= 0 ? 'Profit' : 'Loss'}
@@ -267,7 +268,7 @@ export function FinanceDashboard() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `₱${value.toFixed(2)}`} />
+                  <Tooltip formatter={(value: number) => `₱${formatCurrency(value)}`} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -312,7 +313,7 @@ export function FinanceDashboard() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="period" />
                   <YAxis />
-                  <Tooltip formatter={(value: number) => `₱${value.toFixed(2)}`} />
+                  <Tooltip formatter={(value: number) => `₱${formatCurrency(value)}`} />
                   <Legend />
                   <Bar dataKey="revenue" fill="#22c55e" name="Revenue" />
                   <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />

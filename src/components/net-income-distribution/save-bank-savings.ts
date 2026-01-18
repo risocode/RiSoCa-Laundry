@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase-client';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 import type { DistributionPeriod } from './types';
 import type { User } from '@supabase/supabase-js';
 
@@ -126,7 +127,7 @@ export async function saveBankSavingsDeposit(
 
     toast({
       title: 'Deposit Successful',
-      description: `₱${depositAmount.toFixed(2)} deposited to bank savings for ${depositDescription}.`,
+      description: `₱${formatCurrency(depositAmount)} deposited to bank savings for ${depositDescription}.`,
     });
 
     return { success: true, newTotal: totalAmount };
@@ -135,6 +136,90 @@ export async function saveBankSavingsDeposit(
     toast({
       variant: 'destructive',
       title: 'Error',
+      description: error.message || 'An unexpected error occurred.',
+    });
+    return { success: false };
+  }
+}
+
+export async function saveBankSavingsClaim(
+  claimAmount: number,
+  distributionPeriod: DistributionPeriod,
+  ownerName: string,
+  periodLabel: string,
+  user: User | null,
+  toast: (props: { title: string; description?: string; variant?: 'default' | 'destructive' }) => void
+): Promise<{ success: boolean }> {
+  const now = new Date();
+  let startDate: Date;
+  let endDate = now;
+  let periodType: string;
+
+  if (distributionPeriod === 'monthly') {
+    startDate = startOfMonth(now);
+    endDate = endOfMonth(now);
+    periodType = 'monthly';
+  } else if (distributionPeriod === 'yearly') {
+    startDate = startOfYear(now);
+    endDate = endOfYear(now);
+    periodType = 'yearly';
+  } else if (distributionPeriod === 'all') {
+    startDate = now;
+    endDate = now;
+    periodType = 'custom';
+  } else {
+    toast({
+      variant: 'destructive',
+      title: 'Cannot claim',
+      description: 'Invalid period type for bank savings claim.',
+    });
+    return { success: false };
+  }
+
+  if (isNaN(claimAmount) || claimAmount <= 0) {
+    toast({
+      variant: 'destructive',
+      title: 'Invalid amount',
+      description: 'Please enter a valid positive number.',
+    });
+    return { success: false };
+  }
+
+  const negativeAmount = -Math.abs(claimAmount);
+
+  try {
+    const { error } = await supabase
+      .from('bank_savings')
+      .insert({
+        period_start: format(startDate, 'yyyy-MM-dd'),
+        period_end: format(endDate, 'yyyy-MM-dd'),
+        period_type: periodType,
+        amount: negativeAmount,
+        notes: `Claim: ${ownerName} (${periodLabel})`,
+        created_by: user?.id,
+      });
+
+    if (error) {
+      console.error('Error inserting bank savings claim:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Claim failed',
+        description: error.message || 'Failed to deduct from bank savings.',
+      });
+      return { success: false };
+    }
+
+    toast({
+      title: 'Bank Savings Updated',
+      description: `₱${formatCurrency(claimAmount)} deducted from bank savings.`,
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Unexpected error saving bank savings claim:', error);
+    toast({
+      variant: 'destructive',
+      title: 'Claim failed',
       description: error.message || 'An unexpected error occurred.',
     });
     return { success: false };

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, ShoppingBag, Package, Truck, Sparkles, CheckCircle2, Clock, Info, ArrowRight, WashingMachine, MapPin, Phone, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
+import { formatCurrencyWhole } from '@/lib/utils';
 
 function CreateOrderForm() {
     return (
@@ -171,7 +172,7 @@ function CreateOrderForm() {
                           </div>
                           <span className="text-sm font-semibold">Standard Service (per 7.5kg load)</span>
                         </div>
-                        <Badge variant="outline" className="text-lg font-bold px-3 py-1">₱180</Badge>
+                        <Badge variant="outline" className="text-lg font-bold px-3 py-1">₱{formatCurrencyWhole(180)}</Badge>
                       </div>
                       <div className="flex items-center justify-between p-4 rounded-xl bg-background/80 border-2 border-green-200/50 hover:border-green-300 transition-colors">
                         <div className="flex items-center gap-3">
@@ -189,7 +190,7 @@ function CreateOrderForm() {
                           </div>
                           <span className="text-sm font-semibold">Each additional kilometer</span>
                         </div>
-                        <Badge variant="outline" className="text-lg font-bold px-3 py-1">₱20</Badge>
+                        <Badge variant="outline" className="text-lg font-bold px-3 py-1">₱{formatCurrencyWhole(20)}</Badge>
                       </div>
                     </div>
                     <div className="pt-3 p-4 rounded-lg bg-muted/30 border">

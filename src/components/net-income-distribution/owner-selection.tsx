@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckSquare, Square, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { OWNERS, COLORS } from './types';
 import type { OwnerDistribution } from './types';
 
@@ -65,7 +65,7 @@ export function OwnerSelection({
                 </div>
                 {ownerData && ownerData.share > 0 && !isDisabled && (
                   <Badge variant={isSelected ? "default" : "outline"}>
-                    {isSelected ? `₱${ownerData.share.toFixed(2)}` : 'Excluded'}
+                    {isSelected ? `₱${formatCurrency(ownerData.remainingShare)}` : 'Excluded'}
                   </Badge>
                 )}
               </div>

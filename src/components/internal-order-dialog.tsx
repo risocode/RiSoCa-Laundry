@@ -17,7 +17,7 @@ import type { Order } from './order-list';
 import { Loader2, Shirt, Users } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useEmployees } from '@/hooks/use-employees';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrencyWhole } from '@/lib/utils';
 
 const internalOrderSchema = z.object({
   loads: z.number().min(1, 'Please select number of loads.').max(10, 'Maximum 10 loads allowed.'),
@@ -156,7 +156,7 @@ export function InternalOrderDialog({ isOpen, onClose, onAddOrder }: InternalOrd
                 </div>
                 <div className="flex-1 text-right">
                   <div className="text-xs text-muted-foreground mb-1">Total</div>
-                  <div className="text-lg font-bold text-green-600 dark:text-green-400">₱0.00</div>
+                  <div className="text-lg font-bold text-green-600 dark:text-green-400">₱{formatCurrencyWhole(0)}</div>
                 </div>
               </div>
             </div>
@@ -219,7 +219,7 @@ export function InternalOrderDialog({ isOpen, onClose, onAddOrder }: InternalOrd
             />
             {form.watch('assigned_employee_ids') && form.watch('assigned_employee_ids')!.length > 0 && (
               <p className="text-xs text-muted-foreground mt-1">
-                Selected employee(s) will receive +₱30 bonus per load
+                Selected employee(s) will receive +₱{formatCurrencyWhole(30)} bonus per load
               </p>
             )}
           </div>

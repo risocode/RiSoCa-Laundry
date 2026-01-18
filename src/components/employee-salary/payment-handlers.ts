@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase-client';
+import { formatCurrencyWhole } from '@/lib/utils';
 import { fetchDailyPayments } from './fetch-data';
 import type { LoadCompletionData } from './types';
 
@@ -67,7 +68,7 @@ export async function savePaymentAmount(
 
   toast({
     title: 'Amount Updated',
-    description: `Payment amount has been updated to ₱${amount.toFixed(2)}.`,
+    description: `Payment amount has been updated to ₱${formatCurrencyWhole(amount)}.`,
   });
 
   const payments = await fetchDailyPayments(dateStr);

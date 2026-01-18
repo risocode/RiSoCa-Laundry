@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/components/app-header';
 import { AppFooter } from '@/components/app-footer';
+import { formatCurrencyWhole } from '@/lib/utils';
 import { PromoBanner } from '@/components/promo-banner';
 import { OrderStatusTracker } from '@/components/order-status-tracker';
 import { RateRKRLaundrySection } from '@/components/rate-rkr-laundry/rate-rkr-laundry-section';
@@ -300,7 +301,7 @@ export default function MyOrdersPage() {
                                   </p>
                                 </div>
                                 <div className="text-right ml-4">
-                                  <p className="font-semibold text-sm">₱{order.total.toFixed(2)}</p>
+                                  <p className="font-semibold text-sm">₱{formatCurrencyWhole(order.total)}</p>
                                   <p className="text-xs text-muted-foreground mt-1">
                                     {order.isPaid ? 'Paid' : 'Unpaid'}
                                   </p>

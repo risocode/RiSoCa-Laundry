@@ -13,6 +13,7 @@ import { PendingReimbursementsCard } from './expenses-tracker/pending-reimbursem
 import { ExpenseSummaryCard } from './expenses-tracker/expense-summary-card';
 import { ExpenseLogTable } from './expenses-tracker/expense-log-table';
 import { ReimbursementDialog } from './expenses-tracker/reimbursement-dialog';
+import { formatCurrency } from '@/lib/utils';
 
 export function ExpensesTracker() {
   const { toast } = useToast();
@@ -34,7 +35,7 @@ export function ExpensesTracker() {
     resolver: zodResolver(expenseSchema),
     defaultValues: {
       title: '',
-      amount: 0,
+      amount: undefined as any,
       category: '',
       expense_for: 'RKR',
       incurred_on: new Date().toISOString().slice(0, 10)
@@ -161,7 +162,7 @@ export function ExpensesTracker() {
     
     toast({ 
       title: `${personToReimburse}'s Expenses Reimbursed`, 
-      description: `${expenseIds.length} expense(s) totaling ₱${personTotal.toFixed(2)} have been transferred to RKR.` 
+      description: `${expenseIds.length} expense(s) totaling ₱${formatCurrency(personTotal)} have been transferred to RKR.` 
     });
     
     setBulkReimbursing(false);

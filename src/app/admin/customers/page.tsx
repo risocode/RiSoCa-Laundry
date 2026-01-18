@@ -23,7 +23,7 @@ import { Loader2, Inbox, ChevronDown, Search, Users, Package, DollarSign, Trendi
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase-client';
 import { format, startOfDay } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrencyWhole } from '@/lib/utils';
 
 type Order = {
   id: string;
@@ -261,7 +261,7 @@ export default function AdminCustomersPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">Total Revenue</p>
-                <p className="text-2xl font-bold text-primary">₱{stats.totalRevenue.toFixed(0)}</p>
+                <p className="text-2xl font-bold text-primary">₱{formatCurrencyWhole(stats.totalRevenue)}</p>
               </div>
               <div className="p-3 rounded-lg bg-amber-500/20">
                 <DollarSign className="h-6 w-6 text-amber-600 dark:text-amber-400" />
@@ -397,7 +397,7 @@ export default function AdminCustomersPage() {
                         </TableCell>
                         <TableCell className="text-right px-4 py-4 align-middle min-w-[160px] whitespace-nowrap">
                           <span className="font-bold text-primary text-lg">
-                            ₱{customer.totalAmountPaid.toFixed(2)}
+                            ₱{formatCurrencyWhole(customer.totalAmountPaid)}
                           </span>
                         </TableCell>
                         <TableCell className="px-4 py-4 align-middle w-[60px]">
@@ -468,7 +468,7 @@ export default function AdminCustomersPage() {
                                           <span className="font-medium">{transaction.weight.toFixed(2)} kg</span>
                                         </div>
                                         <div className="text-right min-w-[120px] whitespace-nowrap">
-                                          <span className="font-bold text-primary">₱{transaction.amountPaid.toFixed(2)}</span>
+                                          <span className="font-bold text-primary">₱{formatCurrencyWhole(transaction.amountPaid)}</span>
                                         </div>
                                         <div className="text-center min-w-[120px]">
                                           <code className="text-xs text-muted-foreground break-all bg-muted px-2 py-1 rounded">

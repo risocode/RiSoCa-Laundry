@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getAllPromos, createPromo, updatePromo, deletePromo, activatePromo, type Promo } from '@/lib/api/promos';
 import { useAuthSession } from '@/hooks/use-auth-session';
 import { Loader2, Plus, Edit, Trash2, Power, Calendar, Clock, DollarSign, FileText } from 'lucide-react';
+import { formatCurrencyWhole } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -343,7 +344,7 @@ export default function AdminPromoPage() {
                     <div className="flex-1">
                       <CardTitle className="text-lg flex items-center gap-2">
                         <DollarSign className="h-5 w-5 text-primary" />
-                        ₱{promo.price_per_load} per load
+                        ₱{formatCurrencyWhole(promo.price_per_load)} per load
                       </CardTitle>
                       <CardDescription className="mt-1">
                         <FileText className="h-4 w-4 inline mr-1" />

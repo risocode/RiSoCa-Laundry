@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { fetchOrderForCustomer, fetchMyOrders } from '@/lib/api/orders';
 import type { Order as OrderType } from '@/components/order-list';
 import { useAuthSession } from '@/hooks/use-auth-session';
+import { formatCurrencyWhole } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getCachedOrders, setCachedOrders } from '@/lib/order-cache';
@@ -421,7 +422,7 @@ export default function OrderStatusPage() {
                               </div>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              <p className="font-bold text-sm sm:text-base text-primary">₱{order.total.toFixed(2)}</p>
+                              <p className="font-bold text-sm sm:text-base text-primary">₱{formatCurrencyWhole(order.total)}</p>
                               <p className="text-xs text-muted-foreground mt-1">{order.status}</p>
                             </div>
                           </div>

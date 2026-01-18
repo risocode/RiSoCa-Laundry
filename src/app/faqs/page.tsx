@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, HelpCircle, MessageCircle, Phone, Mail, MapPin, Clock, Package, Truck, DollarSign, CheckCircle2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { formatCurrencyWhole } from '@/lib/utils';
 
 const faqs = [
     {
@@ -25,7 +26,7 @@ const faqs = [
     },
     {
         question: "How does your pricing work?",
-        answer: "Our standard pricing is ₱180 per 7.5kg load for wash, dry, and fold services. For services requiring delivery, we charge ₱20 per kilometer after the first kilometer, which is free. For a detailed breakdown, please visit our Service Rates page.",
+        answer: `Our standard pricing is ₱${formatCurrencyWhole(180)} per 7.5kg load for wash, dry, and fold services. For services requiring delivery, we charge ₱${formatCurrencyWhole(20)} per kilometer after the first kilometer, which is free. For a detailed breakdown, please visit our Service Rates page.`,
         category: "pricing",
         icon: DollarSign
     },
@@ -49,7 +50,7 @@ const faqs = [
     },
     {
         question: "How is the delivery fee calculated?",
-        answer: "The first kilometer of delivery is free! After that, we charge a flat rate of ₱20 per kilometer. The distance is calculated from our main branch to your selected location on the map.",
+        answer: `The first kilometer of delivery is free! After that, we charge a flat rate of ₱${formatCurrencyWhole(20)} per kilometer. The distance is calculated from our main branch to your selected location on the map.`,
         category: "pricing",
         icon: MapPin
     },
@@ -181,7 +182,7 @@ export default function FaqsPage() {
                       <p className="text-xs text-muted-foreground">First kilometer</p>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-green-700 dark:text-green-300">₱20/km after</p>
+                  <p className="text-sm font-bold text-green-700 dark:text-green-300">₱{formatCurrencyWhole(20)}/km after</p>
                 </CardContent>
               </Card>
 
@@ -196,7 +197,7 @@ export default function FaqsPage() {
                       <p className="text-xs text-muted-foreground">Per 7.5kg</p>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-blue-700 dark:text-blue-300">₱180 per load</p>
+                  <p className="text-sm font-bold text-blue-700 dark:text-blue-300">₱{formatCurrencyWhole(180)} per load</p>
                 </CardContent>
               </Card>
             </div>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Edit, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { fetchServiceRates, updateServiceRate, type ServiceRate } from '@/lib/api/rates';
+import { formatCurrencyWhole } from '@/lib/utils';
 
 export function ServiceRatesEditor() {
   const { toast } = useToast();
@@ -112,7 +113,7 @@ export function ServiceRatesEditor() {
                         disabled={saving}
                       />
                     ) : (
-                      item.price === 0 && item.id.startsWith('delivery') ? 'Free' : item.price.toFixed(2)
+                      item.price === 0 && item.id.startsWith('delivery') ? 'Free' : formatCurrencyWhole(item.price)
                     )}
                   </TableCell>
                 </TableRow>

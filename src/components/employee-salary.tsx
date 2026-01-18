@@ -29,6 +29,7 @@ import { Loader2, Inbox, Check, X, Layers, Edit2, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, startOfDay } from 'date-fns';
 import { supabase } from '@/lib/supabase-client';
+import { formatCurrencyWhole } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useEmployees } from '@/hooks/use-employees';
 import type { Order } from '@/components/order-list';
@@ -386,24 +387,55 @@ export function EmployeeSalary() {
         {!loading && employeeSalaryTotals.length > 0 && (
           <div className="mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {employeeSalaryTotals.map((emp) => (
-                <Card key={emp.id} className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-4 h-4 rounded bg-green-500"></div>
-                    <span className="text-sm text-green-600">Paid</span>
-                  </div>
-                  <div className="text-3xl font-bold text-green-600 mb-2">
-                    ₱{emp.totalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                  <div className="text-sm text-red-600">
-                    {emp.totalUnpaid > 0 ? (
-                      <>₱{emp.totalUnpaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} unpaid</>
-                    ) : (
-                      <>₱0.00 unpaid</>
-                    )}
-                  </div>
-                </Card>
-              ))}
+              {employeeSalaryTotals.map((emp) => {
+                const total = emp.totalPaid + emp.totalUnpaid;
+                const paidPercent = total > 0 ? (emp.totalPaid / total) * 100 : 0;
+                return (
+                  <Card key={emp.id} className="p-3 sm:p-4 border border-border/60 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold">
+                          {emp.firstName} {emp.lastName}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">Salary summary</div>
+                      </div>
+                      <Badge variant="outline" className="text-[11px] px-2 py-0.5">
+                        {paidPercent.toFixed(0)}% paid
+                      </Badge>
+                    </div>
+
+                    <div className="mt-3 space-y-1.5">
+                      <div className="flex items-center justify-between text-[13px]">
+                        <span className="text-muted-foreground">Paid</span>
+                        <span className="font-semibold text-green-600">
+                          ₱{formatCurrencyWhole(emp.totalPaid)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[13px]">
+                        <span className="text-muted-foreground">Unpaid</span>
+                        <span className="font-semibold text-red-600">
+                          ₱{formatCurrencyWhole(emp.totalUnpaid)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <div className="h-1.5 w-full rounded-full bg-muted">
+                        <div
+                          className="h-1.5 rounded-full bg-green-500 transition-all"
+                          style={{ width: `${paidPercent}%` }}
+                        />
+                      </div>
+                      <div className="mt-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>Total</span>
+                        <span>
+                          ₱{formatCurrencyWhole(total)}
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}
@@ -495,7 +527,9 @@ export function EmployeeSalary() {
                         </div>
                         <div className="flex gap-4 text-sm text-right">
                            <span>Loads: <span className="font-bold">{totalLoads}</span></span>
-                           <span className="text-primary">Salary: <span className="font-bold">₱{calculateActualTotalSalary(date, orders, employees, dailyPayments).toFixed(2)}</span></span>
+                           <span className="text-primary">
+                             Salary: <span className="font-bold">₱{formatCurrencyWhole(calculateActualTotalSalary(date, orders, employees, dailyPayments))}</span>
+                           </span>
                         </div>
                     </div>
                 </AccordionTrigger>
@@ -548,7 +582,7 @@ export function EmployeeSalary() {
                                    </span>
                                    <div className="flex flex-col gap-0.5 mt-1">
                                      <span className="text-xs text-muted-foreground">
-                                       {customerLoadsForEmployee} load{customerLoadsForEmployee !== 1 ? 's' : ''} × ₱{SALARY_PER_LOAD} = ₱{customerSalary.toFixed(2)}
+                                      {customerLoadsForEmployee} load{customerLoadsForEmployee !== 1 ? 's' : ''} × ₱{formatCurrencyWhole(SALARY_PER_LOAD)} = ₱{formatCurrencyWhole(customerSalary)}
                                        {isMyra && unassignedCustomerOrders.length > 0 && (
                                          <span className="text-orange-600 ml-1">
                                            ({unassignedCustomerOrders.length} unassigned)
@@ -557,11 +591,11 @@ export function EmployeeSalary() {
                                      </span>
                                      {internalBonus > 0 && (
                                        <span className="text-xs text-green-600">
-                                         + {internalOrdersForEmployee.length} internal order{internalOrdersForEmployee.length !== 1 ? 's' : ''} (₱{internalBonus.toFixed(2)})
+                                        + {internalOrdersForEmployee.length} internal order{internalOrdersForEmployee.length !== 1 ? 's' : ''} (₱{formatCurrencyWhole(internalBonus)})
                                        </span>
                                      )}
                                      <span className="text-xs font-semibold text-primary mt-0.5">
-                                       Calculated: ₱{employeeSalary.toFixed(2)}
+                                       Calculated: ₱{formatCurrencyWhole(employeeSalary)}
                                      </span>
                                    </div>
                                  </div>
@@ -611,9 +645,9 @@ export function EmployeeSalary() {
                                    ) : (
                                      <div className="flex items-center gap-2">
                                        <span className="text-xs text-muted-foreground whitespace-nowrap">Payment:</span>
-                                       <span className="text-sm font-semibold text-primary">
-                                         ₱{currentAmount.toFixed(2)}
-                                       </span>
+                                      <span className="text-sm font-semibold text-primary">
+                                        ₱{formatCurrencyWhole(currentAmount)}
+                                      </span>
                                        <Button
                                          size="sm"
                                          variant="ghost"
@@ -860,17 +894,17 @@ export function EmployeeSalary() {
                             </TableCell>
                             <TableCell className="text-right text-xs">
                               {order.orderType === 'internal' && order.assignedEmployeeId ? (
-                                <span className="text-green-600 font-semibold">₱30.00</span>
+                                <span className="text-green-600 font-semibold">₱{formatCurrencyWhole(30)}</span>
                               ) : order.orderType === 'internal' ? (
-                                <span className="text-muted-foreground">₱0.00</span>
+                                <span className="text-muted-foreground">₱{formatCurrencyWhole(0)}</span>
                               ) : (() => {
                                 // Check if order is assigned to any employee
                                 const hasAssignment = (order.assignedEmployeeIds && Array.isArray(order.assignedEmployeeIds) && order.assignedEmployeeIds.length > 0) ||
                                                      order.assignedEmployeeId !== null;
                                 // If unassigned, show ₱0.00, otherwise calculate salary
                                 return hasAssignment 
-                                  ? `₱${(order.load * SALARY_PER_LOAD).toFixed(2)}`
-                                  : <span className="text-muted-foreground">₱0.00</span>;
+                                  ? `₱${formatCurrencyWhole(order.load * SALARY_PER_LOAD)}`
+                                  : <span className="text-muted-foreground">₱{formatCurrencyWhole(0)}</span>;
                               })()}
                             </TableCell>
                             </TableRow>
@@ -880,7 +914,7 @@ export function EmployeeSalary() {
                             <TableRow>
                                 <TableCell colSpan={4} className="font-bold text-xs">Total</TableCell>
                                 <TableCell className="text-center font-bold text-xs">{totalLoads}</TableCell>
-                                <TableCell className="text-right font-bold text-xs">₱{calculateActualTotalSalary(date, orders, employees, dailyPayments).toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-bold text-xs">₱{formatCurrencyWhole(calculateActualTotalSalary(date, orders, employees, dailyPayments))}</TableCell>
                             </TableRow>
                         </TableFooter>
                     </Table>

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrencyWhole } from '@/lib/utils';
 
 type PaymentDialogProps = {
   isOpen: boolean;
@@ -79,25 +79,35 @@ export function PaymentDialog({
           <div className="space-y-2">
             <Label>Amount Due</Label>
             <div className="flex items-center justify-between p-3 bg-muted rounded-md">
-              <span className="text-sm font-medium">₱{amountDue.toFixed(2)}</span>
+              <span className="text-sm font-medium">₱{formatCurrencyWhole(amountDue)}</span>
             </div>
           </div>
 
           {/* Amount Paid Input */}
           <div className="space-y-2">
             <Label htmlFor="amountPaid">Amount Paid</Label>
-            <Input
-              id="amountPaid"
-              type="number"
-              step="0.01"
-              min="0"
-              value={amountPaid}
-              onChange={(e) => setAmountPaid(e.target.value)}
-              placeholder="0.00"
-              className="text-lg font-semibold"
-              disabled={isProcessing}
-              autoFocus
-            />
+            <div className="flex gap-2">
+              <Input
+                id="amountPaid"
+                type="number"
+                step="0.01"
+                min="0"
+                value={amountPaid}
+                onChange={(e) => setAmountPaid(e.target.value)}
+                placeholder="0.00"
+                className="text-lg font-semibold flex-1"
+                disabled={isProcessing}
+                autoFocus
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setAmountPaid(amountDue.toFixed(2))}
+                disabled={isProcessing}
+              >
+                Full
+              </Button>
+            </div>
           </div>
 
           {/* Change Display */}
@@ -106,7 +116,7 @@ export function PaymentDialog({
               <Label className="text-green-600 font-medium">Change</Label>
               <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-md border border-green-200 dark:border-green-800">
                 <span className="text-sm font-medium text-green-700 dark:text-green-300">
-                  ₱{change.toFixed(2)}
+                  ₱{formatCurrencyWhole(change)}
                 </span>
               </div>
             </div>
@@ -118,7 +128,7 @@ export function PaymentDialog({
               <Label className="text-red-600 font-medium">Remaining Balance</Label>
               <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-950 rounded-md border border-red-200 dark:border-red-800">
                 <span className="text-sm font-semibold text-red-700 dark:text-red-300">
-                  ₱{balance.toFixed(2)}
+                  ₱{formatCurrencyWhole(balance)}
                 </span>
               </div>
             </div>

@@ -20,6 +20,7 @@ import {
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Expense } from './types';
+import { formatCurrency } from '@/lib/utils';
 
 interface ReimbursementDialogProps {
   open: boolean;
@@ -66,7 +67,7 @@ export function ReimbursementDialog({
                   Total Expenses: {personExpensesToReimburse.length}
                 </span>
                 <span className="text-lg font-bold text-orange-700 dark:text-orange-300">
-                  ₱{totalAmount.toFixed(2)}
+                  ₱{formatCurrency(totalAmount)}
                 </span>
               </div>
               <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
@@ -104,7 +105,7 @@ export function ReimbursementDialog({
                           {expense.category || '—'}
                         </TableCell>
                         <TableCell className="text-right font-semibold">
-                          ₱{Number(expense.amount).toFixed(2)}
+                          ₱{formatCurrency(Number(expense.amount))}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -126,7 +127,7 @@ export function ReimbursementDialog({
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-primary">
-                    ₱{totalAmount.toFixed(2)}
+                    ₱{formatCurrency(totalAmount)}
                   </p>
                 </div>
               </div>

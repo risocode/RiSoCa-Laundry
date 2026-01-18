@@ -8,6 +8,7 @@ import {
   Layers,
 } from 'lucide-react';
 import type { OrderStatistics } from './calculate-statistics';
+import { formatCurrencyWhole } from '@/lib/utils';
 
 interface StatisticsCardsProps {
   statistics: OrderStatistics;
@@ -80,10 +81,10 @@ export function StatisticsCards({ statistics }: StatisticsCardsProps) {
             <span className="text-[#16A34A] dark:text-[#16A34A] opacity-85 text-[28px]">
               ₱
             </span>
-            {Math.ceil(statistics.paidRevenue).toLocaleString()}
+            {formatCurrencyWhole(statistics.paidRevenue)}
           </p>
           <p className="text-[12px] font-normal text-[#16A34A]/60 dark:text-[#16A34A]/60 opacity-80 mt-1.5">
-            Today: ₱{Math.ceil(statistics.todayRevenue).toLocaleString()}
+            Today: ₱{formatCurrencyWhole(statistics.todayRevenue)}
           </p>
         </div>
       </div>
@@ -101,7 +102,7 @@ export function StatisticsCards({ statistics }: StatisticsCardsProps) {
             <span className="text-[#F97316] dark:text-[#F97316] opacity-85 text-[28px]">
               ₱
             </span>
-            {Math.ceil(statistics.pendingRevenue).toLocaleString()}
+            {formatCurrencyWhole(statistics.pendingRevenue)}
           </p>
           <p className={subtextClasses}>&nbsp;</p>
         </div>
@@ -120,10 +121,10 @@ export function StatisticsCards({ statistics }: StatisticsCardsProps) {
             <span className="text-[#334155] dark:text-[#F1F5F9] opacity-85 text-[28px]">
               ₱
             </span>
-            {Math.ceil(statistics.totalRevenue).toLocaleString()}
+            {formatCurrencyWhole(statistics.totalRevenue)}
           </p>
           <p className={subtextClasses}>
-            Yesterday: ₱{Math.ceil(statistics.yesterdayRevenue).toLocaleString()}
+            Yesterday: ₱{formatCurrencyWhole(statistics.yesterdayRevenue)}
           </p>
         </div>
       </div>
