@@ -68,7 +68,6 @@ export function PopupAd({ trigger }: { trigger: number }) {
                 setAdLoaded(true);
               } catch (e) {
                 // Ad already initialized or error - retry after delay
-                console.log('Ad initialization error, will retry:', e);
                 setTimeout(() => {
                   if (!adFilled) {
                     initAd();

@@ -198,7 +198,6 @@ class EmailQueueManager {
         // Supabase returns error if email fails, so check for that
         if (result && !result.error) {
           this.incrementUsage();
-          console.log(`Email queued: ${email.type} to ${email.recipient}`);
         } else if (result?.error) {
           // If Supabase returned an error, throw it so we can handle it
           throw result.error;

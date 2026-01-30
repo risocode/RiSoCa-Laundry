@@ -202,10 +202,10 @@ export function EmployeeSalary() {
         const totalLoads = assignedCustomerOrders.reduce((sum, o) => sum + o.load, 0);
         // Calculate base salary from loads
         const baseSalary = totalLoads * SALARY_PER_LOAD;
-        // Calculate internal order bonuses (+30 per assigned internal order)
+        // Calculate internal order bonuses (+30 per load for assigned internal orders)
         const internalOrderBonus = orders
           .filter(o => o.orderType === 'internal' && o.assignedEmployeeId)
-          .length * 30;
+          .reduce((sum, order) => sum + (order.load * 30), 0);
         const calculatedTotalSalary = baseSalary + internalOrderBonus;
         
         return {
@@ -557,7 +557,8 @@ export function EmployeeSalary() {
                            const internalOrdersForEmployee = orders.filter(
                              o => o.orderType === 'internal' && o.assignedEmployeeId === emp.id
                            );
-                           const internalBonus = internalOrdersForEmployee.length * 30;
+                           const internalBonus = internalOrdersForEmployee.reduce((sum, order) => sum + (order.load * 30), 0);
+                           const totalInternalLoads = internalOrdersForEmployee.reduce((sum, order) => sum + order.load, 0);
                            
                            const employeeSalary = calculateEmployeeSalary(orders, emp, employees, dailyPayments);
                            
@@ -591,7 +592,7 @@ export function EmployeeSalary() {
                                      </span>
                                      {internalBonus > 0 && (
                                        <span className="text-xs text-green-600">
-                                        + {internalOrdersForEmployee.length} internal order{internalOrdersForEmployee.length !== 1 ? 's' : ''} (₱{formatCurrencyWhole(internalBonus)})
+                                        + {totalInternalLoads} internal load{totalInternalLoads !== 1 ? 's' : ''} (₱{formatCurrencyWhole(internalBonus)})
                                        </span>
                                      )}
                                      <span className="text-xs font-semibold text-primary mt-0.5">

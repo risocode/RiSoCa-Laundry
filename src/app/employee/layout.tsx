@@ -9,6 +9,7 @@ import { useAuthSession } from '@/hooks/use-auth-session';
 import { isEmployee, isAdmin } from '@/lib/auth-helpers';
 import { Loader2 } from 'lucide-react';
 import { NotFound404 } from '@/components/not-found-404';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 export default function EmployeeLayout({
   children,
@@ -70,18 +71,20 @@ export default function EmployeeLayout({
   }
 
   return (
-    <div className="flex flex-col h-screen">
-      <AppHeader />
-      <PromoBanner />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">
-        <div className="container mx-auto px-4 py-4 sm:py-8 min-h-full flex items-center justify-center">
-          <div className="w-full max-w-7xl">
-        {children}
+    <ErrorBoundary>
+      <div className="flex flex-col h-screen">
+        <AppHeader />
+        <PromoBanner />
+        <main className="flex-1 overflow-y-auto overflow-x-hidden scrollable pb-20">
+          <div className="container mx-auto px-4 py-4 sm:py-8 min-h-full flex items-center justify-center">
+            <div className="w-full max-w-7xl">
+          {children}
+            </div>
           </div>
-        </div>
-      </main>
-      <AppFooter />
-    </div>
+        </main>
+        <AppFooter />
+      </div>
+    </ErrorBoundary>
   );
 }
 

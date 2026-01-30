@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -359,9 +359,8 @@ export default function AdminCustomersPage() {
                   const hasMultipleTransactions = customer.transactions.length > 1;
                   
                   return (
-                    <>
+                    <React.Fragment key={customer.name}>
                       <TableRow 
-                        key={customer.name}
                         className="hover:bg-muted/50 transition-colors border-b"
                       >
                         <TableCell className="text-left px-4 py-4 align-top min-w-[200px]">
@@ -484,7 +483,7 @@ export default function AdminCustomersPage() {
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </React.Fragment>
                   );
                 })}
               </TableBody>

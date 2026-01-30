@@ -240,16 +240,6 @@ export function OrderStatusTracker({ order: initialOrder }: { order: Order }) {
 
   // Update when order prop changes - always use initialOrder as source of truth
   useEffect(() => {
-    // Debug: Log initial order to verify foundItems
-    if (process.env.NODE_ENV === 'development') {
-      console.log('OrderStatusTracker - Initial order received:', {
-        id: initialOrder.id,
-        foundItems: initialOrder.foundItems,
-        foundItemsType: typeof initialOrder.foundItems,
-        foundItemsIsArray: Array.isArray(initialOrder.foundItems),
-        foundItemsLength: initialOrder.foundItems?.length
-      });
-    }
     setOrder(initialOrder);
     previousStatusRef.current = initialOrder.status;
   }, [initialOrder]);

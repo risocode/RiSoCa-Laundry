@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { CookieConsentBanner } from '@/components/cookie-consent-banner';
 import { PromoProviderWrapper } from '@/components/promo-provider-wrapper';
 import { ConditionalAds } from '@/components/conditional-ads';
+import { ErrorBoundary } from '@/components/error-boundary';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -425,12 +426,14 @@ export default function RootLayout({
             `,
           }}
         />
-        <PromoProviderWrapper>
-          <ConditionalAds />
-          {children}
-          <Toaster />
-          <CookieConsentBanner />
-        </PromoProviderWrapper>
+        <ErrorBoundary>
+          <PromoProviderWrapper>
+            <ConditionalAds />
+            {children}
+            <Toaster />
+            <CookieConsentBanner />
+          </PromoProviderWrapper>
+        </ErrorBoundary>
       </body>
     </html>
   );

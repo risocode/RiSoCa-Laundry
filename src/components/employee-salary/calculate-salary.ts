@@ -55,7 +55,7 @@ export function calculateEmployeeSalary(
   const internalOrdersForEmployee = orders.filter(
     o => o.orderType === 'internal' && o.assignedEmployeeId === employee.id
   );
-  const internalBonus = internalOrdersForEmployee.length * 30;
+  const internalBonus = internalOrdersForEmployee.reduce((sum, order) => sum + (order.load * 30), 0);
   
   return customerSalary + internalBonus;
 }

@@ -9,6 +9,7 @@ import { useAuthSession } from '@/hooks/use-auth-session';
 import { isAdmin } from '@/lib/auth-helpers';
 import { Loader2 } from 'lucide-react';
 import { NotFound404 } from '@/components/not-found-404';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 export default function AdminLayout({
   children,
@@ -65,17 +66,19 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-y-auto overflow-x-hidden" data-admin-layout>
-      <AppHeader />
-      <PromoBanner />
-      <main className="flex-1 w-full pb-20">
-        <div className="w-full px-4 sm:px-6 py-4 sm:py-8">
-          <div className="w-full space-y-6">
-            {children}
+    <ErrorBoundary>
+      <div className="flex flex-col h-screen w-full overflow-y-auto overflow-x-hidden" data-admin-layout>
+        <AppHeader />
+        <PromoBanner />
+        <main className="flex-1 w-full pb-20">
+          <div className="w-full px-4 sm:px-6 py-4 sm:py-8">
+            <div className="w-full space-y-6">
+              {children}
+            </div>
           </div>
-        </div>
-      </main>
-      <AppFooter />
-    </div>
+        </main>
+        <AppFooter />
+      </div>
+    </ErrorBoundary>
   );
 }
