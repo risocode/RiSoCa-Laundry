@@ -109,7 +109,7 @@ export async function handleOrderUpdate(
         updatedOrder.balance ?? (updatedOrder.isPaid ? 0 : updatedOrder.total),
       delivery_option: updatedOrder.deliveryOption,
       distance: updatedOrder.distance,
-      service_package: updatedOrder.servicePackage,
+      service_package: updatedOrder.servicePackage as 'package1' | 'package2' | 'package3',
       status: updatedOrder.status,
       created_at: updatedOrder.orderDate.toISOString(), // Update the order date
     };
@@ -128,7 +128,7 @@ export async function handleOrderUpdate(
         patch.assigned_employee_id = updatedOrder.assignedEmployeeIds[0];
       } else {
         // Empty array means no employees assigned
-        patch.assigned_employee_ids = null;
+        patch.assigned_employee_ids = undefined;
         patch.assigned_employee_id = null;
       }
     } else if (updatedOrder.assignedEmployeeId !== undefined) {
@@ -138,7 +138,7 @@ export async function handleOrderUpdate(
         patch.assigned_employee_ids = [updatedOrder.assignedEmployeeId];
       } else {
         patch.assigned_employee_id = null;
-        patch.assigned_employee_ids = null;
+        patch.assigned_employee_ids = undefined;
       }
     }
 
@@ -152,7 +152,7 @@ export async function handleOrderUpdate(
         );
         patch.load_pieces = cleanedPieces.length > 0 ? cleanedPieces : null;
       } else {
-        patch.load_pieces = null;
+        patch.load_pieces = undefined;
       }
     }
 
@@ -164,9 +164,9 @@ export async function handleOrderUpdate(
         const cleanedItems = updatedOrder.foundItems
           .map(item => item?.trim())
           .filter(item => item && item.length > 0);
-        patch.found_items = cleanedItems.length > 0 ? cleanedItems : null;
+        patch.found_items = cleanedItems.length > 0 ? cleanedItems : undefined;
       } else {
-        patch.found_items = null;
+        patch.found_items = undefined;
       }
     }
 
