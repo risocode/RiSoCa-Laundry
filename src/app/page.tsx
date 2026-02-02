@@ -215,14 +215,18 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
     window.history.pushState({}, '', newUrl);
   };
 
-  // Combine grid items based on user role
+  // Determine user role priority: Admin > Employee > Customer
+  // Each role gets its own distinct home page
+  const userRole = userIsAdmin ? 'admin' : (userIsEmployee ? 'employee' : 'customer');
+  
+  // Combine grid items based on user role (strict separation)
   const gridItems = viewAsCustomer
-    ? customerGridItems // Show customer items if view=customer is toggled
-    : [
-        ...(userIsAdmin ? adminGridItems : []),
-        ...(userIsEmployee ? employeeGridItems : []),
-        ...(userIsAdmin || userIsEmployee ? [] : customerGridItems), // Only show customer items if not admin/employee
-      ];
+    ? customerGridItems // Show customer items if view=customer is toggled (admin only)
+    : userIsAdmin
+    ? adminGridItems // Admin sees ONLY admin items
+    : userIsEmployee
+    ? employeeGridItems // Employee sees ONLY employee items
+    : customerGridItems; // Customer sees ONLY customer items
 
   return (
     <HomePageWrapper gridItems={gridItems}>
@@ -239,6 +243,20 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
                 <span className="text-4xl font-bold text-primary">RKR Laundry</span>
               </div>
               <p className="text-muted-foreground">Fast. Clean. Convenient.</p>
+              {/* Role-based Welcome Message */}
+              {shouldShowProfile && (
+                <div className="mt-2">
+                  {userIsAdmin && (
+                    <p className="text-sm text-muted-foreground">Admin Dashboard</p>
+                  )}
+                  {!userIsAdmin && userIsEmployee && (
+                    <p className="text-sm text-muted-foreground">Employee Portal</p>
+                  )}
+                  {!userIsAdmin && !userIsEmployee && (
+                    <p className="text-sm text-muted-foreground">Customer Portal</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Profile / Auth Buttons */}
@@ -279,9 +297,45 @@ function HomeContent({ viewAsCustomer: initialViewAsCustomer }: { viewAsCustomer
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <span className="text-sm font-semibold text-primary">
-                    {displayName}
-                  </span>
+                  <div className="flex flex-col items-center gap-1">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-sm font-semibold text-primary">
+                      {displayName}
+                    </span>
+                    {/* Role Badge */}
+                    {userIsAdmin && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-medium">
+                        Admin
+                      </span>
+                    )}
+                    {!userIsAdmin && userIsEmployee && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium">
+                        Employee
+                      </span>
+                    )}
+                    {!userIsAdmin && !userIsEmployee && user && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
+                        Customer
+                      </span>
+                    )}
+                  </div>
+                    {/* Role Badge */}
+                    {userIsAdmin && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-medium">
+                        Admin
+                      </span>
+                    )}
+                    {!userIsAdmin && userIsEmployee && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium">
+                        Employee
+                      </span>
+                    )}
+                    {!userIsAdmin && !userIsEmployee && user && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
+                        Customer
+                      </span>
+                    )}
+                  </div>
                 </div>
               ) : mounted && !authLoading ? (
                 <>
