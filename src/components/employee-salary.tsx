@@ -469,7 +469,7 @@ export function EmployeeSalary() {
                               let customerLoadsForEmployee = 0;
                               
                               const eligibleOrders = orders.filter(order => 
-                                ELIGIBLE_STATUSES.includes(order.status)
+                                ELIGIBLE_STATUSES.includes(order.status as (typeof ELIGIBLE_STATUSES)[number])
                               );
                               
                               eligibleOrders.forEach(order => {
