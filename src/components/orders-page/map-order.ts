@@ -1,6 +1,34 @@
 import type { Order, StatusHistory } from '@/components/order-list/types';
 
-export function mapOrder(o: any): Order {
+// Type for raw database order object from Supabase
+type DatabaseOrder = {
+  id: string;
+  customer_id: string;
+  customer_name: string;
+  contact_number: string;
+  loads: number;
+  weight: number;
+  status: string;
+  total: number | string;
+  created_at: string;
+  is_paid: boolean;
+  balance?: number | string | null;
+  delivery_option?: string | null;
+  service_package: string;
+  distance?: number | null;
+  branch_id?: string | null;
+  order_type?: 'customer' | 'internal' | null;
+  assigned_employee_id?: string | null;
+  assigned_employee_ids?: string[] | null;
+  load_pieces?: number[] | null;
+  found_items?: string[] | null;
+  order_status_history?: Array<{
+    status: string;
+    created_at: string;
+  }> | null;
+};
+
+export function mapOrder(o: DatabaseOrder): Order {
   const totalNum =
     typeof o.total === 'string' ? parseFloat(o.total) : Number(o.total);
 
@@ -35,7 +63,7 @@ export function mapOrder(o: any): Order {
     deliveryOption: o.delivery_option ?? undefined,
     servicePackage: o.service_package,
     distance: o.distance ?? 0,
-    statusHistory: (o.order_status_history ?? []).map((sh: any) => ({
+    statusHistory: (o.order_status_history ?? []).map((sh) => ({
       status: sh.status,
       timestamp: new Date(sh.created_at),
     })) as StatusHistory[],

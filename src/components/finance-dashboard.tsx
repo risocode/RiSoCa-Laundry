@@ -30,8 +30,10 @@ import { calculateFinancialTotals, calculateBusinessMetrics } from './finance-da
 import { prepareChartData, prepareExpenseCategoryData } from './finance-dashboard/prepare-chart-data';
 import { formatCurrency } from '@/lib/utils';
 
+import type { OrderData } from './finance-dashboard/types';
+
 export function FinanceDashboard() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderData[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [salaryPayments, setSalaryPayments] = useState<any[]>([]);
   const [totalUsers, setTotalUsers] = useState<number>(0);

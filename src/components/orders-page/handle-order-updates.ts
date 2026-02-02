@@ -3,6 +3,7 @@ import {
   updateOrderFields,
   updateOrderStatus,
 } from '@/lib/api/orders';
+import type { OrderInsert } from '@/lib/api/orders';
 
 export interface UpdateOrderResult {
   success: boolean;
@@ -97,7 +98,7 @@ export async function handleOrderUpdate(
       }
     }
 
-    const patch: any = {
+    const patch: Partial<OrderInsert> = {
       customer_name: updatedOrder.customerName,
       contact_number: updatedOrder.contactNumber,
       weight: updatedOrder.weight,
@@ -172,7 +173,7 @@ export async function handleOrderUpdate(
     // Use finalOrderId (which might be the new RKR ID) for the update
     const { error: patchError } = await updateOrderFields(
       finalOrderId,
-      patch as any
+      patch
     );
 
     if (patchError) {
